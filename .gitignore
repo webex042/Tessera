@@ -1,0 +1,62 @@
+# --- Rust ---
+/target/
+**/*.rs.bk
+*.pdb
+
+# --- Node / UI ---
+node_modules/
+ui/dist/
+.pnpm-store/
+*.tsbuildinfo
+.vite/
+
+# --- Tauri ---
+src-tauri/target/
+src-tauri/gen/
+# Sidecar binaries are fetched by tools/fetch-sidecar.ps1 (pinned in tools/sidecar.lock)
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
+
+# --- Model files (never committed; downloaded or located at runtime) ---
+models/
+*.gguf
+*.onnx
+*.safetensors
+*.bin
+
+# --- Local data: must never enter the repo (see "No real user data" rule, plan §3) ---
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+key.bin
+logs/
+EBWebView/
+
+# --- Bench / evals scratch (committed results go in CSV/MD files) ---
+bench/.venv/
+bench/raw/
+evals/runs/
+__pycache__/
+*.py[cod]
+.venv/
+.ipynb_checkpoints/
+
+# --- Fuzzing ---
+fuzz/target/
+fuzz/corpus/
+fuzz/artifacts/
+
+# --- Secrets / env ---
+.env
+.env.*
+!.env.example
+
+# --- Editors / OS ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store

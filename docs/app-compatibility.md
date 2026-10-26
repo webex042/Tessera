@@ -7,6 +7,13 @@ APIs work against each app's UI framework, not how well real inboxes or chats re
 
 Machine: Windows 11 build 26300, Ryzen 5 7530U, 2026-10-26. Times are single measurements.
 
+**Update (Stage 1, production UIA reader with a 285 ms deadline):** every read returned to the
+caller within **294 ms** (p95 294 ms). Word, PowerPoint and Explorer hit the deadline (their
+abandoned reads finished in the background at 290, 647 and 732 ms) and are read by OCR. In
+both browsers' password fixture, TextPattern is now refused because the document contains a
+password field; the cached tree walk skips that control (`uia_pw_skipped = 1`). All 16 windows
+usable. The table below is the Stage 0 measurement; the current CSV is `docs/stage0/app-compat-probe.csv`.
+
 | # | Target app | Status | Rung 1 UIA | Rung 2 WGC + OCR | Notes |
 |---|---|---|---|---|---|
 | 1 | Chrome | usable | TextPattern 62–74 ms; first page tree walk 231 ms | 179–199 + 87–94 ms | isolated profile |

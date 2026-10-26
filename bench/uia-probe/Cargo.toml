@@ -8,6 +8,7 @@ publish.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+tsr-capture = { path = "../../crates/tsr-capture" }
 
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = [

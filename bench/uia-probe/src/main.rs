@@ -17,8 +17,6 @@
 #[cfg(windows)]
 mod quality;
 #[cfg(windows)]
-mod uia;
-#[cfg(windows)]
 mod wgc;
 
 #[cfg(not(windows))]
@@ -63,20 +61,21 @@ fn main() -> anyhow::Result<()> {
 
     // SAFETY: first COM call on this thread; MTA as in plan §4.1 (T2).
     unsafe { CoInitializeEx(None, COINIT_MULTITHREADED).ok()? };
-    let uia = uia::Uia::new()?;
+    // The production rung-1 reader (tsr-capture): dedicated thread, 300 ms wall-clock deadline.
+    let uia = tsr_capture::uia::UiaReader::new()?;
     let cap = if no_ocr { None } else { Some(wgc::Capturer::new()?) };
     if let Some(c) = &cap {
         println!("borderless capture access: {}", c.borderless_access);
     }
 
     let header = "label,exe,class,uia_method,uia_ms,uia_nodes,uia_pw_skipped,uia_chars,uia_quality,\
-wgc_ms,wgc_w,wgc_h,wgc_border_free,ocr_ms,ocr_chars,ocr_quality,usable,error";
+wgc_ms,wgc_w,wgc_h,wgc_border_free,ocr_ms,ocr_chars,ocr_quality,usable,error,uia_abandoned_read_ms";
     let mut rows = vec![header.to_string()];
     let mut leaked = 0usize;
     println!("{header}");
 
     for w in windows_for(&exes, &pids, title_contains.as_deref()) {
-        let u = uia.read(w.hwnd);
+        let u = read_uia(&uia, w.hwnd);
         let uq = quality::score(&u.text, None);
         let o = cap.as_ref().map(|c| c.capture_and_ocr(w.hwnd)).unwrap_or_default();
         let oq = quality::score(&o.text, (o.height > 0).then_some(o.height as u32));
@@ -88,7 +87,7 @@ wgc_ms,wgc_w,wgc_h,wgc_border_free,ocr_ms,ocr_chars,ocr_quality,usable,error";
             .collect::<Vec<_>>()
             .join("|");
         let row = format!(
-            "{},{},{},{},{},{},{},{},{:.2},{},{},{},{},{},{},{:.2},{},{}",
+            "{},{},{},{},{},{},{},{},{:.2},{},{},{},{},{},{},{:.2},{},{},{}",
             label.as_deref().unwrap_or(""),
             w.exe,
             w.class,
@@ -106,7 +105,8 @@ wgc_ms,wgc_w,wgc_h,wgc_border_free,ocr_ms,ocr_chars,ocr_quality,usable,error";
             o.text.chars().count(),
             oq,
             usable,
-            err
+            err,
+            u.abandoned_ms.map_or(String::new(), |m| m.to_string())
         );
         println!("{row}");
         if show_text {
@@ -229,4 +229,59 @@ fn windows_for(exes: &[String], pids: &[u32], title_contains: Option<&str>) -> V
         }
     }
     out
+}
+
+/// Rung-1 result in the probe's table shape.
+#[cfg(windows)]
+#[derive(Default)]
+struct ProbeUia {
+    method: &'static str,
+    /// Caller-observed wall time (what the deadline bounds).
+    ms: u128,
+    nodes: u32,
+    password_nodes_skipped: u32,
+    text: String,
+    error: Option<String>,
+    /// For timed-out reads: when the abandoned read finished in the background (ms after start).
+    abandoned_ms: Option<u128>,
+}
+
+#[cfg(windows)]
+fn read_uia(r: &tsr_capture::uia::UiaReader, hwnd: windows::Win32::Foundation::HWND) -> ProbeUia {
+    use tsr_capture::deadline::DeadlineError;
+    use tsr_capture::uia::{Method, UiaError};
+    let t0 = std::time::Instant::now();
+    let out = r.read(hwnd);
+    let ms = t0.elapsed().as_millis();
+    match out {
+        Ok(t) => ProbeUia {
+            method: if t.method == Method::TextPattern {
+                "text_pattern"
+            } else {
+                "tree"
+            },
+            ms,
+            nodes: t.nodes,
+            password_nodes_skipped: t.password_controls_skipped,
+            text: t.text,
+            ..Default::default()
+        },
+        Err(e) => {
+            // Measure the abandoned read so the table shows what the deadline saved, and so the
+            // next window starts with an idle worker.
+            let abandoned_ms = if matches!(e, UiaError::Deadline(DeadlineError::TimedOut)) {
+                r.wait_idle(std::time::Duration::from_secs(30))
+                    .map(|d| ms + d.as_millis())
+            } else {
+                None
+            };
+            ProbeUia {
+                method: "failed",
+                ms,
+                error: Some(e.to_string()),
+                abandoned_ms,
+                ..Default::default()
+            }
+        }
+    }
 }

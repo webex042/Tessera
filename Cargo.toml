@@ -5,6 +5,7 @@ members = [
     "crates/tsr-retrieval",
     "crates/tsr-guard",
     "crates/tsr-infer",
+    "crates/tsr-capture",
     "src-tauri",
     "bench/uia-probe",
 ]

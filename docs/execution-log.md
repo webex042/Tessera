@@ -2,6 +2,23 @@
 
 Newest first. One entry per working session: stage, what changed, what was run and what it showed.
 
+## 2026-10-26 (later still) — Stage 1: UIA wall-clock deadline
+
+- `crates/tsr-capture`: `DeadlineWorker` (dedicated thread, caller waits at most the deadline,
+  `Busy` instead of queueing behind a stuck call, init excluded from the first call, panics contained),
+  `UiaFallback` (two timeouts in a row → OCR only for 10 min; bounded memory), `UiaReader`
+  (TextPattern only when the document has no password field; otherwise one cached subtree round
+  trip, password subtrees skipped structurally; `Debug` hides text).
+- `bench/uia-probe` now uses the production reader and reports abandoned-read times.
+- Bugs caught: the first read paid for UIA initialisation (fixed: spawn waits for readiness);
+  a 300 ms wait returned after up to 314 ms because of Windows' timer tick (deadline set to 285 ms).
+
+| Command | Result |
+|---|---|
+| `cargo test -p tsr-capture` | 12 passed (incl. REAL taskbar read: 300.07 ms cut-off cold, 125–145 ms warm) |
+| `tools/run-capture-probe.ps1` | 16/16 windows usable; max caller-observed UIA 294 ms; Word 285 ms (abandoned read 290 ms), PowerPoint 285 (647), Explorer 294 (732) |
+| `cargo test --workspace` | 75 passed |
+
 ## 2026-10-26 (later) — Stage 1 started; GPU-vendor independence
 
 **Stage 1 (part 1, commit 825f6aa):** `tsr-guard` scoped blocklist (10 tests incl. the

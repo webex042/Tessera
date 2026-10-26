@@ -1,0 +1,10 @@
+[package]
+name = "tsr-guard"
+description = "Tessara guardrails: blocklists, redaction, untrusted-content handling, action policy"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+regex.workspace = true

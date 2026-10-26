@@ -4609,6 +4609,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
+name = "tsr-guard"
+version = "0.0.1"
+dependencies = [
+ "regex",
+]
+
+[[package]]
 name = "tsr-retrieval"
 version = "0.0.1"
 dependencies = [
@@ -4627,6 +4634,7 @@ dependencies = [
  "rusqlite",
  "tempfile",
  "thiserror 2.0.21",
+ "tsr-guard",
  "zeroize",
 ]
 

@@ -2,7 +2,11 @@
 //!
 //! Stage 0 scope: open a SQLCipher database with a raw 32-byte key, apply the
 //! security PRAGMAs from §9.1, and confirm SQLCipher and FTS5 are really compiled in.
-//! Key management (DPAPI wrapping) and migrations arrive in Stage 1.
+//! Stage 1 adds schema migrations ([`migrate`]) and the blocklist repository ([`blocklist`]).
+//! Key management (DPAPI wrapping) follows.
+
+pub mod blocklist;
+pub mod migrate;
 
 use std::path::Path;
 
@@ -25,6 +29,12 @@ pub enum StoreError {
     NoFts5,
     #[error("sqlite error code {0}")]
     Sqlite(i32),
+    /// The database was written by a newer build (schema version above what this build knows).
+    #[error("database schema {found} is newer than supported {supported}")]
+    SchemaTooNew { found: u32, supported: u32 },
+    /// A blocklist rule was rejected (empty, too long, or a regex that does not compile).
+    #[error("invalid blocklist rule")]
+    InvalidRule,
 }
 
 impl From<rusqlite::Error> for StoreError {
@@ -53,6 +63,11 @@ pub struct BuildInfo {
 /// internally, which we cannot wipe; `cipher_memory_security` reduces that exposure.
 pub fn open_encrypted(path: &Path, key: &[u8; KEY_LEN]) -> Result<Connection, StoreError> {
     let conn = Connection::open(path)?;
+
+    // SQLCipher logs to stderr by default (e.g. on a wrong key). All diagnostics must go through
+    // our content-free tracing layer instead, so silence it before the key is even tried.
+    let level: String = conn.query_row("PRAGMA cipher_log_level = NONE", [], |r| r.get(0))?;
+    debug_assert_eq!(level, "NONE");
 
     let mut hex = Zeroizing::new(String::with_capacity(KEY_LEN * 2 + 16));
     hex.push_str("PRAGMA key = \"x'");

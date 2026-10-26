@@ -48,6 +48,38 @@ fn fts5_round_trip_in_encrypted_db() {
     assert_eq!(hinglish, 1);
 }
 
+/// Stage 1 criterion: SQLCipher's own logging is off, so a wrong-key open writes nothing to
+/// stderr (it used to print `ERROR CORE sqlite3Codec ...`). stderr cannot be captured in-process,
+/// so the test re-runs itself as a child process and inspects the child's stderr.
+#[test]
+fn wrong_key_writes_nothing_to_stderr() {
+    if std::env::var_os("TSR_STDERR_CHILD").is_some() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("t.db");
+        open_encrypted(&path, &key(1))
+            .unwrap()
+            .execute_batch("CREATE TABLE t(x);")
+            .unwrap();
+        assert!(matches!(
+            open_encrypted(&path, &key(2)),
+            Err(StoreError::WrongKeyOrNotDatabase)
+        ));
+        return;
+    }
+    let out = std::process::Command::new(std::env::current_exe().unwrap())
+        .args(["--exact", "wrong_key_writes_nothing_to_stderr", "--test-threads=1"])
+        .env("TSR_STDERR_CHILD", "1")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "child failed: {}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.trim().is_empty(), "SQLCipher wrote to stderr: {stderr}");
+}
+
 #[test]
 fn wrong_key_is_rejected_and_right_key_reopens() {
     let dir = tempfile::tempdir().unwrap();

@@ -602,8 +602,10 @@ CREATE TABLE summary_sources (
 
 CREATE TABLE briefs (day TEXT PRIMARY KEY, json TEXT NOT NULL, created_at INTEGER NOT NULL);
 
-CREATE TABLE blocklist (
-  id INTEGER PRIMARY KEY, kind TEXT NOT NULL CHECK (kind IN ('process','title','url')),
+CREATE TABLE blocklist (                       -- implemented: crates/tsr-store/migrations/0001_*.sql
+  id INTEGER PRIMARY KEY,
+  key TEXT NOT NULL UNIQUE,                      -- stable, content-free ('builtin.title.otp', 'user.7'); what audit events record
+  kind TEXT NOT NULL CHECK (kind IN ('process','title','url')),
   scope TEXT NOT NULL DEFAULT 'all' CHECK (scope IN ('all','browser')),
   pattern TEXT NOT NULL, is_regex INTEGER NOT NULL, builtin INTEGER NOT NULL, enabled INTEGER NOT NULL
 );

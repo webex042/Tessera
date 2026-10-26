@@ -8,7 +8,7 @@ Effort is in full-time-equivalent weeks for one developer; double it for part-ti
 | Stage | Name | Effort | Depends on | Status |
 |---|---|---|---|---|
 | 0 | Feasibility and model benchmark | 2 wk | — | **In progress** — tooling done; model gates unverified; S1 WebView2 finding open ([results](docs/stage0/results.md)) |
-| 1 | Foundation, capture, memory, baseline guardrails | 5 wk | 0 | Not started |
+| 1 | Foundation, capture, memory, baseline guardrails | 5 wk | 0 | **In progress** — scoped blocklist, migrations, SQLCipher logging done |
 | 2 | Understanding pipeline | 4 wk | 1 | Not started |
 | 3 | Notch UI | 3 wk | 1 | Not started |
 | 4 | Rollups, morning brief, open loops | 3 wk | 2, 3 | Not started |
@@ -48,9 +48,9 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 - [ ] 8-hour run: no crash, background CPU ≤ 3 %, app RAM ≤ 250 MB.
 - [ ] No image files ever written (Process Monitor + FS-watcher test on data dir and `%TEMP%`).
 - [ ] Blocklisted apps and private windows produce zero items.
-- [ ] Title rules don't over-block: ordinary non-browser windows titled with "login", "sign in" or "password" are still captured.
+- [x] Title rules don't over-block: ordinary non-browser windows titled with "login", "sign in" or "password" are still captured. *(policy-level: `tsr-guard` test `generic_words_do_not_block_non_browser_windows`; end-to-end with fixture windows once capture exists)*
 - [ ] A UIA read never blocks the caller beyond 300 ms wall-clock, including against Word (Stage 0 measured 2.8 s without a deadline); late results are discarded.
-- [ ] SQLCipher's own logging is off (`cipher_log_level = NONE`): a wrong-key open writes nothing to stderr.
+- [x] SQLCipher's own logging is off (`cipher_log_level = NONE`): a wrong-key open writes nothing to stderr. *(`tsr-store` test `wrong_key_writes_nothing_to_stderr`, child-process stderr capture)*
 - [ ] Password text from a test WinForms/WPF app never appears in items.
 - [ ] Redaction corpus: 100 % of seeded secrets redacted; false positives ≤ 2 % on the clean corpus.
 - [ ] DB unreadable without the key; no canary strings in a hex scan.

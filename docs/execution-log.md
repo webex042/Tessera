@@ -2,6 +2,45 @@
 
 Newest first. One entry per working session: stage, what changed, what was run and what it showed.
 
+## 2026-10-26 (later) — Stage 1 started; GPU-vendor independence
+
+**Stage 1 (part 1, commit 825f6aa):** `tsr-guard` scoped blocklist (10 tests incl. the
+non-browser regression test); `tsr-store` migration runner, 0001 schema (blocklist with `scope` and
+content-free `key`, settings, audit log), blocklist repository with per-rule block counts (8 tests);
+`cipher_log_level = NONE` with a child-process stderr test (written first, seen failing, then fixed).
+
+**GPU portability (owner request, ADR-0004):**
+- Audit: no Rust dependency on CUDA; NVIDIA-only pieces were the benchmark's `nvidia-smi` sampler and
+  docs. Fixed both.
+- `crates/tsr-infer`: OS adapter enumeration (DXGI / sysfs / Apple), pinned-build discovery with full
+  manifest verification, real `--list-devices` probe with cleared environment, GGUF header reader,
+  backend support table, ranked selection with override and CPU fallback, start-with-fallback,
+  `tsr-hw` diagnostic CLI.
+- `tools/sidecar.lock`: 19 llama.cpp builds (all backends/OSes) with GitHub digests; full per-file
+  manifests for `cpu-x64`, `vulkan-x64` and ONNX Runtime. `tools/fetch_sidecar.py` replaces the
+  PowerShell logic (wrapper kept).
+- Bench: vendor-neutral per-process GPU memory (Windows counters), `--device/--ngl/--no-mmproj-offload`.
+- Download with owner's consent: llama.cpp b11900 Vulkan build (37 MB, hash-checked). No models.
+
+| Command | Result |
+|---|---|
+| `cargo test --workspace` | 63 passed (incl. 18 simulated hardware scenarios) |
+| `cargo test -p tsr-infer --test real_hardware -- --ignored --test-threads=1` | 4 passed on AMD Radeon iGPU (Vulkan) |
+| `tsr-hw` | AMD Radeon via DXGI; Vulkan probe `Vulkan0 … 8096 MiB, 7691 MiB free`; selected Vulkan, CPU fallback |
+| `tsr-hw` timing | 0.6–0.7 s release, 10.4 s debug (SHA-256 of 105 files + probe) |
+| bench sampler on `dwm.exe` | 130 MiB dedicated / 136–138 MiB shared, ~0.5 samples/s |
+| network deps / cargo deny / integrity / evals / harness / UI | all pass |
+
+**Bugs caught by tests:** device-list parser took a trailing log line for a GPU; GGUF reader accepted
+a file truncated inside the last tensor descriptor (seek past EOF does not fail on Windows).
+
+**Security findings:** backend DLLs were unpinned (exe identical across builds) — now full manifests;
+`GGML_*` env vars change device visibility — probe/sidecar env cleared and tested; `ggml-rpc.dll`
+present in every build (inert without `--rpc`).
+
+**Still open:** Stage 1 UIA wall-clock deadline (next); real tests on NVIDIA/Intel/Apple/Qualcomm;
+manifests for builds other than CPU/Vulkan; no model run on any backend.
+
 ## 2026-10-26 — Stage 0 (in progress)
 
 **Constraints for this session (owner's decisions):** the dev machine has no NVIDIA GPU (AMD Radeon

@@ -38,23 +38,27 @@ owner no model files were downloaded or run. Every model-dependent gate is there
 | Rust fmt / clippy `-D warnings` | `cargo fmt --check`, `cargo clippy --workspace --all-targets` | clean |
 | UI typecheck + build | `pnpm build:ui` | clean, no inline scripts |
 
-## How to finish Stage 0 on the target machine
+## How to finish Stage 0 (any GPU, or CPU)
 
-On the RTX 4050 laptop, with the model files placed locally (download is a user decision; record
-their SHA-256 in `tools/sidecar.lock` under a new `models` section):
+With the model files placed locally (download is a user decision; record their SHA-256 in
+`tools/sidecar.lock` under a new `models` section):
 
 ```powershell
-./tools/fetch-sidecar.ps1 -Component llama_cpp -Variant cuda-12.4-x64 -Record
-./tools/fetch-sidecar.ps1 -Component llama_cpp -Variant cudart-12.4-x64
-# copy the cudart DLLs next to llama-server.exe, then:
-python bench/run_bench.py --server third_party/llama_cpp/b11900/cuda-12.4-x64/llama-server.exe `
+python tools/fetch_sidecar.py --list                         # builds for each backend
+python tools/fetch_sidecar.py llama_cpp <variant> --record   # the build for this machine's GPU (once, then commit)
+cargo run --release -p tsr-infer --bin tsr-hw -- --model <path>/Qwen3-VL-4B-Instruct-Q4_K_M.gguf --mmproj <path>/mmproj-Qwen3-VL-4B-Instruct-F16.gguf
+# take <variant>, --device and -ngl from candidate 1 of tsr-hw's plan, then:
+python bench/run_bench.py --server third_party/llama_cpp/b11900/<variant>/llama-server.exe `
   --model <path>/Qwen3-VL-4B-Instruct-Q4_K_M.gguf --mmproj <path>/mmproj-Qwen3-VL-4B-Instruct-F16.gguf `
-  --label q4km-ctx8k-q8kv-cuda --split heldout
+  --device <ID> --ngl all --label q4km-ctx8k-q8kv-<backend>-<gpu> --split heldout
 ```
 
-`bench/results/<date>-<label>/summary.md` fills in the gate table automatically (VRAM from
-`nvidia-smi`), and `drafts_for_rating.md` is the blind-rating sheet. Repeat with `--kv-type f16`,
-`--ctx 4096` and the Vulkan build for the plan's comparison matrix.
+For CUDA, also fetch `cudart-12.4-x64` (it unpacks into the CUDA build) and re-record the CUDA
+manifest. `bench/results/<date>-<label>/summary.md` fills in the gate table automatically (GPU
+memory per llama-server process from Windows counters, any vendor; `nvidia-smi` additionally on
+NVIDIA), and `drafts_for_rating.md` is the blind-rating sheet. Repeat with `--kv-type f16`,
+`--ctx 4096` and every backend that will ship (`docs/hardware-backends.md`). On the dev machine
+(AMD iGPU) the candidate today is `vulkan-x64`, `--device Vulkan0 --ngl all`.
 
 Still to build before Stage 0 can close (not started in this session):
 

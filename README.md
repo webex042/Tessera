@@ -35,13 +35,16 @@ Tessara reads the text on your screen as you work, keeps it as private, searchab
 
 These are design goals. They are tested in Stage 7 (24-hour network monitor, on-disk canary scan) before any release, and [`docs/privacy.md`](docs/privacy.md) tracks what is true of the code today — including the WebView2 connection that Stage 0 found and has not yet removed.
 
-## Target hardware
+## Hardware
 
-- Windows 11
-- NVIDIA GPU with 6 GB VRAM (RTX 4050 laptop class); planning range for model memory is 4.2–5.2 GB
-- 16 GB RAM
-
-Other GPUs (AMD/Intel via Vulkan) and CPU-only machines are planned as slower fallback modes.
+- Windows 11 (Linux and macOS builds of the inference backends exist; the app itself is Windows-first)
+- **Any GPU vendor, or none.** Tessara picks a backend at run time: CUDA (NVIDIA), ROCm or Vulkan
+  (AMD), SYCL or Vulkan (Intel), Metal (Apple Silicon), OpenCL (Qualcomm Adreno), Vulkan for others,
+  and CPU when there is no usable GPU. See [`docs/hardware-backends.md`](docs/hardware-backends.md)
+  for what is supported, what has been tested on real hardware (so far: CPU and AMD+Vulkan), and
+  how to check your machine (`cargo run -p tsr-infer --bin tsr-hw`).
+- Reference machine for the plan's targets: 6 GB GPU (RTX 4050 laptop class), 16 GB RAM; planning
+  range for model memory 4.2–5.2 GB.
 
 ## Tech stack
 

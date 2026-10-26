@@ -155,7 +155,7 @@ def gate(summary: dict) -> list[str]:
         lines.append(f"| {name} | {fmt(value) if not isinstance(value, str) else value} | {status} |")
 
     peak = hw.get("vram_peak_mib")
-    row("VRAM peak <= 5.2 GB (5325 MiB)", peak, peak is not None and peak <= 5325)
+    row("GPU memory peak (dedicated+shared, llama-server) <= 5.2 GB (5325 MiB)", peak, peak is not None and peak <= 5325)
     jv = ex.get("json_validity")
     row("Extraction JSON valid >= 99%", jv, jv is not None and jv >= 0.99)
     f1 = ex.get("action_f1")
@@ -179,7 +179,9 @@ def main() -> int:
     ap.add_argument("--mmproj", type=Path)
     ap.add_argument("--ctx", type=int, default=8192)
     ap.add_argument("--kv-type", default="q8_0")
-    ap.add_argument("--ngl", type=int, default=99)
+    ap.add_argument("--ngl", default="all", help="number, 'all' or 'auto' (from tsr-hw); 0 = CPU only")
+    ap.add_argument("--device", help="backend device id from tsr-hw, e.g. CUDA0, Vulkan0, ROCm0, SYCL0, MTL0, or 'none'")
+    ap.add_argument("--no-mmproj-offload", action="store_true", help="keep the vision encoder on the CPU")
     ap.add_argument("--label", required=True)
     ap.add_argument("--split", default="all", choices=["all", "dev", "heldout"])
     ap.add_argument("--only", default="extraction,ask,draft")
@@ -192,7 +194,8 @@ def main() -> int:
     if args.server:
         if not args.model:
             ap.error("--model is required with --server")
-        srv = Server.launch(args.server, args.model, args.mmproj, out, ctx=args.ctx, kv_type=args.kv_type, ngl=args.ngl)
+        srv = Server.launch(args.server, args.model, args.mmproj, out, ctx=args.ctx, kv_type=args.kv_type, ngl=args.ngl,
+                            device=args.device, mmproj_offload=not args.no_mmproj_offload)
     else:
         srv = Server(args.url, args.api_key)
         srv.wait_healthy(10)
@@ -213,7 +216,18 @@ def main() -> int:
         vram.stop()
         if args.server:
             srv.stop()
-    summary["hardware"] = {"nvidia_smi": vram.available, "vram_baseline_mib": vram.baseline_mib, "vram_peak_mib": vram.peak_mib}
+    g = srv.gpu_mem if args.server else None
+    peak = None if not (g and g.samples) else (g.peak_dedicated_mib or 0) + (g.peak_shared_mib or 0)
+    summary["hardware"] = {
+        "device": args.device, "ngl": args.ngl,
+        # Vendor-neutral, per llama-server process (Windows WDDM counters).
+        "gpu_mem_samples": g.samples if g else 0,
+        "gpu_mem_peak_dedicated_mib": g.peak_dedicated_mib if g else None,
+        "gpu_mem_peak_shared_mib": g.peak_shared_mib if g else None,
+        "vram_peak_mib": peak,
+        # Device-wide, NVIDIA only, when nvidia-smi exists.
+        "nvidia_smi": vram.available, "nvidia_smi_peak_mib": vram.peak_mib,
+    }
 
     (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     md = [f"# Stage 0 benchmark: {args.label}\n", f"- split: {args.split}\n- server: `{summary['server']}`\n- model: `{summary['model']}`\n",

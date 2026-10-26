@@ -34,11 +34,23 @@ jobs:
         run: cargo fmt --all --check
       - name: clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
-      - name: Fetch pinned ONNX Runtime (hash-checked)
+      - name: Fetch pinned ONNX Runtime and the CPU llama.cpp build (hash-checked, full manifests)
+        run: |
+          python tools/fetch_sidecar.py onnxruntime win-x64
+          python tools/fetch_sidecar.py llama_cpp cpu-x64
+      - name: Tests (simulated hardware + unit)
+        run: cargo test --workspace --locked
+      - name: Real-runtime tests that need no GPU
+        run: |
+          cargo test -p tsr-retrieval --locked -- --ignored
+          cargo test -p tsr-infer --test real_hardware --locked -- --ignored --test-threads=1 real_cpu_only_path real_probe_of_missing_executable_fails_cleanly
+      - name: CPU-only machine selects CPU (GitHub runners have no GPU)
         shell: pwsh
-        run: ./tools/fetch-sidecar.ps1 -Component onnxruntime -Variant win-x64
-      - name: Tests (incl. pinned-runtime loading)
-        run: cargo test --workspace --locked -- --include-ignored
+        run: |
+          $j = cargo run -q -p tsr-infer --bin tsr-hw --locked -- --json | ConvertFrom-Json
+          $first = $j.plan.Ok.candidates[0]
+          "first candidate: $($first.backend) ($($first.reason))"
+          if ($first.backend -ne 'Cpu') { throw "expected CPU on a GPU-less runner" }
       - name: App builds with bundled UI
         run: cargo build -p tessara --features custom-protocol --locked
 

@@ -7,7 +7,7 @@
 |---|---|
 | Status | Draft v0.3 — **Stage 0 in progress** (results: `docs/stage0/results.md`; verified discrepancies: `docs/stage0/findings.md`). v0.3 folds in Stage 0 findings: pinned versions and features, hardened llama-server line, WebView2 network finding (ADR-0002), updater blocked (ADR-0003), UIA wall-clock timeouts. v0.2: clipboard cloud exclusion, embedder build features, WebView2 network, updater exception, scoped title blocklist |
 | Scope of this document | MVP (Stages 0–7) in full detail; Stages 8–10 in outline |
-| Target hardware | Windows 11, NVIDIA GPU with 6 GB VRAM (RTX 4050 laptop class), 16 GB RAM |
+| Target hardware | Any GPU vendor or none (ADR-0004, `docs/hardware-backends.md`): CUDA, ROCm, Vulkan, SYCL, OpenVINO, Metal, OpenCL or CPU, chosen at run time. **Reference** machine for the numeric gates: Windows 11, 6 GB GPU (RTX 4050 laptop class), 16 GB RAM |
 | Last updated | 2026-10-26 |
 
 ---
@@ -161,7 +161,7 @@ Rules:
                 │ HTTP on 127.0.0.1:<random port>, Bearer <random key>
                 ▼
 ┌──────────── llama-server.exe (sidecar, inside a kill-on-close Job Object) ───┐
-│ Qwen3-VL-4B-Instruct Q4_K_M + mmproj F16, CUDA (or Vulkan) backend           │
+│ Qwen3-VL-4B-Instruct Q4_K_M + mmproj F16; backend chosen at run time (§7.1)  │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -403,7 +403,7 @@ llama-server.exe
 - **Health:** poll `GET /health` until ready (timeout 90 s for cold load); then a warm-up request with the extraction system prompt to fill the prompt cache.
 - **Restart policy:** exponential backoff 2 s → 60 s, max 5 restarts per hour, then surface "model unavailable" in the notch and keep capturing text (search still works).
 - **Unload:** kill the process after `model_idle_unload_min`; lazy restart on next job.
-- **Hardware check:** query dedicated VRAM via DXGI (`IDXGIAdapter3::QueryVideoMemoryInfo`). < 5.5 GB free → offer `-ngl` partial offload or the 2B model; no compatible GPU → Vulkan or CPU build (slow mode: extraction only on AC + idle).
+- **Hardware check and backend selection (implemented, `crates/tsr-infer`, ADR-0004):** enumerate adapters via DXGI / sysfs / Apple (no GPU runtime loaded); verify each installed pinned llama.cpp build against its full file manifest; probe each verified GPU build with `llama-server --list-devices` (real backend initialisation, no model); read the model's GGUF header; rank candidates (full fit > discrete > vendor-preferred backend > free memory) with CPU always last; start with fallback. Vendor order: NVIDIA CUDA→Vulkan, AMD ROCm→Vulkan, Intel SYCL→Vulkan(→OpenVINO if forced), Apple Metal, Qualcomm OpenCL→Vulkan, other Vulkan. User override: backend, device, GPU layers, allow-fallback. The device arguments come from the plan (`--device <id> -ngl all|N`, `--no-mmproj-offload` when only the vision encoder does not fit). Insufficient memory → partial offload or CPU; offering the 2B model stays a user choice, never automatic. No GPU → CPU (slow mode: extraction only on AC + idle). Details: `docs/hardware-backends.md`.
 
 ### 7.2 VRAM estimate (to be measured in Stage 0)
 
@@ -1058,11 +1058,11 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 **Goal:** prove the 4B model, capture stack and hardware budget before building the app.
 
 Tasks:
-1. `tools/fetch-sidecar.ps1`: download pinned llama.cpp release (CUDA and Vulkan), verify SHA-256, record in `sidecar.lock`.
+1. `tools/fetch_sidecar.py` (wrapper `fetch-sidecar.ps1`): download a pinned llama.cpp build for the machine's GPU (any backend, `--list`), verify the archive SHA-256 and a full per-file manifest, record in `sidecar.lock`.
 2. `bench/` harness (Python standard library only — no `openai` package needed — against llama-server; `bench/run_bench.py`): measures cold load time, TTFT, prefill and decode tok/s, VRAM peak (`nvidia-smi --query-gpu=memory.used` sampled at 10 Hz), JSON validity, latency per job type.
 3. Synthetic eval sets in `evals/` (no real data): 80 screen texts (email threads, Slack/Teams, WhatsApp Web, Jira/GitHub issues, docs, code review, calendar pages, mixed Hindi-English) with hand-labelled facts; 60 Ask Q/A pairs; 20 draft scenarios; 40 window images for OCR/VLM.
 4. Experiments:
-   - Q4_K_M vs Q5_K_M; ctx 4 k vs 8 k; K/V cache q8_0 vs f16; CUDA vs Vulkan.
+   - Q4_K_M vs Q5_K_M; ctx 4 k vs 8 k; K/V cache q8_0 vs f16; each backend available on the test machines (CUDA, Vulkan, ROCm, SYCL, Metal, CPU).
    - Extraction with/without few-shot; schema-constrained vs free JSON.
    - Image token cost and latency at 768 / 1 024 / 1 280 px long side.
    - Windows OCR vs VLM transcription accuracy (CER) and latency.
@@ -1074,7 +1074,7 @@ Tasks:
 5. Write ADR updates for D3, D6, D7 with numbers.
 
 **Exit criteria (go / no-go):**
-- VRAM peak ≤ 5.2 GB with vision at 8 k ctx on the RTX 4050 6 GB.
+- GPU memory peak ≤ 5.2 GB with vision at 8 k ctx on the 6 GB reference GPU (measured per llama-server process with vendor-neutral Windows counters); on other hardware, the selected offload fits the device's reported free memory.
 - Extraction: JSON valid ≥ 99 %, task/commitment F1 ≥ 0.65 (MVP target 0.70 after prompt work), p50 latency ≤ 8 s for a 1 500-token item.
 - Ask: p50 time to first token ≤ 2.5 s with 1 500 tokens of snippets.
 - Draft: blind self-rating ≥ 3/5 average on the 20 scenarios.
@@ -1305,7 +1305,7 @@ SemVer for the app; `prompt_ver` and `schema_ver` tracked separately and stored 
 
 ## 22. Open questions
 
-1. Ship the CUDA or Vulkan build of llama-server by default? (CUDA is faster on NVIDIA but much larger to bundle; decide from Stage 0 numbers.)
+1. Which llama.cpp builds to bundle in the installer vs. offer as optional, consented downloads? (Vulkan covers most GPUs at ~37 MB; CUDA is faster on NVIDIA but ~670 MB with its runtime; ROCm/SYCL ~150–260 MB. ADR-0004; decide from per-backend Stage 0 numbers.)
 2. Default retention for raw item text: 30, 90 or 180 days?
 3. Redact phone numbers and emails by default, or keep them for people resolution?
 4. Browser extension for reliable URLs/page text in v1, or post-MVP?

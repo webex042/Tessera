@@ -28,7 +28,7 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 **Goal:** prove the 4B model, capture stack and hardware budget before building the app.
 
 **Exit criteria (go / no-go):** (status 2026-10-26 in brackets; details in `docs/stage0/results.md`)
-- [ ] VRAM peak ≤ 5.2 GB with vision at 8 k ctx on the RTX 4050 6 GB. *(unverified: no target GPU, no model)*
+- [ ] GPU memory peak ≤ 5.2 GB with vision at 8 k ctx on the 6 GB reference GPU; other GPUs: chosen offload fits reported free memory. *(unverified: no model; detection/selection works on the real AMD iGPU — `docs/hardware-backends.md`)*
 - [ ] Extraction: JSON valid ≥ 99 %, task/commitment F1 ≥ 0.65, p50 latency ≤ 8 s for a 1 500-token item. *(unverified; harness + 80-item eval set ready)*
 - [ ] Ask: p50 time to first token ≤ 2.5 s with 1 500 tokens of snippets. *(unverified; 60-question set ready)*
 - [ ] Draft: blind self-rating ≥ 3/5 average on the 20 scenarios. *(unverified; 20 scenarios ready)*

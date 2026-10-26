@@ -30,9 +30,14 @@ def free_port() -> int:
         return s.getsockname()[1]
 
 
-def server_args(model: Path, mmproj: Path | None, port: int, api_key: str, *, ctx: int = 8192, ngl: int = 99,
+def server_args(model: Path, mmproj: Path | None, port: int, api_key: str, *, ctx: int = 8192, ngl: str = "all",
+                device: str | None = None, mmproj_offload: bool = True,
                 kv_type: str = "q8_0", threads: int | None = None, flash_attn: str = "on") -> list[str]:
-    """Plan §7.1 command line, corrected for b11900 (see docs/stage0/findings.md)."""
+    """Plan §7.1 command line, corrected for b11900 (see docs/stage0/findings.md).
+
+    `device` / `ngl` / `mmproj_offload` come from the backend plan (`tsr-hw` prints them); the
+    defaults mean "let the build use its GPU fully". Use device="none", ngl="0" for CPU only.
+    """
     args = [
         "--host", "127.0.0.1", "--port", str(port), "--api-key", api_key,
         "-m", str(model),
@@ -46,15 +51,84 @@ def server_args(model: Path, mmproj: Path | None, port: int, api_key: str, *, ct
         "--fit", "off", "--cache-ram", "0",
         "--reasoning", "off",
     ]
+    if device:
+        args += ["--device", device]
     if mmproj:
         args += ["--mmproj", str(mmproj)]
+        if not mmproj_offload:
+            args.append("--no-mmproj-offload")
     if threads:
         args += ["-t", str(threads)]
     return args
 
 
+class ProcessGpuMemSampler:
+    """Peak GPU memory of ONE process, any GPU vendor (Windows WDDM performance counters).
+
+    Reads `\\GPU Process Memory(pid_<PID>_*)\\Dedicated Usage` and `Shared Usage` through a single
+    long-lived PowerShell process. Measured on the dev machine: one sample every ~1.5-2 s (each
+    Get-Counter call is slow), so spikes shorter than that can be missed; model memory is flat
+    once loading finishes, which is what the gate needs. Dedicated = the GPU's own memory
+    (discrete cards); Shared = system memory used by the GPU (integrated GPUs live here). Works the
+    same for NVIDIA, AMD, Intel and Qualcomm because the counters come from the Windows display
+    driver model, not a vendor tool. Not available on Linux/macOS (reports None there).
+    """
+
+    _SCRIPT = (
+        "$ErrorActionPreference='SilentlyContinue';"
+        "while ($true) {{"
+        " $s = (Get-Counter -Counter '\\GPU Process Memory(pid_{pid}_*)\\Dedicated Usage',"
+        "'\\GPU Process Memory(pid_{pid}_*)\\Shared Usage').CounterSamples;"
+        " $d = ($s | Where-Object Path -like '*dedicated usage' | Measure-Object CookedValue -Sum).Sum;"
+        " $h = ($s | Where-Object Path -like '*shared usage' | Measure-Object CookedValue -Sum).Sum;"
+        " [Console]::Out.WriteLine(\"$([long]$d) $([long]$h)\"); [Console]::Out.Flush();"
+        " Start-Sleep -Milliseconds 250 }}"
+    )
+
+    def __init__(self, pid: int) -> None:
+        self.pid = pid
+        self.peak_dedicated_mib: int | None = None
+        self.peak_shared_mib: int | None = None
+        self.samples = 0
+        self._proc: subprocess.Popen | None = None
+        self._thread: threading.Thread | None = None
+
+    @property
+    def available(self) -> bool:
+        return os.name == "nt" and shutil.which("powershell") is not None
+
+    def start(self) -> None:
+        if not self.available:
+            return
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        self._proc = subprocess.Popen(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", self._SCRIPT.format(pid=self.pid)],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, creationflags=flags)
+
+        def loop() -> None:
+            assert self._proc and self._proc.stdout
+            for line in self._proc.stdout:
+                try:
+                    d, s = (int(x) >> 20 for x in line.split())
+                except ValueError:
+                    continue
+                self.samples += 1
+                self.peak_dedicated_mib = max(self.peak_dedicated_mib or 0, d)
+                self.peak_shared_mib = max(self.peak_shared_mib or 0, s)
+
+        self._thread = threading.Thread(target=loop, daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        if self._proc and self._proc.poll() is None:
+            self._proc.kill()
+        if self._thread:
+            self._thread.join(timeout=3)
+
+
 class VramSampler:
-    """Samples GPU memory with nvidia-smi at ~10 Hz (plan §17 Stage 0 task 2)."""
+    """Device-wide GPU memory via nvidia-smi, when present (NVIDIA only; optional extra).
+    The vendor-neutral measurement is ProcessGpuMemSampler."""
 
     def __init__(self) -> None:
         self.exe = shutil.which("nvidia-smi")
@@ -103,6 +177,7 @@ class Server:
     proc: subprocess.Popen | None = None
     cold_load_s: float | None = None
     log_path: Path | None = None
+    gpu_mem: "ProcessGpuMemSampler | None" = None
 
     @classmethod
     def launch(cls, exe: Path, model: Path, mmproj: Path | None, log_dir: Path, **kw) -> "Server":
@@ -117,6 +192,9 @@ class Server:
         proc = subprocess.Popen([str(exe), *server_args(model, mmproj, port, key, **kw)], env=env,
                                 stdout=log, stderr=subprocess.STDOUT, creationflags=flags)
         srv = cls(f"http://127.0.0.1:{port}", key, proc, log_path=log_path)
+        # Start sampling before the model loads so the loading peak is captured.
+        srv.gpu_mem = ProcessGpuMemSampler(proc.pid)
+        srv.gpu_mem.start()
         srv.wait_healthy(timeout_s=600)
         srv.cold_load_s = time.perf_counter() - t0
         return srv
@@ -183,6 +261,8 @@ class Server:
         return res
 
     def stop(self) -> None:
+        if self.gpu_mem:
+            self.gpu_mem.stop()
         if self.proc and self.proc.poll() is None:
             self.proc.terminate()
             try:

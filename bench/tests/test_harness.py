@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -69,6 +70,43 @@ class PromptTests(unittest.TestCase):
     def test_client_refuses_non_loopback(self):
         with self.assertRaises(ValueError):
             Server("http://192.168.1.5:8080", "k").wait_healthy(1)
+
+
+class DeviceArgsTests(unittest.TestCase):
+    def test_device_and_layers_from_backend_plan(self):
+        a = server_args(Path("m.gguf"), Path("p.gguf"), 1, "k", device="Vulkan0", ngl="all", mmproj_offload=False)
+        self.assertEqual(a[a.index("--device") + 1], "Vulkan0")
+        self.assertEqual(a[a.index("-ngl") + 1], "all")
+        self.assertIn("--no-mmproj-offload", a)
+        cpu = server_args(Path("m.gguf"), None, 1, "k", device="none", ngl="0")
+        self.assertEqual(cpu[cpu.index("--device") + 1], "none")
+        self.assertEqual(cpu[cpu.index("-ngl") + 1], "0")
+        self.assertNotIn("--no-mmproj-offload", cpu, "no mmproj, nothing to keep off the GPU")
+
+
+@unittest.skipUnless(os.name == "nt", "Windows WDDM GPU counters")
+class RealGpuMemSamplerTests(unittest.TestCase):
+    """REAL hardware: per-process GPU memory through Windows counters (any GPU vendor).
+    dwm.exe, the desktop compositor, always holds GPU memory while a desktop is shown."""
+
+    def test_samples_dwm(self):
+        import subprocess
+        import time
+
+        from tessara_bench.llama import ProcessGpuMemSampler
+
+        out = subprocess.run(["tasklist", "/fi", "imagename eq dwm.exe", "/fo", "csv", "/nh"],
+                             capture_output=True, text=True).stdout.strip()
+        if not out.startswith('"dwm.exe"'):
+            self.skipTest("no dwm.exe (non-interactive session)")
+        pid = int(out.split(",")[1].strip('"'))
+        s = ProcessGpuMemSampler(pid)
+        s.start()
+        time.sleep(4)
+        s.stop()
+        print(f"REAL dwm.exe GPU memory: dedicated {s.peak_dedicated_mib} MiB, shared {s.peak_shared_mib} MiB, {s.samples} samples")
+        self.assertGreater(s.samples, 0)
+        self.assertGreater((s.peak_dedicated_mib or 0) + (s.peak_shared_mib or 0), 0)
 
 
 class EndToEndSimulated(unittest.TestCase):

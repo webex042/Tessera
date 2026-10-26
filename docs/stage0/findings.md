@@ -143,3 +143,26 @@ accepted, and that `--offline` blocks every download path.
   local ports only and `bench/results/` is git-ignored.
 - A `.pptx` generated through PowerPoint and Word's `~$` owner file carried the signed-in user's
   name. Both deleted; the probe script now builds Office fixtures in `%TEMP%` and `~$*` is ignored.
+
+## 9. GPU portability (Stage 1, ADR-0004)
+
+- No Tessara crate depends on CUDA or any GPU SDK; the only NVIDIA-specific code was the
+  benchmark's `nvidia-smi` VRAM sampler (now an optional extra next to vendor-neutral Windows
+  per-process GPU counters) and NVIDIA wording in docs.
+- llama.cpp b11900 ships builds for CPU, CUDA, Vulkan, ROCm, SYCL, OpenVINO (Windows/Linux x64),
+  OpenCL-Adreno (Windows arm64) and Metal (macOS arm64). All are now in `tools/sidecar.lock` with
+  GitHub's archive digests; only `cpu-x64` and `vulkan-x64` have recorded file manifests.
+- **Security finding:** `llama-server.exe` is byte-identical across backend builds; the backend is
+  `ggml-<backend>.dll`. The old lock pinned only the executable, so a swapped backend DLL would
+  have passed. The lock now holds a SHA-256 for every file and verification rejects unlisted files
+  (`tools/fetch_sidecar.py`, and at run time `tsr_infer::backend::installed_builds`).
+- Every build contains `ggml-rpc.dll` (remote ggml backend over the network). It is inert unless
+  `--rpc` is passed; Tessara never passes it.
+- `llama-server --list-devices` initialises the backend without a model: a real, cheap probe.
+  On the dev machine: `Vulkan0: AMD Radeon (TM) Graphics (8096 MiB, 7691 MiB free)`, 0.3–0.8 s.
+  The iGPU exposes 8 GB of shared memory to Vulkan while DXGI reports 495 MiB dedicated.
+- `GGML_VK_VISIBLE_DEVICES` (and other `GGML_*` variables) change what a build sees; the probe and
+  the sidecar run with a cleared environment, verified on real hardware.
+- Repo in OneDrive: directory deletes fail ("Access denied") while OneDrive holds handles;
+  `fetch_sidecar.py` clears files instead of removing folders. `third_party/` is uploaded by
+  OneDrive unless excluded.

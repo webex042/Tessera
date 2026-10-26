@@ -1,0 +1,64 @@
+{
+  "_comment": "Pinned external binaries (plan §7.1, §10.1). Archive SHA-256 values come from GitHub release-asset digests and are re-checked on download by tools/fetch-sidecar.ps1. 'files' lists SHA-256 of extracted files that Tessara loads at runtime; null means not yet recorded (run fetch-sidecar.ps1 -Record once on a trusted machine and commit the result).",
+  "llama_cpp": {
+    "tag": "b11900",
+    "commit": "74b104c9ba5717116b7e65e0cd35397778653304",
+    "source": "https://github.com/ggml-org/llama.cpp/releases/tag/b11900",
+    "assets": [
+      {
+        "variant": "cpu-x64",
+        "name": "llama-b11900-bin-win-cpu-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11900/llama-b11900-bin-win-cpu-x64.zip",
+        "size": 24228419,
+        "sha256": "d3bbbbb7d1b4979b72052fd73cdeeb5a4d5a4e6a3f52aeb40abd6f116558e323",
+        "files": {
+          "llama-server.exe": "f40ea5811fe422f4d7b15a1621eddfc258f962b61ba545c1f9fe80ef850de845"
+        }
+      },
+      {
+        "variant": "vulkan-x64",
+        "name": "llama-b11900-bin-win-vulkan-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11900/llama-b11900-bin-win-vulkan-x64.zip",
+        "size": 37051563,
+        "sha256": "baf0183b1906d7cc0cfe9a0bd3fae34ceb4048acecc371ff3b7a91456783d051",
+        "files": {
+          "llama-server.exe": null
+        }
+      },
+      {
+        "variant": "cuda-12.4-x64",
+        "name": "llama-b11900-bin-win-cuda-12.4-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11900/llama-b11900-bin-win-cuda-12.4-x64.zip",
+        "size": 279417051,
+        "sha256": "387ad76c926cdb301971851a11df018165a7b4df4b1b7c64cf4b09a367ec82bc",
+        "files": {
+          "llama-server.exe": null
+        }
+      },
+      {
+        "variant": "cudart-12.4-x64",
+        "name": "cudart-llama-bin-win-cuda-12.4-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11900/cudart-llama-bin-win-cuda-12.4-x64.zip",
+        "size": 391443627,
+        "sha256": "8c79a9b226de4b3cacfd1f83d24f962d0773be79f1e7b75c6af4ded7e32ae1d6",
+        "files": {}
+      }
+    ]
+  },
+  "onnxruntime": {
+    "version": "1.31.0",
+    "source": "https://github.com/microsoft/onnxruntime/releases/tag/v1.31.0",
+    "assets": [
+      {
+        "variant": "win-x64",
+        "name": "onnxruntime-win-x64-1.31.0.zip",
+        "url": "https://github.com/microsoft/onnxruntime/releases/download/v1.31.0/onnxruntime-win-x64-1.31.0.zip",
+        "size": 82887349,
+        "sha256": "3958d8a44984160692c1b4ffd0de3cb48f8c39f9d34bb31e433db06e30b82195",
+        "files": {
+          "onnxruntime-win-x64-1.31.0/lib/onnxruntime.dll": "0c42dc4e278f0968fdf9ebf1b1e54a74c657a9942e70803e453c91993451cf4c"
+        }
+      }
+    ]
+  }
+}

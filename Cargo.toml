@@ -1,0 +1,48 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/tsr-store",
+    "crates/tsr-retrieval",
+    "src-tauri",
+    "bench/uia-probe",
+]
+
+[workspace.package]
+edition = "2024"
+version = "0.0.1"
+rust-version = "1.99"
+publish = false
+
+# Versions are pinned exactly (`=`) for the libraries whose feature flags carry
+# privacy guarantees (network, crypto, runtime loading). See docs/stage0/dependency-verification.md.
+[workspace.dependencies]
+# Storage: SQLCipher compiled from source with a vendored OpenSSL (plan D5).
+rusqlite = { version = "=0.41.0", default-features = false, features = ["bundled-sqlcipher-vendored-openssl"] }
+
+# Embeddings: default features would add the Hugging Face hub client (TLS HTTP) and
+# a build-time ONNX Runtime download. `ort-load-dynamic` loads a local onnxruntime.dll instead (plan D7, §10.1).
+fastembed = { version = "=7.5.0", default-features = false, features = ["ort-load-dynamic"] }
+# api-31 makes ort refuse any onnxruntime.dll older than 1.31. Windows 11 ships its own
+# System32\onnxruntime.dll (1.17 on the dev machine), which the default api-17 level would accept.
+ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "load-dynamic", "api-31"] }
+
+# App shell
+tauri = { version = "=2.12.5", features = [] }
+tauri-build = { version = "=2.7.4", features = [] }
+
+# Windows APIs
+windows = { version = "0.62.2" }
+
+# Common
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.11.1"
+thiserror = "2.0.21"
+zeroize = "1.9.1"
+anyhow = "1.0.104"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+panic = "unwind"
+strip = "symbols"

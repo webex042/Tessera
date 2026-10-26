@@ -1,0 +1,5 @@
+App: {app_name} | Window: {title} | Source: {url_or_path}
+Captured: {local_datetime} ({weekday}), time zone {tz}
+<screen_content>
+{redacted_text}
+</screen_content>

@@ -1,0 +1,203 @@
+[
+  {
+    "id": "em-001", "split": "dev", "tags": ["email", "commitment", "date"],
+    "app": "Gmail", "title": "Re: Q3 budget sheet - asha.verma@northwind.example - Gmail", "source": "https://mail.google.com/mail/u/0/#inbox/FMfcgzQ001",
+    "captured_at": "2026-10-21T10:05:00+05:30",
+    "text": "Re: Q3 budget sheet\nInbox\nRavi Iyer <ravi.iyer@northwind.example>\nTue, 20 Oct, 18:42\nto me\nHi Asha,\nFinance flagged that the travel line is 12% over. Can you send the revised sheet with the travel numbers split by team?\nThanks,\nRavi\nAsha Verma <asha.verma@northwind.example>\nWed, 21 Oct, 09:58\nto Ravi\nSure Ravi, I'll send the revised sheet by Friday. I need Meera's headcount numbers first.\nAsha\nReply Forward",
+    "expected": {
+      "facts": [
+        {"kind": "commitment", "owner": "me", "counterparty": "Ravi Iyer", "text": "Send Ravi the revised Q3 budget sheet with travel split by team", "due_text": "by Friday", "evidence": "I'll send the revised sheet by Friday"},
+        {"kind": "note", "owner": "unknown", "counterparty": null, "text": "Finance flagged the travel line as 12% over budget", "due_text": null, "evidence": "Finance flagged that the travel line is 12% over"},
+        {"kind": "task", "owner": "me", "counterparty": "Meera", "text": "Get headcount numbers from Meera before revising the sheet", "due_text": null, "evidence": "I need Meera's headcount numbers first"}
+      ],
+      "people": [{"name": "Ravi Iyer", "handle": "ravi.iyer@northwind.example"}, {"name": "Meera", "handle": null}]
+    }
+  },
+  {
+    "id": "em-002", "split": "heldout", "tags": ["email", "event", "time"],
+    "app": "Outlook", "title": "Design review moved - Outlook", "source": "app:olk.exe",
+    "captured_at": "2026-10-19T09:12:00+05:30",
+    "text": "Design review moved\nMeera Nair\nMon 19/10/2026 08:51\nTo: Asha Verma; Daniel Ortiz; Priya Shah\nHi all,\nThe onboarding design review is moved from Tuesday to Thursday 3pm IST because Daniel is travelling. Same Teams link.\nPriya, please bring the updated funnel numbers.\nMeera\nReply   Reply all   Forward",
+    "expected": {
+      "facts": [
+        {"kind": "event", "owner": "unknown", "counterparty": null, "text": "Onboarding design review moved to Thursday 3pm IST", "due_text": "Thursday 3pm IST", "evidence": "The onboarding design review is moved from Tuesday to Thursday 3pm IST"},
+        {"kind": "task", "owner": "Priya Shah", "counterparty": "Meera Nair", "text": "Bring updated funnel numbers to the design review", "due_text": null, "evidence": "Priya, please bring the updated funnel numbers."}
+      ],
+      "people": [{"name": "Meera Nair", "handle": null}, {"name": "Daniel Ortiz", "handle": null}, {"name": "Priya Shah", "handle": null}]
+    }
+  },
+  {
+    "id": "em-003", "split": "heldout", "tags": ["email", "question", "waiting"],
+    "app": "Gmail", "title": "Vendor contract renewal - Gmail", "source": "https://mail.google.com/mail/u/0/#sent/FMfcgzQ003",
+    "captured_at": "2026-10-20T16:30:00+05:30",
+    "text": "Vendor contract renewal\nSent\nAsha Verma <asha.verma@northwind.example>\nto Fatima\nTue, 20 Oct, 16:24\nHi Fatima,\nDoes the renewal include the extra 200 support seats we discussed, or is that a separate order form?\nAlso, could you confirm the new price per seat before legal reviews it on 28 Oct?\nBest,\nAsha",
+    "expected": {
+      "facts": [
+        {"kind": "question", "owner": "me", "counterparty": "Fatima", "text": "Asked Fatima whether the renewal includes the extra 200 support seats", "due_text": null, "evidence": "Does the renewal include the extra 200 support seats we discussed, or is that a separate order form?"},
+        {"kind": "question", "owner": "me", "counterparty": "Fatima", "text": "Asked Fatima to confirm the new price per seat before legal review", "due_text": "28 Oct", "evidence": "could you confirm the new price per seat before legal reviews it on 28 Oct?"},
+        {"kind": "event", "owner": "unknown", "counterparty": null, "text": "Legal reviews the vendor contract renewal", "due_text": "28 Oct", "evidence": "before legal reviews it on 28 Oct"}
+      ],
+      "people": [{"name": "Fatima", "handle": null}]
+    }
+  },
+  {
+    "id": "em-004", "split": "dev", "tags": ["email", "decision"],
+    "app": "Outlook", "title": "Decision: pricing page experiment - Outlook", "source": "app:olk.exe",
+    "captured_at": "2026-10-22T11:40:00+05:30",
+    "text": "Decision: pricing page experiment\nDaniel Ortiz\nThu 22/10/2026 11:02\nTo: Growth team\nCc: Asha Verma\nAfter yesterday's readout we decided to ship variant B (annual toggle on by default) to 100% of traffic starting Monday 26 Oct.\nVariant C is cancelled; the copy changes did not move conversion.\nKenji will own the rollout. Asha, can you update the launch notes?\n- Daniel",
+    "expected": {
+      "facts": [
+        {"kind": "decision", "owner": "unknown", "counterparty": null, "text": "Ship pricing variant B (annual toggle default) to 100% of traffic from Monday 26 Oct", "due_text": "Monday 26 Oct", "evidence": "we decided to ship variant B (annual toggle on by default) to 100% of traffic starting Monday 26 Oct"},
+        {"kind": "decision", "owner": "unknown", "counterparty": null, "text": "Pricing variant C is cancelled", "due_text": null, "evidence": "Variant C is cancelled"},
+        {"kind": "task", "owner": "Kenji", "counterparty": null, "text": "Own the variant B rollout", "due_text": null, "evidence": "Kenji will own the rollout."},
+        {"kind": "task", "owner": "me", "counterparty": "Daniel Ortiz", "text": "Update the pricing launch notes", "due_text": null, "evidence": "Asha, can you update the launch notes?"}
+      ],
+      "people": [{"name": "Daniel Ortiz", "handle": null}, {"name": "Kenji", "handle": null}]
+    }
+  },
+  {
+    "id": "em-005", "split": "heldout", "tags": ["email", "newsletter", "no_facts"],
+    "app": "Gmail", "title": "This week in product: 5 reads - Gmail", "source": "https://mail.google.com/mail/u/0/#inbox/FMfcgzQ005",
+    "captured_at": "2026-10-23T08:15:00+05:30",
+    "text": "This week in product: 5 reads\nProductDigest <news@productdigest.example>\nUnsubscribe\n1. Why onboarding checklists still work in 2026\n2. A field guide to pricing experiments\n3. Interview: running discovery with tiny teams\n4. The metric tree template everyone copies\n5. Hiring your first PM ops lead\nYou are receiving this because you subscribed at productdigest.example.",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "em-006", "split": "heldout", "tags": ["email", "commitment_by_other"],
+    "app": "Gmail", "title": "Re: API rate limits for the partner pilot - Gmail", "source": "https://mail.google.com/mail/u/0/#inbox/FMfcgzQ006",
+    "captured_at": "2026-10-20T12:20:00+05:30",
+    "text": "Re: API rate limits for the partner pilot\nKenji Watanabe <kenji@northwind.example>\nTue, 20 Oct, 12:11\nto me, Lena\nAsha - I'll raise the pilot tenant to 600 requests/min by end of day tomorrow and send you the dashboard link once it's live.\nLena, the partner should keep retries under 3 per request.\nKenji",
+    "expected": {
+      "facts": [
+        {"kind": "commitment", "owner": "Kenji Watanabe", "counterparty": "me", "text": "Raise the pilot tenant rate limit to 600 requests/min", "due_text": "by end of day tomorrow", "evidence": "I'll raise the pilot tenant to 600 requests/min by end of day tomorrow"},
+        {"kind": "commitment", "owner": "Kenji Watanabe", "counterparty": "me", "text": "Send Asha the dashboard link once the limit is live", "due_text": null, "evidence": "send you the dashboard link once it's live"},
+        {"kind": "task", "owner": "Lena", "counterparty": "Kenji Watanabe", "text": "Make sure the partner keeps retries under 3 per request", "due_text": null, "evidence": "Lena, the partner should keep retries under 3 per request."}
+      ],
+      "people": [{"name": "Kenji Watanabe", "handle": "kenji@northwind.example"}, {"name": "Lena", "handle": null}]
+    }
+  },
+  {
+    "id": "em-007", "split": "dev", "tags": ["email", "otp_redacted", "no_facts"],
+    "app": "Gmail", "title": "Your sign-in code - Gmail", "source": "https://mail.google.com/mail/u/0/#inbox/FMfcgzQ007",
+    "captured_at": "2026-10-21T07:03:00+05:30",
+    "text": "Your sign-in code\nNorthwind Accounts <no-reply@accounts.northwind.example>\nYour verification code is [REDACTED:otp]. It expires in 10 minutes. If you did not request this, ignore this email.",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "em-008", "split": "heldout", "tags": ["email", "multi_task", "relative_date"],
+    "app": "Outlook", "title": "Offsite logistics - Outlook", "source": "app:OUTLOOK.EXE",
+    "captured_at": "2026-10-16T17:45:00+05:30",
+    "text": "Offsite logistics\nSana Qureshi\nFri 16/10/2026 17:30\nTo: Asha Verma\nHi Asha, a few things for the November offsite:\n- Please confirm the final headcount by next Wednesday.\n- I'll book the venue in Coorg once you confirm.\n- Tom asked if we can add a half-day for the roadmap workshop; can you decide that with Daniel?\nThanks!\nSana",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": "Sana Qureshi", "text": "Confirm final offsite headcount", "due_text": "by next Wednesday", "evidence": "Please confirm the final headcount by next Wednesday."},
+        {"kind": "commitment", "owner": "Sana Qureshi", "counterparty": "me", "text": "Book the Coorg venue once Asha confirms headcount", "due_text": null, "evidence": "I'll book the venue in Coorg once you confirm."},
+        {"kind": "task", "owner": "me", "counterparty": "Daniel", "text": "Decide with Daniel whether to add a half-day roadmap workshop", "due_text": null, "evidence": "can you decide that with Daniel?"}
+      ],
+      "people": [{"name": "Sana Qureshi", "handle": null}, {"name": "Tom", "handle": null}, {"name": "Daniel", "handle": null}]
+    }
+  },
+  {
+    "id": "em-009", "split": "heldout", "tags": ["email", "done_evidence"],
+    "app": "Gmail", "title": "Re: Q3 budget sheet - Gmail", "source": "https://mail.google.com/mail/u/0/#sent/FMfcgzQ009",
+    "captured_at": "2026-10-23T15:10:00+05:30",
+    "text": "Re: Q3 budget sheet\nAsha Verma <asha.verma@northwind.example>\nFri, 23 Oct, 15:06\nto Ravi\nHi Ravi, attached is the revised sheet with travel split by team (Q3_budget_v4.xlsx). Travel is now 4% over, mostly the sales kickoff.\nAsha\nQ3_budget_v4.xlsx 48 KB",
+    "expected": {
+      "facts": [
+        {"kind": "note", "owner": "me", "counterparty": "Ravi", "text": "Sent Ravi the revised Q3 budget sheet (Q3_budget_v4.xlsx)", "due_text": null, "evidence": "attached is the revised sheet with travel split by team (Q3_budget_v4.xlsx)"},
+        {"kind": "note", "owner": "unknown", "counterparty": null, "text": "Travel is now 4% over budget, mostly the sales kickoff", "due_text": null, "evidence": "Travel is now 4% over, mostly the sales kickoff."}
+      ],
+      "people": [{"name": "Ravi", "handle": null}]
+    }
+  },
+  {
+    "id": "em-010", "split": "heldout", "tags": ["email", "us_date", "ambiguous"],
+    "app": "Gmail", "title": "Partner webinar - Gmail", "source": "https://mail.google.com/mail/u/0/#inbox/FMfcgzQ010",
+    "captured_at": "2026-10-19T21:05:00+05:30",
+    "text": "Partner webinar\nLena Fischer <lena@partner-co.example>\nMon, 19 Oct, 21:01\nto me\nHi Asha, our webinar is locked for 11/03 at 9am PT. Could you send me two customer quotes we can use by Oct 28?\nCheers, Lena",
+    "expected": {
+      "facts": [
+        {"kind": "event", "owner": "unknown", "counterparty": "Lena Fischer", "text": "Partner webinar", "due_text": "11/03 at 9am PT", "evidence": "our webinar is locked for 11/03 at 9am PT"},
+        {"kind": "task", "owner": "me", "counterparty": "Lena Fischer", "text": "Send Lena two customer quotes for the webinar", "due_text": "by Oct 28", "evidence": "Could you send me two customer quotes we can use by Oct 28?"}
+      ],
+      "people": [{"name": "Lena Fischer", "handle": "lena@partner-co.example"}]
+    }
+  },
+  {
+    "id": "em-011", "split": "dev", "tags": ["email", "forwarded", "attribution"],
+    "app": "Outlook", "title": "FW: Security questionnaire - Outlook", "source": "app:olk.exe",
+    "captured_at": "2026-10-20T10:30:00+05:30",
+    "text": "FW: Security questionnaire\nArjun Rao\nTue 20/10/2026 10:22\nTo: Asha Verma\nAsha, forwarding this. Can your team fill sections 3 and 4? I'll handle the rest.\n---------- Forwarded message ----------\nFrom: procurement@bigretail.example\nPlease return the completed questionnaire by 30 October to keep the deal on track.",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": "Arjun Rao", "text": "Fill sections 3 and 4 of the security questionnaire", "due_text": null, "evidence": "Can your team fill sections 3 and 4?"},
+        {"kind": "commitment", "owner": "Arjun Rao", "counterparty": "me", "text": "Handle the remaining sections of the security questionnaire", "due_text": null, "evidence": "I'll handle the rest."},
+        {"kind": "event", "owner": "unknown", "counterparty": null, "text": "Completed security questionnaire due to BigRetail procurement", "due_text": "by 30 October", "evidence": "Please return the completed questionnaire by 30 October"}
+      ],
+      "people": [{"name": "Arjun Rao", "handle": null}]
+    }
+  },
+  {
+    "id": "em-012", "split": "heldout", "tags": ["email", "polite_decline", "no_commitment"],
+    "app": "Gmail", "title": "Speaking slot at DevSummit - Gmail", "source": "https://mail.google.com/mail/u/0/#sent/FMfcgzQ012",
+    "captured_at": "2026-10-22T19:00:00+05:30",
+    "text": "Speaking slot at DevSummit\nAsha Verma\nto events@devsummit.example\nThu, 22 Oct, 18:55\nThank you for the invitation. Unfortunately I can't take the December slot this year. Maybe next year!\nAsha",
+    "expected": {
+      "facts": [
+        {"kind": "decision", "owner": "me", "counterparty": null, "text": "Declined the December DevSummit speaking slot", "due_text": null, "evidence": "Unfortunately I can't take the December slot this year."}
+      ],
+      "people": []
+    }
+  },
+  {
+    "id": "em-013", "split": "heldout", "tags": ["email", "long_thread", "latest_wins"],
+    "app": "Gmail", "title": "Re: Re: Launch date - Gmail", "source": "https://mail.google.com/mail/u/0/#inbox/FMfcgzQ013",
+    "captured_at": "2026-10-21T18:20:00+05:30",
+    "text": "Re: Re: Launch date\nPriya Shah\nWed, 21 Oct, 18:02\nto me, Daniel\nUpdate: QA found a blocker in the export flow, so we're pushing the launch to 4 Nov. Old date of 28 Oct is off.\n\nOn Mon, 19 Oct, Daniel Ortiz wrote:\n> Launch confirmed for 28 Oct.\n\nOn Fri, 16 Oct, Priya Shah wrote:\n> Targeting end of October for launch.",
+    "expected": {
+      "facts": [
+        {"kind": "decision", "owner": "unknown", "counterparty": null, "text": "Launch pushed to 4 Nov because of an export-flow blocker", "due_text": "4 Nov", "evidence": "we're pushing the launch to 4 Nov"},
+        {"kind": "note", "owner": "unknown", "counterparty": null, "text": "QA found a blocker in the export flow", "due_text": null, "evidence": "QA found a blocker in the export flow"}
+      ],
+      "people": [{"name": "Priya Shah", "handle": null}, {"name": "Daniel Ortiz", "handle": null}]
+    }
+  },
+  {
+    "id": "em-014", "split": "dev", "tags": ["email", "amount"],
+    "app": "Outlook", "title": "Invoice INV-2291 - Outlook", "source": "app:OUTLOOK.EXE",
+    "captured_at": "2026-10-19T14:00:00+05:30",
+    "text": "Invoice INV-2291\naccounts@cloudhost.example\nMon 19/10/2026 13:47\nTo: Asha Verma\nInvoice INV-2291 for INR 1,84,500 is due on 05/11/2026. Please approve in the vendor portal.\nRegards, CloudHost Billing",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": "CloudHost Billing", "text": "Approve CloudHost invoice INV-2291 (INR 1,84,500) in the vendor portal", "due_text": "05/11/2026", "evidence": "Invoice INV-2291 for INR 1,84,500 is due on 05/11/2026. Please approve in the vendor portal."}
+      ],
+      "people": []
+    }
+  },
+  {
+    "id": "em-015", "split": "heldout", "tags": ["email", "cc_only", "others_tasks"],
+    "app": "Gmail", "title": "Sprint 44 retro actions - Gmail", "source": "https://mail.google.com/mail/u/0/#inbox/FMfcgzQ015",
+    "captured_at": "2026-10-23T12:00:00+05:30",
+    "text": "Sprint 44 retro actions\nTom Becker <tom@northwind.example>\nFri, 23 Oct, 11:48\nto eng-team, cc me\nActions from the retro:\n1. Kenji - add flaky-test dashboard to the standup board\n2. Priya - write the on-call handover template by Wednesday\n3. Tom - book the incident-review room for every other Thursday",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "Kenji", "counterparty": null, "text": "Add the flaky-test dashboard to the standup board", "due_text": null, "evidence": "Kenji - add flaky-test dashboard to the standup board"},
+        {"kind": "task", "owner": "Priya", "counterparty": null, "text": "Write the on-call handover template", "due_text": "by Wednesday", "evidence": "Priya - write the on-call handover template by Wednesday"},
+        {"kind": "task", "owner": "Tom Becker", "counterparty": null, "text": "Book the incident-review room for every other Thursday", "due_text": "every other Thursday", "evidence": "Tom - book the incident-review room for every other Thursday"}
+      ],
+      "people": [{"name": "Tom Becker", "handle": "tom@northwind.example"}, {"name": "Kenji", "handle": null}, {"name": "Priya", "handle": null}]
+    }
+  },
+  {
+    "id": "em-016", "split": "heldout", "tags": ["email", "hedged", "low_confidence"],
+    "app": "Gmail", "title": "Coffee next week? - Gmail", "source": "https://mail.google.com/mail/u/0/#inbox/FMfcgzQ016",
+    "captured_at": "2026-10-22T09:30:00+05:30",
+    "text": "Coffee next week?\nMeera Nair\nThu, 22 Oct, 09:21\nto me\nWe should maybe grab coffee next week if things calm down? No pressure.\nM",
+    "expected": {
+      "facts": [
+        {"kind": "question", "owner": "Meera Nair", "counterparty": "me", "text": "Meera suggested coffee next week", "due_text": "next week", "evidence": "We should maybe grab coffee next week if things calm down?"}
+      ],
+      "people": [{"name": "Meera Nair", "handle": null}]
+    }
+  }
+]

@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* The notch window is transparent; only the pill itself is painted. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,0 +1,98 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # windows-latest images ship Strawberry Perl, which openssl-src (SQLCipher) needs.
+
+jobs:
+  rust:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Build frontend (needed by tauri-build)
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm build:ui
+      - name: rustfmt
+        run: cargo fmt --all --check
+      - name: clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Fetch pinned ONNX Runtime (hash-checked)
+        shell: pwsh
+        run: ./tools/fetch-sidecar.ps1 -Component onnxruntime -Variant win-x64
+      - name: Tests (incl. pinned-runtime loading)
+        run: cargo test --workspace --locked -- --include-ignored
+      - name: App builds with bundled UI
+        run: cargo build -p tessara --features custom-protocol --locked
+
+  dependency-audit:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Network-capable crates only in tsr-net (default build)
+        run: python tools/check_network_deps.py --locked
+      - name: Network-capable crates only in tsr-net (+ updater exception)
+        run: python tools/check_network_deps.py --locked --features tessara/updater
+      - name: Checker self-test (must FAIL on known-bad fixtures)
+        shell: pwsh
+        run: |
+          foreach ($f in 'fastembed-defaults', 'ort-download') {
+            python tools/check_network_deps.py --manifest-path "tests/fixtures/netdeps/$f/Cargo.toml"
+            if ($LASTEXITCODE -ne 1) { throw "checker did not reject fixture $f" }
+          }
+          exit 0
+      - name: cargo deny (default build)
+        run: cargo deny --locked check
+      - name: cargo deny (updater build)
+        # Known failing until tauri-plugin-updater moves to zip >= 9 (RUSTSEC-2026-0367/0368/0369).
+        # Kept visible rather than ignored; the Stage 10 gate requires this step to pass.
+        continue-on-error: true
+        run: cargo deny --locked --features tessara/updater check
+
+  python-and-evals:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Validate synthetic eval sets
+        run: python evals/validate.py
+      - name: Harness self-tests (SIMULATED server, no model)
+        run: python -m unittest discover -s bench/tests -v
+
+  frontend:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r typecheck
+      - run: pnpm build:ui

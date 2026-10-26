@@ -1,0 +1,17 @@
+label,exe,class,uia_method,uia_ms,uia_nodes,uia_pw_skipped,uia_chars,uia_quality,wgc_ms,wgc_w,wgc_h,wgc_border_free,ocr_ms,ocr_chars,ocr_quality,usable,error
+edge-email,msedge.exe,Chrome_WidgetWin_1,tree,319,67,0,1035,0.95,243,1557,969,true,104,520,0.93,true,
+edge-chat,msedge.exe,Chrome_WidgetWin_1,text_pattern,75,0,0,283,0.94,182,1557,969,true,99,382,0.94,true,
+edge-jira,msedge.exe,Chrome_WidgetWin_1,text_pattern,72,0,0,437,0.94,179,1557,969,true,108,541,0.94,true,
+edge-hinglish,msedge.exe,Chrome_WidgetWin_1,text_pattern,108,0,0,154,0.96,201,1557,969,true,85,264,0.96,true,
+edge-password,msedge.exe,Chrome_WidgetWin_1,text_pattern,68,0,0,119,0.90,154,1557,969,true,64,180,0.94,true,
+chrome-email,chrome.exe,Chrome_WidgetWin_1,tree,231,54,0,828,0.93,199,1557,969,true,94,516,0.93,true,
+chrome-chat,chrome.exe,Chrome_WidgetWin_1,text_pattern,66,0,0,283,0.94,188,1557,969,true,87,378,0.93,true,
+chrome-jira,chrome.exe,Chrome_WidgetWin_1,text_pattern,68,0,0,437,0.94,179,1557,969,true,94,537,0.94,true,
+chrome-hinglish,chrome.exe,Chrome_WidgetWin_1,text_pattern,74,0,0,154,0.96,193,1557,969,true,94,260,0.94,true,
+chrome-password,chrome.exe,Chrome_WidgetWin_1,text_pattern,62,0,0,119,0.90,161,1557,969,true,62,176,0.91,true,
+vscode,code.exe,Chrome_WidgetWin_1,tree,155,13,0,54,0.91,214,1807,1011,true,77,306,0.96,true,
+notepad,notepad.exe,Notepad,text_pattern,40,0,0,269,0.87,159,1426,721,true,71,413,0.85,true,
+word,winword.exe,OpusApp,failed,2794,0,0,0,0.00,346,1422,718,true,125,608,0.85,true,0x80131505
+excel,excel.exe,XLMAIN,text_pattern,149,0,0,409,0.95,216,1920,1008,true,150,792,0.86,true,
+explorer,explorer.exe,CabinetWClass,failed,628,0,0,0,0.00,258,1920,1008,true,78,62,0.92,true,0x800705b4
+powerpoint,powerpnt.exe,PPTFrameClass,tree,559,86,0,1263,0.96,170,1422,718,true,70,306,0.86,true,

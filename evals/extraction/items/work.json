@@ -1,0 +1,351 @@
+[
+  {
+    "id": "wk-001", "split": "dev", "tags": ["jira", "assigned_to_me", "due"],
+    "app": "Google Chrome", "title": "[NW-1432] Export to CSV times out for >50k rows - Jira", "source": "https://northwind.atlassian.example/browse/NW-1432",
+    "captured_at": "2026-10-19T10:20:00+05:30",
+    "text": "NW-1432\nExport to CSV times out for >50k rows\nStatus: In Progress  Priority: High\nAssignee: Kenji Watanabe  Reporter: Fatima Khan\nDue date: 23/Oct/26\nDescription\nBigRetail exports fail after 60s when the report has more than 50k rows.\nComments\nFatima Khan: Asha, can you confirm with BigRetail whether a 24h emailed export is acceptable as a workaround?\nKenji Watanabe: Streaming fix is in review, should land by Thursday.",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "Kenji Watanabe", "counterparty": null, "text": "Fix CSV export timeout for >50k rows (NW-1432)", "due_text": "23/Oct/26", "evidence": "Export to CSV times out for >50k rows"},
+        {"kind": "task", "owner": "me", "counterparty": "Fatima Khan", "text": "Confirm with BigRetail whether a 24h emailed export is an acceptable workaround", "due_text": null, "evidence": "Asha, can you confirm with BigRetail whether a 24h emailed export is acceptable as a workaround?"},
+        {"kind": "commitment", "owner": "Kenji Watanabe", "counterparty": null, "text": "Streaming export fix should land", "due_text": "by Thursday", "evidence": "Streaming fix is in review, should land by Thursday."}
+      ],
+      "people": [{"name": "Kenji Watanabe", "handle": null}, {"name": "Fatima Khan", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-002", "split": "heldout", "tags": ["jira", "board", "list_noise"],
+    "app": "Microsoft Edge", "title": "Sprint 45 board - Jira", "source": "https://northwind.atlassian.example/jira/software/projects/NW/boards/7",
+    "captured_at": "2026-10-20T09:05:00+05:30",
+    "text": "Sprint 45\nTO DO 6  IN PROGRESS 4  REVIEW 3  DONE 11\nNW-1440 Onboarding checklist v3  AV\nNW-1441 Empty states copy  AV\nNW-1438 Fix SSO redirect loop  KW\nNW-1432 Export to CSV times out  KW\nNW-1429 Pricing variant B rollout  KW\nNW-1435 Mobile nav redesign  MN\nSprint ends 30 Oct",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": null, "text": "Onboarding checklist v3 (NW-1440)", "due_text": null, "evidence": "NW-1440 Onboarding checklist v3  AV"},
+        {"kind": "task", "owner": "me", "counterparty": null, "text": "Empty states copy (NW-1441)", "due_text": null, "evidence": "NW-1441 Empty states copy  AV"},
+        {"kind": "event", "owner": "unknown", "counterparty": null, "text": "Sprint 45 ends", "due_text": "30 Oct", "evidence": "Sprint ends 30 Oct"}
+      ],
+      "people": []
+    }
+  },
+  {
+    "id": "wk-003", "split": "heldout", "tags": ["github", "issue", "question"],
+    "app": "Google Chrome", "title": "Webhook retries ignore Retry-After header · Issue #812 · northwind/platform", "source": "https://github.example/northwind/platform/issues/812",
+    "captured_at": "2026-10-20T14:30:00+05:30",
+    "text": "Webhook retries ignore Retry-After header #812\nOpen  lena-fischer opened this issue 3 days ago\nWhen our endpoint returns 429 with Retry-After: 120, Northwind retries after 5s anyway.\nkenji-w commented yesterday\nConfirmed. Fix in #815, targeting 3.14.\nlena-fischer commented 2 hours ago\nThanks! Will 3.14 also cover the 503 case?",
+    "expected": {
+      "facts": [
+        {"kind": "note", "owner": "kenji-w", "counterparty": null, "text": "Webhook Retry-After fix is in #815, targeting 3.14", "due_text": null, "evidence": "Fix in #815, targeting 3.14."},
+        {"kind": "question", "owner": "lena-fischer", "counterparty": null, "text": "Lena asked whether 3.14 also covers the 503 case", "due_text": null, "evidence": "Will 3.14 also cover the 503 case?"}
+      ],
+      "people": [{"name": "lena-fischer", "handle": "lena-fischer"}, {"name": "kenji-w", "handle": "kenji-w"}]
+    }
+  },
+  {
+    "id": "wk-004", "split": "dev", "tags": ["github", "pr", "review_request"],
+    "app": "Google Chrome", "title": "Add streaming CSV export by kenji-w · Pull Request #815 · northwind/platform", "source": "https://github.example/northwind/platform/pull/815",
+    "captured_at": "2026-10-21T11:00:00+05:30",
+    "text": "Add streaming CSV export #815\nkenji-w wants to merge 7 commits into main from streaming-export\nReviewers: priya-s (requested), asha-v (requested)\nkenji-w: @asha-v could you sanity check the column order against the spec doc? Product sign-off needed before merge.\nChecks: 14 successful, 1 pending",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": "kenji-w", "text": "Check the streaming export column order against the spec (PR #815)", "due_text": null, "evidence": "@asha-v could you sanity check the column order against the spec doc?"},
+        {"kind": "note", "owner": "unknown", "counterparty": null, "text": "PR #815 needs product sign-off before merge", "due_text": null, "evidence": "Product sign-off needed before merge."}
+      ],
+      "people": [{"name": "kenji-w", "handle": "kenji-w"}, {"name": "priya-s", "handle": "priya-s"}]
+    }
+  },
+  {
+    "id": "wk-005", "split": "heldout", "tags": ["code_review", "vscode", "comment"],
+    "app": "Visual Studio Code", "title": "export.rs - platform - Visual Studio Code", "source": "C:\\src\\platform\\src\\export.rs",
+    "captured_at": "2026-10-21T16:20:00+05:30",
+    "text": "export.rs\n120  // TODO(asha): confirm with BigRetail if ISO dates are OK in column F\n121  fn write_row(row: &Row, out: &mut impl Write) -> io::Result<()> {\n122      let date = row.created_at.format(\"%Y-%m-%d\");\n123      writeln!(out, \"{},{},{}\", row.id, row.name, date)\n124  }\nPROBLEMS 0  OUTPUT  TERMINAL",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": "BigRetail", "text": "Confirm with BigRetail whether ISO dates are OK in export column F", "due_text": null, "evidence": "TODO(asha): confirm with BigRetail if ISO dates are OK in column F"}
+      ],
+      "people": []
+    }
+  },
+  {
+    "id": "wk-006", "split": "heldout", "tags": ["code_review", "github", "decision"],
+    "app": "Microsoft Edge", "title": "Conversation · Pull Request #820 · northwind/platform", "source": "https://github.example/northwind/platform/pull/820",
+    "captured_at": "2026-10-22T15:40:00+05:30",
+    "text": "Remove legacy v1 export endpoint #820\npriya-s commented\nWe agreed in the API review to keep /v1/export until 31 Jan for BigRetail, so let's not merge this yet.\nkenji-w commented\nAgreed, converting to draft. I'll add a deprecation header instead.",
+    "expected": {
+      "facts": [
+        {"kind": "decision", "owner": "unknown", "counterparty": null, "text": "Keep /v1/export until 31 Jan for BigRetail", "due_text": "until 31 Jan", "evidence": "We agreed in the API review to keep /v1/export until 31 Jan for BigRetail"},
+        {"kind": "commitment", "owner": "kenji-w", "counterparty": null, "text": "Add a deprecation header to /v1/export", "due_text": null, "evidence": "I'll add a deprecation header instead."}
+      ],
+      "people": [{"name": "priya-s", "handle": "priya-s"}, {"name": "kenji-w", "handle": "kenji-w"}]
+    }
+  },
+  {
+    "id": "wk-007", "split": "heldout", "tags": ["code_review", "diff", "no_facts"],
+    "app": "Visual Studio Code", "title": "lib.rs (Working Tree) - platform - Visual Studio Code", "source": "C:\\src\\platform\\src\\lib.rs",
+    "captured_at": "2026-10-22T10:00:00+05:30",
+    "text": "lib.rs (Working Tree)\n- pub mod export_v1;\n+ pub mod export;\n  pub mod billing;\n  pub mod auth;\n+ pub mod limits;\nSOURCE CONTROL  1 change",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "wk-008", "split": "dev", "tags": ["docs", "notion_like", "decision_log"],
+    "app": "Google Chrome", "title": "Mobile nav - decision log - Docs", "source": "https://docs.northwind.example/d/mobile-nav-decisions",
+    "captured_at": "2026-10-20T17:00:00+05:30",
+    "text": "Mobile nav - decision log\nLast edited by Meera Nair\n2026-10-20\nDecision: bottom tab bar with 4 tabs (Home, Search, Inbox, Profile). Hamburger menu removed.\nOwner: Meera\nOpen question: where do settings live? Asha to propose by next Monday.\nRejected: floating action button (tested poorly in 3 of 5 interviews).",
+    "expected": {
+      "facts": [
+        {"kind": "decision", "owner": "Meera Nair", "counterparty": null, "text": "Mobile nav uses a 4-tab bottom bar; hamburger menu removed", "due_text": null, "evidence": "Decision: bottom tab bar with 4 tabs (Home, Search, Inbox, Profile). Hamburger menu removed."},
+        {"kind": "task", "owner": "me", "counterparty": null, "text": "Propose where settings live in the mobile nav", "due_text": "by next Monday", "evidence": "Open question: where do settings live? Asha to propose by next Monday."},
+        {"kind": "decision", "owner": "unknown", "counterparty": null, "text": "Floating action button rejected", "due_text": null, "evidence": "Rejected: floating action button (tested poorly in 3 of 5 interviews)."}
+      ],
+      "people": [{"name": "Meera Nair", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-009", "split": "heldout", "tags": ["docs", "word", "spec"],
+    "app": "Microsoft Word", "title": "Export API v2 spec.docx - Word", "source": "C:\\Users\\asha\\OneDrive - Northwind\\Specs\\Export API v2 spec.docx",
+    "captured_at": "2026-10-21T12:30:00+05:30",
+    "text": "Export API v2 - Specification\nStatus: Draft (v0.3)\n4. Limits\nExports are capped at 1,000,000 rows. Larger requests return 413.\n5. Open items\n- Asha: decide default date format (ISO 8601 vs locale) before eng kickoff on 27 Oct\n- Kenji: estimate effort for gzip streaming",
+    "expected": {
+      "facts": [
+        {"kind": "note", "owner": "unknown", "counterparty": null, "text": "Export API v2 caps exports at 1,000,000 rows; larger requests return 413", "due_text": null, "evidence": "Exports are capped at 1,000,000 rows. Larger requests return 413."},
+        {"kind": "task", "owner": "me", "counterparty": null, "text": "Decide default export date format (ISO 8601 vs locale)", "due_text": "before eng kickoff on 27 Oct", "evidence": "Asha: decide default date format (ISO 8601 vs locale) before eng kickoff on 27 Oct"},
+        {"kind": "task", "owner": "Kenji", "counterparty": null, "text": "Estimate effort for gzip streaming", "due_text": null, "evidence": "Kenji: estimate effort for gzip streaming"}
+      ],
+      "people": [{"name": "Kenji", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-010", "split": "heldout", "tags": ["docs", "reading", "no_facts"],
+    "app": "Microsoft Edge", "title": "Rust async book - Pinning", "source": "https://rust-lang.example/async-book/04_pinning/01_chapter.html",
+    "captured_at": "2026-10-22T21:30:00+05:30",
+    "text": "Pinning\nTo poll futures, they must be pinned using a special type called Pin<T>. If you read the explanation of the Future trait in the previous section, you'll recall Pin from the self: Pin<&mut Self> in the Future::poll method's definition.",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "wk-011", "split": "dev", "tags": ["calendar", "event", "multi"],
+    "app": "Google Chrome", "title": "Google Calendar - Week of 26 October 2026", "source": "https://calendar.google.com/calendar/u/0/r/week/2026/10/26",
+    "captured_at": "2026-10-23T18:00:00+05:30",
+    "text": "October 2026\nMON 26  TUE 27  WED 28  THU 29  FRI 30\nMon 26  10:00 - 10:30  Standup\nTue 27  11:00 - 12:00  Launch checklist review\nWed 28  15:00 - 16:00  Legal review: vendor contract\nThu 29  16:30 - 17:30  1:1 Daniel\nFri 30  All day  Sprint 45 ends",
+    "expected": {
+      "facts": [
+        {"kind": "event", "owner": "unknown", "counterparty": null, "text": "Launch checklist review", "due_text": "Tue 27  11:00 - 12:00", "evidence": "Tue 27  11:00 - 12:00  Launch checklist review"},
+        {"kind": "event", "owner": "unknown", "counterparty": null, "text": "Legal review of the vendor contract", "due_text": "Wed 28  15:00 - 16:00", "evidence": "Wed 28  15:00 - 16:00  Legal review: vendor contract"},
+        {"kind": "event", "owner": "me", "counterparty": "Daniel", "text": "1:1 with Daniel", "due_text": "Thu 29  16:30 - 17:30", "evidence": "Thu 29  16:30 - 17:30  1:1 Daniel"}
+      ],
+      "people": [{"name": "Daniel", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-012", "split": "heldout", "tags": ["calendar", "invite", "event"],
+    "app": "Outlook", "title": "Invitation: BigRetail QBR - Outlook", "source": "app:olk.exe",
+    "captured_at": "2026-10-21T13:15:00+05:30",
+    "text": "Invitation: BigRetail QBR\nOrganizer: Arjun Rao\nWhen: Wednesday, 4 November 2026 14:00-15:30 (UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi\nWhere: Microsoft Teams Meeting\nAgenda: Q3 usage review, roadmap H1, renewal\nAccept  Tentative  Decline",
+    "expected": {
+      "facts": [
+        {"kind": "event", "owner": "unknown", "counterparty": "Arjun Rao", "text": "BigRetail QBR (usage review, H1 roadmap, renewal)", "due_text": "Wednesday, 4 November 2026 14:00-15:30 (UTC+05:30)", "evidence": "When: Wednesday, 4 November 2026 14:00-15:30 (UTC+05:30)"}
+      ],
+      "people": [{"name": "Arjun Rao", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-013", "split": "heldout", "tags": ["calendar", "cancelled"],
+    "app": "Outlook", "title": "Canceled: Pricing sync - Outlook", "source": "app:olk.exe",
+    "captured_at": "2026-10-22T08:40:00+05:30",
+    "text": "Canceled: Pricing sync\nDaniel Ortiz\nThis meeting has been canceled.\nWhen: Thursday, 22 October 2026 12:00-12:30\nNo need to meet, decision is in the email thread.",
+    "expected": {
+      "facts": [
+        {"kind": "decision", "owner": "Daniel Ortiz", "counterparty": null, "text": "Pricing sync on 22 Oct cancelled", "due_text": "Thursday, 22 October 2026 12:00-12:30", "evidence": "This meeting has been canceled."}
+      ],
+      "people": [{"name": "Daniel Ortiz", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-014", "split": "dev", "tags": ["excel", "tracker", "owner_column"],
+    "app": "Microsoft Excel", "title": "Launch tracker.xlsx - Excel", "source": "C:\\Users\\asha\\OneDrive - Northwind\\Launch tracker.xlsx",
+    "captured_at": "2026-10-22T14:50:00+05:30",
+    "text": "Launch tracker.xlsx\nA        B                      C       D          E\nItem     Task                   Owner   Due        Status\n1        Help center articles   Asha    28-10-26   Not started\n2        Status page banner     Kenji   30-10-26   Done\n3        Sales enablement deck  Arjun   02-11-26   In progress\n4        In-app announcement    Asha    03-11-26   In progress",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": null, "text": "Write launch help center articles", "due_text": "28-10-26", "evidence": "Help center articles   Asha    28-10-26   Not started"},
+        {"kind": "task", "owner": "Arjun", "counterparty": null, "text": "Sales enablement deck for launch", "due_text": "02-11-26", "evidence": "Sales enablement deck  Arjun   02-11-26   In progress"},
+        {"kind": "task", "owner": "me", "counterparty": null, "text": "In-app launch announcement", "due_text": "03-11-26", "evidence": "In-app announcement    Asha    03-11-26   In progress"}
+      ],
+      "people": [{"name": "Kenji", "handle": null}, {"name": "Arjun", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-015", "split": "heldout", "tags": ["powerpoint", "slide", "note"],
+    "app": "Microsoft PowerPoint", "title": "BigRetail roadmap summary.pptx - PowerPoint", "source": "C:\\Users\\asha\\OneDrive - Northwind\\BigRetail roadmap summary.pptx",
+    "captured_at": "2026-10-21T19:30:00+05:30",
+    "text": "Slide 3 of 5\nH1 2027 roadmap\n• Streaming exports (GA in 3.14)\n• Okta SSO - planned Q1, not committed\n• Webhook retry controls\nSpeaker notes: mention the 1M row cap only if they ask",
+    "expected": {
+      "facts": [
+        {"kind": "note", "owner": "me", "counterparty": null, "text": "Roadmap slide: streaming exports GA in 3.14; Okta SSO planned Q1 not committed", "due_text": null, "evidence": "Okta SSO - planned Q1, not committed"}
+      ],
+      "people": []
+    }
+  },
+  {
+    "id": "wk-016", "split": "heldout", "tags": ["onenote", "personal_notes", "tasks"],
+    "app": "OneNote", "title": "Weekly notes - OneNote", "source": "app:ONENOTE.EXE",
+    "captured_at": "2026-10-19T08:30:00+05:30",
+    "text": "Week of 19 Oct\nTo do\n☐ renew passport appointment - book slot this week\n☐ call CA about advance tax before 15 Dec\n☑ submit expense report\nIdeas\n- maybe a 'what changed' digest for customers",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": null, "text": "Book a passport renewal appointment slot", "due_text": "this week", "evidence": "renew passport appointment - book slot this week"},
+        {"kind": "task", "owner": "me", "counterparty": "CA", "text": "Call CA about advance tax", "due_text": "before 15 Dec", "evidence": "call CA about advance tax before 15 Dec"},
+        {"kind": "note", "owner": "me", "counterparty": null, "text": "Idea: a 'what changed' digest for customers", "due_text": null, "evidence": "maybe a 'what changed' digest for customers"}
+      ],
+      "people": []
+    }
+  },
+  {
+    "id": "wk-017", "split": "heldout", "tags": ["jira", "comment_mention", "done"],
+    "app": "Google Chrome", "title": "[NW-1441] Empty states copy - Jira", "source": "https://northwind.atlassian.example/browse/NW-1441",
+    "captured_at": "2026-10-22T12:05:00+05:30",
+    "text": "NW-1441\nEmpty states copy\nStatus: Done\nAssignee: Asha Verma\nActivity\nAsha Verma changed the status from In Progress to Done\nDaniel Ortiz: Approved, thanks Asha!",
+    "expected": {
+      "facts": [
+        {"kind": "note", "owner": "me", "counterparty": null, "text": "NW-1441 Empty states copy marked Done and approved by Daniel", "due_text": null, "evidence": "Asha Verma changed the status from In Progress to Done"}
+      ],
+      "people": [{"name": "Daniel Ortiz", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-018", "split": "dev", "tags": ["docs", "meeting_notes", "mixed_owners"],
+    "app": "Microsoft Word", "title": "BigRetail exec sync notes.docx - Word", "source": "C:\\Users\\asha\\OneDrive - Northwind\\Notes\\BigRetail exec sync notes.docx",
+    "captured_at": "2026-10-22T17:40:00+05:30",
+    "text": "BigRetail exec sync - 22 Oct\nAttendees: Arjun, Asha, Priya (BigRetail CTO office: Mr. Menon)\nNotes\n- Menon happy with export fix timeline\n- They want a written SSO commitment before renewal; we said Q1 is planned, not committed\nActions\n- Arjun: send renewal draft by 6 Nov\n- Asha: share SSO scoping doc after eng review (target 13 Nov)\n- Priya: confirm data-residency answer",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "Arjun", "counterparty": "BigRetail", "text": "Send BigRetail the renewal draft", "due_text": "by 6 Nov", "evidence": "Arjun: send renewal draft by 6 Nov"},
+        {"kind": "commitment", "owner": "me", "counterparty": "BigRetail", "text": "Share SSO scoping doc after eng review", "due_text": "target 13 Nov", "evidence": "Asha: share SSO scoping doc after eng review (target 13 Nov)"},
+        {"kind": "task", "owner": "Priya", "counterparty": "BigRetail", "text": "Confirm the data-residency answer", "due_text": null, "evidence": "Priya: confirm data-residency answer"},
+        {"kind": "note", "owner": "unknown", "counterparty": "Mr. Menon", "text": "BigRetail wants a written SSO commitment before renewal", "due_text": null, "evidence": "They want a written SSO commitment before renewal"}
+      ],
+      "people": [{"name": "Arjun", "handle": null}, {"name": "Priya", "handle": null}, {"name": "Mr. Menon", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-019", "split": "heldout", "tags": ["browser", "shopping", "no_facts"],
+    "app": "Google Chrome", "title": "Noise-cancelling headphones - compare", "source": "https://shop.example/compare?ids=11,12",
+    "captured_at": "2026-10-23T22:10:00+05:30",
+    "text": "Compare\nAuraSound X2  ₹18,999  4.4★  30h battery\nQuietPro 700  ₹24,490  4.6★  24h battery\nAdd to cart  Add to cart",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "wk-020", "split": "heldout", "tags": ["github", "ci_failure", "note"],
+    "app": "Microsoft Edge", "title": "Build #88240 failed - CI", "source": "https://ci.northwind.example/builds/88240",
+    "captured_at": "2026-10-23T10:45:00+05:30",
+    "text": "Build #88240 failed\nbranch: release/3.14\nstep: integration-tests (export)  ✗  12 failed, 340 passed\nTriggered by kenji-w 14 minutes ago",
+    "expected": {
+      "facts": [
+        {"kind": "note", "owner": "unknown", "counterparty": null, "text": "release/3.14 build #88240 failed: 12 export integration tests failing", "due_text": null, "evidence": "integration-tests (export)  ✗  12 failed, 340 passed"}
+      ],
+      "people": []
+    }
+  },
+  {
+    "id": "wk-021", "split": "heldout", "tags": ["docs", "okr", "commitment"],
+    "app": "Google Chrome", "title": "Q4 OKRs (draft) - Docs", "source": "https://docs.northwind.example/d/q4-okrs",
+    "captured_at": "2026-10-23T16:00:00+05:30",
+    "text": "Q4 OKRs - Product (draft, owner: Asha)\nO1: Make exports boringly reliable\n  KR1: p95 export time < 20s for 1M rows\n  KR2: zero export-related Sev1s\nO2: Grow activation\n  KR1: onboarding completion 38% -> 50%\nComment from Daniel: can we review this Monday before it goes to the leads?",
+    "expected": {
+      "facts": [
+        {"kind": "question", "owner": "Daniel", "counterparty": "me", "text": "Daniel asked to review the Q4 OKR draft Monday before it goes to leads", "due_text": "Monday", "evidence": "can we review this Monday before it goes to the leads?"},
+        {"kind": "note", "owner": "me", "counterparty": null, "text": "Q4 OKR: onboarding completion 38% -> 50%", "due_text": null, "evidence": "KR1: onboarding completion 38% -> 50%"}
+      ],
+      "people": [{"name": "Daniel", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-022", "split": "dev", "tags": ["file_explorer", "no_facts"],
+    "app": "File Explorer", "title": "Specs - File Explorer", "source": "C:\\Users\\asha\\OneDrive - Northwind\\Specs",
+    "captured_at": "2026-10-21T12:25:00+05:30",
+    "text": "Specs\nName                          Date modified        Type\nExport API v2 spec.docx       21-10-2026 12:20     Microsoft Word Document\nMobile nav research.pdf       15-10-2026 09:10     PDF\nPricing experiments.xlsx      09-10-2026 18:44     Microsoft Excel Worksheet",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "wk-023", "split": "heldout", "tags": ["jira", "reopened", "question"],
+    "app": "Google Chrome", "title": "[NW-1438] Fix SSO redirect loop - Jira", "source": "https://northwind.atlassian.example/browse/NW-1438",
+    "captured_at": "2026-10-23T11:30:00+05:30",
+    "text": "NW-1438\nFix SSO redirect loop\nStatus: Reopened\nFatima Khan: Still happening for users with uppercase emails. @Asha Verma is this a launch blocker?\nKenji Watanabe: I can patch it by Monday if it's a blocker.",
+    "expected": {
+      "facts": [
+        {"kind": "question", "owner": "Fatima Khan", "counterparty": "me", "text": "Fatima asked whether the SSO redirect loop (NW-1438) is a launch blocker", "due_text": null, "evidence": "@Asha Verma is this a launch blocker?"},
+        {"kind": "commitment", "owner": "Kenji Watanabe", "counterparty": null, "text": "Patch the SSO redirect loop if it's a blocker", "due_text": "by Monday", "evidence": "I can patch it by Monday if it's a blocker."},
+        {"kind": "note", "owner": "Fatima Khan", "counterparty": null, "text": "SSO redirect loop still happens for users with uppercase emails", "due_text": null, "evidence": "Still happening for users with uppercase emails."}
+      ],
+      "people": [{"name": "Fatima Khan", "handle": null}, {"name": "Kenji Watanabe", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-024", "split": "heldout", "tags": ["code_review", "vscode", "terminal", "no_facts"],
+    "app": "Visual Studio Code", "title": "TERMINAL - platform - Visual Studio Code", "source": "C:\\src\\platform",
+    "captured_at": "2026-10-20T20:10:00+05:30",
+    "text": "TERMINAL\nPS C:\\src\\platform> cargo test -p export\n   Compiling export v0.9.0\n    Finished test profile in 41.2s\ntest result: ok. 87 passed; 0 failed; 2 ignored",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "wk-025", "split": "heldout", "tags": ["calendar", "personal", "event"],
+    "app": "Google Chrome", "title": "Google Calendar - Saturday, 31 October", "source": "https://calendar.google.com/calendar/u/0/r/day/2026/10/31",
+    "captured_at": "2026-10-23T22:30:00+05:30",
+    "text": "Saturday, 31 October\n09:00 - 10:00  Dentist (Dr. Kulkarni), Indiranagar\n19:00  Diwali shopping with Rohan",
+    "expected": {
+      "facts": [
+        {"kind": "event", "owner": "me", "counterparty": "Dr. Kulkarni", "text": "Dentist appointment in Indiranagar", "due_text": "09:00 - 10:00", "evidence": "09:00 - 10:00  Dentist (Dr. Kulkarni), Indiranagar"},
+        {"kind": "event", "owner": "me", "counterparty": "Rohan", "text": "Diwali shopping with Rohan", "due_text": "19:00", "evidence": "19:00  Diwali shopping with Rohan"}
+      ],
+      "people": [{"name": "Dr. Kulkarni", "handle": null}, {"name": "Rohan", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-026", "split": "dev", "tags": ["docs", "review_comment", "task"],
+    "app": "Microsoft Word", "title": "Export API v2 spec.docx - Word", "source": "C:\\Users\\asha\\OneDrive - Northwind\\Specs\\Export API v2 spec.docx",
+    "captured_at": "2026-10-22T09:50:00+05:30",
+    "text": "Comments\nPriya Shah  Oct 22, 9:31 AM\nSection 4: 413 is fine but please add a Retry guidance paragraph. @Asha Verma\nAsha Verma  Oct 22, 9:47 AM\nGood call, will add it today.",
+    "expected": {
+      "facts": [
+        {"kind": "commitment", "owner": "me", "counterparty": "Priya Shah", "text": "Add a retry guidance paragraph to section 4 of the export spec", "due_text": "today", "evidence": "Good call, will add it today."}
+      ],
+      "people": [{"name": "Priya Shah", "handle": null}]
+    }
+  },
+  {
+    "id": "wk-027", "split": "heldout", "tags": ["github", "release_notes", "note"],
+    "app": "Google Chrome", "title": "Release v3.14.0 · northwind/platform", "source": "https://github.example/northwind/platform/releases/tag/v3.14.0",
+    "captured_at": "2026-10-23T19:20:00+05:30",
+    "text": "v3.14.0\nLatest\nkenji-w released this 2 hours ago\n- Streaming CSV export (#815)\n- Webhooks honour Retry-After (#812)\n- Fix SSO redirect loop for uppercase emails (#1438)",
+    "expected": {
+      "facts": [
+        {"kind": "note", "owner": "kenji-w", "counterparty": null, "text": "v3.14.0 released with streaming CSV export, Retry-After support and SSO redirect fix", "due_text": null, "evidence": "Streaming CSV export (#815)"}
+      ],
+      "people": [{"name": "kenji-w", "handle": "kenji-w"}]
+    }
+  },
+  {
+    "id": "wk-028", "split": "heldout", "tags": ["excel", "budget", "numbers"],
+    "app": "Microsoft Excel", "title": "Q3_budget_v4.xlsx - Excel", "source": "C:\\Users\\asha\\Downloads\\Q3_budget_v4.xlsx",
+    "captured_at": "2026-10-23T14:40:00+05:30",
+    "text": "Q3_budget_v4.xlsx\nTeam        Planned     Actual      Variance\nSales       12,00,000   13,10,000   +9.2%\nProduct      4,50,000    4,40,000   -2.2%\nEngineering  6,00,000    6,05,000   +0.8%\nTotal travel 22,50,000  23,55,000   +4.7%",
+    "expected": {
+      "facts": [
+        {"kind": "note", "owner": "unknown", "counterparty": null, "text": "Q3 travel total 23,55,000 vs 22,50,000 planned (+4.7%)", "due_text": null, "evidence": "Total travel 22,50,000  23,55,000   +4.7%"}
+      ],
+      "people": []
+    }
+  },
+  {
+    "id": "wk-029", "split": "heldout", "tags": ["docs", "policy", "no_facts"],
+    "app": "Microsoft Edge", "title": "Travel policy - Northwind Intranet", "source": "https://intranet.northwind.example/policies/travel",
+    "captured_at": "2026-10-20T15:30:00+05:30",
+    "text": "Travel policy\nEconomy class for flights under 6 hours. Hotels up to INR 9,000 per night in metro cities. Submit receipts within 30 days of return.",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "wk-030", "split": "heldout", "tags": ["calendar", "focus_block", "no_facts"],
+    "app": "Outlook", "title": "Calendar - Outlook", "source": "app:olk.exe",
+    "captured_at": "2026-10-21T08:00:00+05:30",
+    "text": "Wednesday, 21 October\n09:00 - 11:00  Focus time\n12:00 - 12:30  Lunch\nNo other events",
+    "expected": {"facts": [], "people": []}
+  }
+]

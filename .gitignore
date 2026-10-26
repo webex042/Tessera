@@ -60,3 +60,14 @@ fuzz/artifacts/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# --- Pinned third-party binaries (fetched by tools/fetch-sidecar.ps1, hashes in tools/sidecar.lock) ---
+third_party/
+# Fixture lockfiles are generated on demand by the checker self-test.
+tests/fixtures/netdeps/*/Cargo.lock
+tests/fixtures/netdeps/*/target/
+
+# Raw benchmark/network output may contain machine identifiers; summaries go in docs/stage0/.
+bench/results/
+# Office owner/lock files carry the signed-in user name.
+~$*

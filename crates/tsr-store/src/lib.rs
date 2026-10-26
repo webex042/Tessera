@@ -1,0 +1,112 @@
+//! Encrypted store for Tessara (plan §9).
+//!
+//! Stage 0 scope: open a SQLCipher database with a raw 32-byte key, apply the
+//! security PRAGMAs from §9.1, and confirm SQLCipher and FTS5 are really compiled in.
+//! Key management (DPAPI wrapping) and migrations arrive in Stage 1.
+
+use std::path::Path;
+
+use rusqlite::Connection;
+use zeroize::Zeroizing;
+
+/// Length of the raw SQLCipher key in bytes (256-bit).
+pub const KEY_LEN: usize = 32;
+
+#[derive(Debug, thiserror::Error)]
+pub enum StoreError {
+    /// The key did not decrypt the file, or the file is not a SQLCipher database.
+    #[error("database could not be opened with this key")]
+    WrongKeyOrNotDatabase,
+    /// The linked SQLite is not SQLCipher (cipher_version is empty).
+    #[error("SQLCipher is not linked")]
+    NotSqlcipher,
+    /// FTS5 is missing from the SQLite build.
+    #[error("FTS5 is not available")]
+    NoFts5,
+    #[error("sqlite error code {0}")]
+    Sqlite(i32),
+}
+
+impl From<rusqlite::Error> for StoreError {
+    fn from(e: rusqlite::Error) -> Self {
+        // Only the numeric code is kept: error messages can quote SQL, which may contain content.
+        match e.sqlite_error_code() {
+            Some(rusqlite::ErrorCode::NotADatabase) => StoreError::WrongKeyOrNotDatabase,
+            _ => StoreError::Sqlite(e.sqlite_error().map(|s| s.extended_code).unwrap_or(-1)),
+        }
+    }
+}
+
+/// Facts about the linked SQLite build, used by Stage 0 verification.
+#[derive(Debug, Clone)]
+pub struct BuildInfo {
+    pub sqlite_version: String,
+    pub cipher_version: String,
+    pub cipher_provider: String,
+    pub has_fts5: bool,
+}
+
+/// Open (or create) an encrypted database and apply the §9.1 PRAGMAs.
+///
+/// The key is passed as a raw key (`x'…'`), so SQLCipher skips its own key derivation.
+/// The hex copy we build is zeroized on drop. SQLite keeps its own copy of the SQL text
+/// internally, which we cannot wipe; `cipher_memory_security` reduces that exposure.
+pub fn open_encrypted(path: &Path, key: &[u8; KEY_LEN]) -> Result<Connection, StoreError> {
+    let conn = Connection::open(path)?;
+
+    let mut hex = Zeroizing::new(String::with_capacity(KEY_LEN * 2 + 16));
+    hex.push_str("PRAGMA key = \"x'");
+    for b in key {
+        hex.push_str(&format!("{b:02x}"));
+    }
+    hex.push_str("'\";");
+    conn.execute_batch(&hex)?;
+    drop(hex);
+
+    // Reading the schema is the first statement that actually decrypts a page,
+    // so a wrong key fails here rather than later.
+    conn.query_row("SELECT count(*) FROM sqlite_master", [], |r| r.get::<_, i64>(0))?;
+
+    conn.execute_batch(
+        "PRAGMA cipher_memory_security = ON;
+         PRAGMA secure_delete = ON;
+         PRAGMA foreign_keys = ON;
+         PRAGMA temp_store = MEMORY;
+         PRAGMA synchronous = NORMAL;",
+    )?;
+    // journal_mode returns a row, so it cannot go through execute_batch.
+    let mode: String = conn.query_row("PRAGMA journal_mode = WAL", [], |r| r.get(0))?;
+    debug_assert_eq!(mode.to_ascii_lowercase(), "wal");
+
+    Ok(conn)
+}
+
+/// Report what the linked SQLite actually is. Fails if SQLCipher or FTS5 is missing.
+pub fn build_info(conn: &Connection) -> Result<BuildInfo, StoreError> {
+    let sqlite_version: String = conn.query_row("SELECT sqlite_version()", [], |r| r.get(0))?;
+    let cipher_version: String = conn
+        .query_row("PRAGMA cipher_version", [], |r| r.get(0))
+        .unwrap_or_default();
+    if cipher_version.is_empty() {
+        return Err(StoreError::NotSqlcipher);
+    }
+    let cipher_provider: String = conn
+        .query_row("PRAGMA cipher_provider", [], |r| r.get(0))
+        .unwrap_or_default();
+
+    let mut stmt = conn.prepare("PRAGMA compile_options")?;
+    let has_fts5 = stmt
+        .query_map([], |r| r.get::<_, String>(0))?
+        .filter_map(Result::ok)
+        .any(|opt| opt == "ENABLE_FTS5");
+    if !has_fts5 {
+        return Err(StoreError::NoFts5);
+    }
+
+    Ok(BuildInfo {
+        sqlite_version,
+        cipher_version,
+        cipher_provider,
+        has_fts5,
+    })
+}

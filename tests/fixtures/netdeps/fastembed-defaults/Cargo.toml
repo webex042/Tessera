@@ -1,0 +1,12 @@
+# Self-test fixture for tools/check_network_deps.py: fastembed with DEFAULT features.
+# The checker must FAIL on this (hf-hub -> ureq/native-tls, ort download-binaries).
+[package]
+name = "netdeps-fixture-fastembed-defaults"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+fastembed = "=7.5.0"
+
+[workspace]

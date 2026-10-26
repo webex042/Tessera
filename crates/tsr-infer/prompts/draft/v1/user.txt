@@ -1,0 +1,10 @@
+<style_examples>
+{style_examples}
+</style_examples>
+<thread>
+{thread}
+</thread>
+<memory>
+{snippets}
+</memory>
+Instruction: {instruction}

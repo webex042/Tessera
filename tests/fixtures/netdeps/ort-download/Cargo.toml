@@ -1,0 +1,12 @@
+# Self-test fixture: ort with default features (download-binaries at BUILD time).
+# The checker must FAIL on this through the build-dependency edge of ort-sys.
+[package]
+name = "netdeps-fixture-ort-download"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+ort = "=2.0.0-rc.15"
+
+[workspace]

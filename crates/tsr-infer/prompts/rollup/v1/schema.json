@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "highlights"],
+  "properties": {
+    "summary": { "type": "string", "maxLength": 900 },
+    "highlights": {
+      "type": "array", "maxItems": 6,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["text", "ids"],
+        "properties": {
+          "text": { "type": "string", "maxLength": 160 },
+          "ids": { "type": "array", "items": { "type": "integer" } }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+Summarise the user's {level} from the entries below. Write plain, specific sentences
+about what was worked on, decided and promised. No advice, no speculation.
+Use only the entries. Each highlight must list the entry ids it comes from.
+Return JSON only.

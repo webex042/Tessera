@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| Status | Draft v0.2 — design phase, nothing implemented (v0.2: clipboard cloud exclusion, embedder build features, WebView2 network, updater exception, scoped title blocklist) |
+| Status | Draft v0.3 — **Stage 0 in progress** (results: `docs/stage0/results.md`; verified discrepancies: `docs/stage0/findings.md`). v0.3 folds in Stage 0 findings: pinned versions and features, hardened llama-server line, WebView2 network finding (ADR-0002), updater blocked (ADR-0003), UIA wall-clock timeouts. v0.2: clipboard cloud exclusion, embedder build features, WebView2 network, updater exception, scoped title blocklist |
 | Scope of this document | MVP (Stages 0–7) in full detail; Stages 8–10 in outline |
 | Target hardware | Windows 11, NVIDIA GPU with 6 GB VRAM (RTX 4050 laptop class), 16 GB RAM |
 | Last updated | 2026-10-26 |
@@ -84,7 +84,7 @@ Short ADR-style log. Each entry is revisited at the end of Stage 0 with benchmar
 | D4 | Text-first acquisition ladder: UIA → Windows OCR → VLM | UIA/OCR are cheap and precise; VLM is the expensive last resort | — |
 | D5 | SQLCipher via `rusqlite` (`bundled-sqlcipher-vendored-openssl`) | Whole-database encryption, FTS5 included, one file | Build friction on Windows CI (fallback: system SQLCipher via vcpkg) |
 | D6 | Vectors stored as BLOBs, **brute-force cosine in memory** for MVP; `sqlite-vec` deferred | `sqlite-vec` has a reported incompatibility with `rusqlite`'s bundled SQLCipher; brute force over ≤ 200 k 384-d int8 vectors is a few ms | Item count > 200 k or search p95 > 50 ms |
-| D7 | Embeddings with `fastembed` (ONNX Runtime, CPU), loaded **from local files only**; `fastembed` and `ort` built with `default-features = false` (no Hugging Face hub client, no build-time ONNX Runtime download); `onnxruntime.dll` shipped from a pinned, hash-checked copy (§10.1) | No GPU contention with the LLM; local-file init avoids implicit downloads; default features would pull HTTP/TLS crates into `tsr-retrieval` and fail the `cargo-deny` network ban (§20.3) | — |
+| D7 | Embeddings with `fastembed` (ONNX Runtime, CPU), loaded **from local files only**. Verified in Stage 0: `fastembed =7.5.0` with `default-features = false, features = ["ort-load-dynamic"]`; `ort =2.0.0-rc.15` with `default-features = false, features = ["std", "load-dynamic", "api-31"]`; `onnxruntime.dll` 1.31.0 from a pinned, hash-checked copy, loaded only via `tsr_retrieval::runtime::load_pinned` (§10.1, ADR-0001) | No GPU contention with the LLM; local-file init avoids implicit downloads; default features pull `hf-hub` and a build-time downloader (ureq) and fail the network ban (§20.3); `api-31` refuses Windows' own System32 `onnxruntime.dll` (1.17) | — |
 | D8 | All model outputs are JSON constrained by schema, then validated by code | A 4B model is much more reliable under a grammar; code owns dates, citations, policy | — |
 | D9 | One unified `facts` table (task, commitment, decision, event, question, note) | Simpler queries, rollups and deletion than one table per kind | Kinds diverge strongly in fields |
 | D10 | Network code confined to one crate (`tsr-net`), enforced by `cargo-deny`. **One documented exception:** `tauri-plugin-updater` (Stage 10), compiled only behind an off-by-default `updater` Cargo feature in `src-tauri` and listed as a second allowed wrapper in `deny.toml` (§20.3) | Makes the "nothing leaves your PC" claim auditable; the updater does its own HTTPS fetch, so it cannot live inside `tsr-net` without re-implementing signature checks and install | Updater needs grow, or a `tsr-net`-based check + signed-installer handoff becomes simpler than the plugin |
@@ -241,10 +241,10 @@ Tried in order; stop at the first rung whose output passes the quality check.
 
 **Rung 1 — UI Automation (T2, COM MTA)**
 
-1. `IUIAutomation::ElementFromHandle(hwnd)`; set `ConnectionTimeout`/`TransactionTimeout` (via `IUIAutomation2`) to 300 ms so a hung app cannot stall us.
+1. `IUIAutomation::ElementFromHandle(hwnd)`; set `ConnectionTimeout`/`TransactionTimeout` (via `IUIAutomation2`) to 300 ms so a hung app cannot stall us. **Stage 0 finding:** these are per-call limits, not a wall-clock cap — Word failed only after 2.8 s and Explorer after 0.6 s. The read therefore runs on the T2 worker and the caller abandons it at the 300 ms deadline (result discarded if it arrives late); an app that times out twice in a row drops to rung 2 for that window for 10 minutes.
 2. If the root or a descendant `Document` supports `TextPattern`, read `DocumentRange.GetText(50_000)`.
 3. Otherwise walk the Control View with a `CacheRequest` (Name, ControlType, IsPassword, IsOffscreen, BoundingRectangle, ValuePattern.Value) — caps: 3 000 nodes, 400 ms, depth 40.
-4. Skip `IsOffscreen` nodes and **any node with `IsPassword = true`** (and its subtree).
+4. Skip `IsOffscreen` nodes and **any node with `IsPassword = true`** (and its subtree). Use a `TreeWalker` (not a flat `FindAll`) so a password control's subtree can be skipped structurally. For the TextPattern path (step 2), also search the document for `IsPassword` descendants and drop to the tree walk if any exist, instead of relying on the app to mask the value (Stage 0 relied on browser masking; it held in Edge and Chrome).
 5. Order text by bounding box (top, then left) and join; collapse whitespace.
 6. Browser specifics: read the address bar (Chromium/Edge/Firefox `Edit` in the toolbar) for the URL; check private-mode indicators (§6.1).
 
@@ -375,7 +375,7 @@ Crate: `tsr-infer`.
 
 - **Binary:** `llama-server.exe` from a pinned llama.cpp release (commit + SHA-256 in `tools/sidecar.lock`), bundled via Tauri `bundle.externalBin`. Spawned by Rust with `std::process::Command` (creation flag `CREATE_NO_WINDOW`) so the handle can be put into the Job Object.
 - **Port and key:** pick a free port by binding `127.0.0.1:0`, release it, pass it to the server; generate a 32-byte random API key per run. Retry on bind failure (race).
-- **Command line** (validated against the pinned build in Stage 0; flag spellings change between llama.cpp versions):
+- **Command line** (checked against llama.cpp b11900 `--help` in Stage 0 — `docs/stage0/llama-server-b11900-help.txt`; re-check on every bump; reference implementation `bench/tessara_bench/llama.py::server_args`):
 
 ```
 llama-server.exe
@@ -384,9 +384,21 @@ llama-server.exe
   --mmproj <models>/mmproj-Qwen3-VL-4B-Instruct-F16.gguf
   -ngl 99 -c 8192 -np 1
   -fa on -ctk q8_0 -ctv q8_0
-  --jinja --no-webui
+  --jinja
+  --no-webui --offline --no-agent --no-ui-mcp-proxy --no-slots
+  --no-cors-credentials --cors-origins http://tessara.invalid
+  --fit off --cache-ram 0 --reasoning off
   -t <physical_cores/2>
 ```
+
+  Why the additions: the web UI and `/slots` are on by default; b11900 has experimental agent/MCP
+  tooling that must stay off; `-c` defaults to the model's full context; `--cache-ram` defaults to
+  8 GiB of host RAM; `--fit on` (default) silently shrinks settings instead of failing; CORS
+  defaults to `*` with credentials. (Stage 2 tunes `--cache-ram`.)
+- **Environment:** the sidecar is started with a **cleared environment** (allow-list: `SystemRoot`,
+  `SystemDrive`, `windir`, `TEMP`, `TMP`, `NUMBER_OF_PROCESSORS`, `PROCESSOR_ARCHITECTURE`).
+  llama-server reads `LLAMA_ARG_*` variables (e.g. `LLAMA_ARG_AGENT`, `LLAMA_ARG_MCP_SERVERS_JSON`,
+  `LLAMA_ARG_HF_REPO`) and `HF_TOKEN`, any of which could switch on tools or downloads.
 
 - **Health:** poll `GET /health` until ready (timeout 90 s for cold load); then a warm-up request with the extraction system prompt to fill the prompt cache.
 - **Restart policy:** exponential backoff 2 s → 60 s, max 5 restarts per hour, then surface "model unavailable" in the notch and keep capturing text (search still works).
@@ -483,7 +495,8 @@ Crate: `tsr-store`.
 
 - Data dir: `%LOCALAPPDATA%\Tessara\` → `tessara.db` (SQLCipher), `key.bin` (DPAPI blob), `models\`, `logs\` (content-free), `EBWebView\` (WebView2 profile).
 - Key: 32 random bytes from `BCryptGenRandom`, wrapped with `CryptProtectData` (current-user scope, `CRYPTPROTECT_UI_FORBIDDEN`, app-specific entropy). Passed to SQLCipher as a raw key: `PRAGMA key = "x'…'"`. Unwrapped key bytes are zeroized after `PRAGMA key`.
-- PRAGMAs on open: `cipher_memory_security = ON`, `secure_delete = ON`, `journal_mode = WAL`, `synchronous = NORMAL`, `foreign_keys = ON`, `temp_store = MEMORY` (so temp B-trees never hit disk unencrypted).
+- PRAGMAs on open: `cipher_memory_security = ON`, `secure_delete = ON`, `journal_mode = WAL`, `synchronous = NORMAL`, `foreign_keys = ON`, `temp_store = MEMORY` (so temp B-trees never hit disk unencrypted), and `cipher_log_level = NONE` (Stage 0: SQLCipher otherwise writes its own error lines to stderr, outside our content-free tracing layer).
+- Verified in Stage 0 (`crates/tsr-store`): SQLCipher 4.19.0 on SQLite 3.53.4, OpenSSL provider, FTS5 compiled in; wrong key rejected; no plaintext header or canary in DB/WAL.
 - Optional passphrase mode (v1.1): key derived from passphrase + DPAPI, so a stolen disk image plus Windows login is still not enough.
 
 ### 9.2 Schema (initial migration)
@@ -623,7 +636,8 @@ Crate: `tsr-retrieval`.
 ### 10.1 Embedder
 
 - `fastembed` `TextEmbedding` initialised **from local ONNX + tokenizer files** (user-defined model path), never from the hub at runtime.
-- **Build features:** both `fastembed` and `ort` default features reach the network — `fastembed`'s Hugging Face hub client (TLS HTTP at runtime) and `ort`'s `download-binaries` (fetches ONNX Runtime during the build). Depend on both with `default-features = false`, enable only what is needed (`ort`'s `load-dynamic`), and ship `onnxruntime.dll` from a pinned release with its SHA-256 in `tools/sidecar.lock`, verified at load like the sidecar. Feature names change between releases: confirm against the pinned versions in Stage 0 and let `cargo deny check bans` (§20.3) catch regressions.
+- **Build features (verified in Stage 0):** both `fastembed` and `ort` default features reach the network — `fastembed`'s Hugging Face hub client (TLS HTTP at runtime) and `ort`'s `download-binaries` (ureq inside ort-sys's build script, so it runs on every clean build). The workspace declares `fastembed` with `default-features = false, features = ["ort-load-dynamic"]` and `ort` with `["std", "load-dynamic", "api-31"]`, and ships `onnxruntime.dll` 1.31.0 with its SHA-256 in `tools/sidecar.lock`. `tools/check_network_deps.py` (whole resolved graph, normal + build deps) and `cargo deny check bans` catch regressions; the checker's self-test fixtures prove it rejects the default features.
+- **Runtime loading (Stage 0 finding):** with `load-dynamic`, `ort` falls back to `ORT_DYLIB_PATH` or a bare `onnxruntime.dll` from the DLL search path if nothing initialised it first — and Windows 11 ships `System32\onnxruntime.dll` (1.17 on the dev machine). `tsr_retrieval::runtime::load_pinned` therefore hash-checks an absolute path, calls `ort::init_from`, builds the single process-wide `Environment`, and confirms with `GetModuleHandleW(full path)` that the pinned file is the one mapped. Every embedder is built with `InitOptionsUserDefined::with_environment(..)`, because `fastembed` otherwise creates its own default environment. `api-31` makes `ort` refuse any runtime older than 1.31 even on the fallback path.
 - Candidates compared in Stage 0: `multilingual-e5-small` (384-d, handles Hindi/Hinglish and mixed scripts) vs `bge-small-en-v1.5` (384-d, English). Default to the multilingual model unless it loses by > 5 points recall@10 on the English set.
 - E5 needs `query:` / `passage:` prefixes; the embedder adds them.
 
@@ -729,7 +743,7 @@ Hotkey (Ctrl+Alt+D)
 
 ## 13. Notch UI
 
-App: `ui/` (React 18, TypeScript, Vite, Tailwind, Framer Motion, Zustand for state). Windows created by `src-tauri`.
+App: `ui/` (React 19, TypeScript, Vite, Tailwind 4, Framer Motion, Zustand for state; exact versions in `ui/package.json`). Windows created by `src-tauri`.
 
 ### 13.1 Window
 
@@ -776,11 +790,13 @@ Resize strategy: on expand, grow the (transparent) window first, then animate co
 - Strict CSP (`default-src 'self'`; no remote origins; `connect-src` limited to Tauri IPC). No `dangerouslySetInnerHTML`; markdown renderer with raw HTML and auto-links disabled.
 - Tauri capabilities: each window gets only the commands it needs; no `fs`, `shell`, `http` or `opener` plugin exposed to the webview; DevTools disabled in release.
 - No content in `localStorage`/IndexedDB; UI state that persists (tab, panel size) holds no memory text.
-- **WebView2's own network traffic.** The WebView2 runtime can open connections that our code never asks for (SmartScreen reputation checks, background services). Even though the UI only loads local assets, this would fail S1 (§1.3). Mitigations, all measured in Stage 0:
-  - turn off SmartScreen for our webviews (`CoreWebView2Settings.IsReputationCheckingRequired = false`, or the `msSmartScreenProtection` feature flag);
-  - pass Chromium background-networking switches through Tauri's `additionalBrowserArgs`. **Setting this field replaces Tauri's defaults** (`--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection`), so copy those into our value;
+- **WebView2's own network traffic.** The WebView2 runtime can open connections that our code never asks for (SmartScreen reputation checks, background services). Even though the UI only loads local assets, this would fail S1 (§1.3). Mitigations, implemented in `src-tauri/src/webview_policy.rs` and checked in Stage 0 against runtime 155.0.4283.62:
+  - SmartScreen off per webview via `ICoreWebView2Settings8::SetIsReputationCheckingRequired(false)`, read back after setting;
+  - Chromium switches through `additionalBrowserArgs`: `--disable-background-networking --disable-component-update --disable-domain-reliability --disable-sync --no-pings --disable-default-apps --no-proxy-server`. **Setting this field replaces wry's defaults**; for wry 0.57.1 they are exactly `--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection` (read from source), kept verbatim as the prefix and guarded by a unit test. `--no-proxy-server` was added after a NetLog showed WPAD (`wpad:80`) lookups;
+  - `WEBVIEW2_*` override variables (e.g. `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`) are cleared at start-up before any webview exists, because WebView2 lets them override app settings;
   - no navigation outside the app origin (Tauri navigation handler denies it) and no remote origins in the CSP.
   - The WebView2 runtime's own updater (`msedgeupdate`, a system service, not a child of Tessara) is out of our control; it is excluded from the S1 process set and documented in `privacy.md`.
+  - **Open (ADR-0002):** with all of the above, the WebView2 browser process still opened one HTTPS connection to a Microsoft address about a minute after start in every Stage 0 run. It is not in the Chromium NetLog, so it comes from outside Chromium's network service. Next step: identify the host with an elevated capture (`docs/stage0/network-test.md`); fallback is the native notch of D1.
 
 ---
 
@@ -984,7 +1000,7 @@ If the snippets do not answer the question, set "insufficient" to true and say w
 Return JSON only.
 User: Today is {local_date} ({weekday}).
 <memory>
-[1] 2026-10-21 Tue 15:12 · Slack · #design — "…snippet…"
+[1] 2026-10-21 Wed 15:12 · Slack · #design — "…snippet…"
 [2] …
 </memory>
 Question: {question}
@@ -1041,7 +1057,7 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 
 Tasks:
 1. `tools/fetch-sidecar.ps1`: download pinned llama.cpp release (CUDA and Vulkan), verify SHA-256, record in `sidecar.lock`.
-2. `bench/` harness (Python + `openai` client against llama-server): measures cold load time, TTFT, prefill and decode tok/s, VRAM peak (`nvidia-smi --query-gpu=memory.used` sampled at 10 Hz), JSON validity, latency per job type.
+2. `bench/` harness (Python standard library only — no `openai` package needed — against llama-server; `bench/run_bench.py`): measures cold load time, TTFT, prefill and decode tok/s, VRAM peak (`nvidia-smi --query-gpu=memory.used` sampled at 10 Hz), JSON validity, latency per job type.
 3. Synthetic eval sets in `evals/` (no real data): 80 screen texts (email threads, Slack/Teams, WhatsApp Web, Jira/GitHub issues, docs, code review, calendar pages, mixed Hindi-English) with hand-labelled facts; 60 Ask Q/A pairs; 20 draft scenarios; 40 window images for OCR/VLM.
 4. Experiments:
    - Q4_K_M vs Q5_K_M; ctx 4 k vs 8 k; K/V cache q8_0 vs f16; CUDA vs Vulkan.
@@ -1180,7 +1196,7 @@ Tasks:
 ### Stage 10 — Release engineering (~3 weeks)
 
 - NSIS installer via Tauri bundler; Authenticode signing (e.g. Azure Trusted Signing or SignPath for open source); signed sidecar.
-- Opt-in updater (Tauri updater plugin with signature verification); off by default; behind the `updater` Cargo feature and the `deny.toml` exception (D10, §20.3). Re-run the §18.6 network test with updates on and off.
+- Opt-in updater (Tauri updater plugin with signature verification); off by default; behind the `updater` Cargo feature and the `deny.toml` exception (D10, §20.3). Re-run the §18.6 network test with updates on and off. **Blocked by ADR-0003** until the plugin's `zip` dependency clears RUSTSEC-2026-0367/0368/0369.
 - SBOM (CycloneDX) per release; reproducible build notes; release checklist including the Stage 7 tests.
 
 ---
@@ -1237,7 +1253,7 @@ Fixture screens contain unique canary strings (e.g. `TSRCANARY-7f3a…`). After 
 ## 20. Build, CI and release
 
 ### 20.1 Developer prerequisites
-Rust stable (MSVC toolchain), Visual Studio Build Tools (C++), Node.js LTS + pnpm, WebView2 runtime, Strawberry Perl (needed to build vendored OpenSSL for SQLCipher), CUDA-capable driver for GPU tests. `tools/bootstrap.ps1` checks all of these.
+Rust stable (MSVC toolchain; 1.99 at Stage 0), Visual Studio Build Tools (C++; 2019 works), Node.js LTS + pnpm (12.x; settings live in `pnpm-workspace.yaml`, not `.npmrc`), WebView2 runtime, Strawberry Perl (needed to build vendored OpenSSL for SQLCipher; the portable zip works without admin — put `perl\bin` first on PATH; first OpenSSL build ~25 min), CUDA-capable driver for GPU tests, Python 3.11+ for `bench/` and `evals/` (standard library only). `tools/bootstrap.ps1` checks all of these (to be written in Stage 1).
 
 ### 20.2 CI (`.github/workflows/ci.yml`, `windows-latest`)
 1. `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`
@@ -1248,7 +1264,9 @@ Rust stable (MSVC toolchain), Visual Studio Build Tools (C++), Node.js LTS + pnp
 6. Nightly: fuzz (30 min), evals on a self-hosted GPU runner (optional), redaction/injection corpora.
 
 ### 20.3 `deny.toml` highlights
-- `bans.deny`: `reqwest`, `hyper-tls`, `hyper-rustls`, `native-tls`, `rustls`, `ureq` (with TLS) allowed only via `wrappers = ["tsr-net", "tauri-plugin-updater"]`. The updater entry is the single documented exception (D10); CI runs `cargo deny check bans` twice: once on the default build (no `updater` feature), where only `tsr-net` may pull in network crates, and once with `--features updater`, where the updater is also allowed.
+- `bans.deny`: `reqwest`, `hyper-tls`, `hyper-rustls`, `native-tls`, `rustls`, `ureq` (with TLS), `hf-hub`, `curl`, `tungstenite` and similar, allowed only via `wrappers` naming `tsr-net` or the updater exception. Stage 0 found `rustls` is used directly by `tauri-plugin-updater` and `rustls-platform-verifier` (both updater-only) — listed as wrappers too. CI runs `cargo deny check` twice: once on the default build (no `updater` feature), where only `tsr-net` may pull in network crates, and once with `--features tessara/updater`. Because `wrappers` only checks the direct edge, `tools/check_network_deps.py` also walks the full resolved graph (normal + build dependencies) in both configurations.
+- **Updater build currently fails** (ADR-0003): `tauri-plugin-updater` 2.14.0 depends on `zip` 4.6.1 with RUSTSEC-2026-0367/0368/0369, fixed only in zip ≥ 9. The CI job stays visible (`continue-on-error`), nothing is ignored, and Stage 10 cannot pass until it is green.
+- `paste` (RUSTSEC-2024-0436, unmaintained build-time proc-macro via `tokenizers`) is ignored with a written reason; `sqlcipher-src` gets a crate-scoped licence exception for `blessing` and `WTFPL`.
 - Any new wrapper entry needs an ADR and a line in `privacy.md`.
 - Licence allowlist: MIT, Apache-2.0, BSD-2/3, ISC, Zlib, Unicode, MPL-2.0 (file-level), AGPL-compatible; deny unknown.
 
@@ -1268,7 +1286,10 @@ SemVer for the app; `prompt_ver` and `schema_ver` tracked separately and stored 
 | `sqlite-vec` + bundled SQLCipher incompatibility | Known | Low | Brute-force in-memory index (D6) |
 | Vendored OpenSSL build friction on Windows | Medium | Low | Document Perl requirement; vcpkg SQLCipher fallback |
 | WebView2 transparency/animation glitches | Low–Medium | Medium | Spike in Stage 0; native notch fallback (D1) |
-| WebView2 runtime makes its own outbound connections, failing S1 | Medium | High | SmartScreen off, background-networking switches, navigation lock (§13.5); 2 h Sysmon spike in Stage 0; native notch fallback (D1) removes WebView2 from the always-on window |
+| WebView2 runtime makes its own outbound connections, failing S1 | **Observed in Stage 0** | High | SmartScreen off, background-networking switches, `--no-proxy-server`, navigation lock (§13.5); identify the remaining connection with an elevated capture; native notch fallback (D1) removes WebView2 from the always-on window (ADR-0002) |
+| Windows' own `System32\onnxruntime.dll` loaded instead of the pinned one | Medium (found in Stage 0) | Medium | `load_pinned` with absolute path + hash + module check; `ort` `api-31` refuses < 1.31 (§10.1) |
+| Local environment variables reconfigure the sidecar or webview (`LLAMA_ARG_*`, `HF_TOKEN`, `WEBVIEW2_*`) | Medium (found in Stage 0) | High | Sidecar started with a cleared environment; `WEBVIEW2_*` cleared at start-up (§7.1, §13.5) |
+| UIA calls exceed the 300 ms budget despite timeouts | Observed (Word 2.8 s) | Medium | Wall-clock deadline on the T2 worker; per-window fallback to rung 2 (§5.4) |
 | A default crate feature pulls in network code (`fastembed`, `ort`, Tauri plugins) | Medium | Medium | `default-features = false` (D7, §10.1); `cargo deny check bans` in CI; dependency spike in Stage 0 |
 | WGC yellow border visible on capture | Medium | Low | Borderless access request; capture rarely (OCR rung is a fallback, not default) |
 | Private-browsing detection misses a browser | Medium | High | Fail closed for undetermined browser windows; per-browser tests |

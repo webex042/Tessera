@@ -1,0 +1,15 @@
+[package]
+name = "tsr-store"
+description = "Tessara encrypted store (SQLCipher)"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+rusqlite.workspace = true
+thiserror.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+tempfile = "3"

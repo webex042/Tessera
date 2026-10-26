@@ -1,0 +1,7 @@
+Export API v2 - Specification
+Status: Draft (v0.3)
+4. Limits
+Exports are capped at 1,000,000 rows. Larger requests return 413.
+5. Open items
+- Asha: decide default date format (ISO 8601 vs locale) before eng kickoff on 27 Oct
+- Kenji: estimate effort for gzip streaming

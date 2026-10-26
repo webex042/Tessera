@@ -1,0 +1,33 @@
+[package]
+name = "tessara"
+description = "Tessara desktop app"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "tessara_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build.workspace = true
+
+[dependencies]
+tauri.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+# The only network exception (plan D10). Off by default; never enabled in release
+# profiles implicitly. Build with `--features updater` to include it.
+tauri-plugin-updater = { version = "=2.14.0", optional = true }
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = "=0.39.1"
+windows = { workspace = true, features = ["Win32_Foundation"] }
+
+[features]
+default = []
+updater = ["dep:tauri-plugin-updater"]
+# Serve the built frontend (ui/dist) instead of the Vite dev server. The Tauri CLI turns this
+# on for `tauri build`; Stage 0 tests turn it on for debug builds too.
+custom-protocol = ["tauri/custom-protocol"]

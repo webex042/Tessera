@@ -1,0 +1,84 @@
+# cargo-deny policy (plan §20.3, D10).
+#
+# Two layers enforce "network code only in tsr-net":
+#   1. [bans] below: a banned crate may only be a *direct* dependency of the listed wrappers.
+#   2. tools/check_network_deps.py: walks the full resolved graph (normal + build deps) and
+#      fails if any workspace member other than tsr-net can reach a network-capable crate
+#      through any chain. cargo-deny's `wrappers` only sees the direct edge, so layer 2 is
+#      what catches transitive paths such as fastembed -> hf-hub -> ureq.
+#
+# The single documented exception is `tauri-plugin-updater`, compiled only with the
+# off-by-default `updater` feature of src-tauri. Adding another wrapper needs an ADR.
+
+[graph]
+targets = ["x86_64-pc-windows-msvc"]
+all-features = false
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = [
+    # `paste` is unmaintained (not vulnerable). It is a proc-macro used at build time by
+    # tokenizers <- fastembed; no maintained replacement upstream yet. Re-check on each
+    # fastembed/tokenizers bump (docs/stage0/findings.md).
+    { id = "RUSTSEC-2024-0436", reason = "build-time proc-macro via tokenizers; unmaintained, no known vulnerability" },
+]
+
+[licenses]
+version = 2
+confidence-threshold = 0.9
+allow = [
+    "MIT",
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "MPL-2.0",
+    "BSL-1.0",
+    "CC0-1.0",
+    "0BSD",
+    "OpenSSL",
+    "CDLA-Permissive-2.0",
+]
+
+[licenses.private]
+ignore = true
+
+# SQLCipher's source bundle: SQLite's public-domain "blessing" and libtomcrypt's WTFPL.
+# Both are permissive; allowed for this crate only rather than workspace-wide.
+[[licenses.exceptions]]
+crate = "sqlcipher-src"
+allow = ["blessing", "WTFPL"]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+deny = [
+    { crate = "reqwest", wrappers = ["tsr-net", "tauri-plugin-updater"] },
+    { crate = "ureq", wrappers = ["tsr-net"] },
+    { crate = "curl", wrappers = [] },
+    { crate = "isahc", wrappers = [] },
+    { crate = "attohttpc", wrappers = [] },
+    { crate = "hf-hub", wrappers = [] },
+    { crate = "native-tls", wrappers = ["tsr-net", "reqwest", "ureq"] },
+    # tauri-plugin-updater and rustls-platform-verifier use rustls directly; both only exist
+    # in `--features updater` builds (verified with `cargo tree -i rustls`).
+    { crate = "rustls", wrappers = ["tsr-net", "reqwest", "ureq", "hyper-rustls", "tokio-rustls", "tauri-plugin-updater", "rustls-platform-verifier"] },
+    { crate = "hyper-tls", wrappers = ["reqwest"] },
+    { crate = "hyper-rustls", wrappers = ["reqwest"] },
+    { crate = "tokio-rustls", wrappers = ["reqwest", "hyper-rustls"] },
+    { crate = "tokio-native-tls", wrappers = ["reqwest", "hyper-tls"] },
+    { crate = "tungstenite", wrappers = [] },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

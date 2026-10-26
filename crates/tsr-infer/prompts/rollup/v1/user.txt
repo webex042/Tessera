@@ -1,0 +1,4 @@
+Period: {period_label}
+<memory>
+{entries}
+</memory>

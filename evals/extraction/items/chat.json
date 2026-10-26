@@ -1,0 +1,237 @@
+[
+  {
+    "id": "ch-001", "split": "dev", "tags": ["slack", "commitment"],
+    "app": "Slack", "title": "#design - Northwind - Slack", "source": "app:slack.exe",
+    "captured_at": "2026-10-21T15:12:00+05:30",
+    "text": "#design\nMeera Nair 3:02 PM\nthe new empty-state illustrations are in Figma, page 'Onboarding v3'\nDaniel Ortiz 3:05 PM\nnice. @Asha can we get copy for the three empty states?\nAsha Verma 3:09 PM\nyes, I'll have copy for all three by tomorrow noon\nMeera Nair 3:10 PM\n:+1:",
+    "expected": {
+      "facts": [
+        {"kind": "commitment", "owner": "me", "counterparty": "Daniel Ortiz", "text": "Write copy for the three onboarding empty states", "due_text": "by tomorrow noon", "evidence": "I'll have copy for all three by tomorrow noon"},
+        {"kind": "note", "owner": "Meera Nair", "counterparty": null, "text": "New empty-state illustrations are in Figma page 'Onboarding v3'", "due_text": null, "evidence": "the new empty-state illustrations are in Figma, page 'Onboarding v3'"}
+      ],
+      "people": [{"name": "Meera Nair", "handle": null}, {"name": "Daniel Ortiz", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-002", "split": "heldout", "tags": ["slack", "question", "unanswered"],
+    "app": "Slack", "title": "Kenji Watanabe (DM) - Northwind - Slack", "source": "app:slack.exe",
+    "captured_at": "2026-10-20T11:40:00+05:30",
+    "text": "Kenji Watanabe\nAsha Verma 11:31 AM\nhey Kenji, is the webhook retry fix going out in this week's release or the next one?\nAsha Verma 11:32 AM\nasking because BigRetail keeps pinging about it",
+    "expected": {
+      "facts": [
+        {"kind": "question", "owner": "me", "counterparty": "Kenji Watanabe", "text": "Asked Kenji whether the webhook retry fix ships this week or next", "due_text": null, "evidence": "is the webhook retry fix going out in this week's release or the next one?"},
+        {"kind": "note", "owner": "unknown", "counterparty": null, "text": "BigRetail keeps asking about the webhook retry fix", "due_text": null, "evidence": "BigRetail keeps pinging about it"}
+      ],
+      "people": [{"name": "Kenji Watanabe", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-003", "split": "heldout", "tags": ["slack", "decision", "thread"],
+    "app": "Slack", "title": "#growth - Northwind - Slack", "source": "app:slack.exe",
+    "captured_at": "2026-10-22T17:55:00+05:30",
+    "text": "#growth\nThread\nDaniel Ortiz 5:40 PM\nok final call: we drop the referral banner from the dashboard and keep it only in settings\nPriya Shah 5:42 PM\nworks for me\nKenji Watanabe 5:43 PM\nI'll remove it from the dashboard in tomorrow's deploy\nAsha Verma 5:50 PM\nagreed",
+    "expected": {
+      "facts": [
+        {"kind": "decision", "owner": "Daniel Ortiz", "counterparty": null, "text": "Drop the referral banner from the dashboard; keep it only in settings", "due_text": null, "evidence": "we drop the referral banner from the dashboard and keep it only in settings"},
+        {"kind": "commitment", "owner": "Kenji Watanabe", "counterparty": null, "text": "Remove the referral banner from the dashboard", "due_text": "in tomorrow's deploy", "evidence": "I'll remove it from the dashboard in tomorrow's deploy"}
+      ],
+      "people": [{"name": "Daniel Ortiz", "handle": null}, {"name": "Priya Shah", "handle": null}, {"name": "Kenji Watanabe", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-004", "split": "heldout", "tags": ["slack", "chitchat", "no_facts"],
+    "app": "Slack", "title": "#random - Northwind - Slack", "source": "app:slack.exe",
+    "captured_at": "2026-10-23T13:05:00+05:30",
+    "text": "#random\nTom Becker 12:58 PM\nwho ate the last samosa\nSana Qureshi 1:00 PM\nnot me :innocent:\nArjun Rao 1:02 PM\nthere's more in the 4th floor pantry\nTom Becker 1:03 PM\nhero",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "ch-005", "split": "dev", "tags": ["slack", "task_assigned_to_me", "mention"],
+    "app": "Slack", "title": "#support-escalations - Northwind - Slack", "source": "app:slack.exe",
+    "captured_at": "2026-10-19T16:20:00+05:30",
+    "text": "#support-escalations\nFatima Khan 4:11 PM\n@Asha Verma BigRetail wants a written root-cause summary for last Friday's outage. Can you own the customer-facing version? Draft due EOD Wednesday.\nFatima Khan 4:12 PM\nengineering timeline is in the incident doc INC-778",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": "Fatima Khan", "text": "Write the customer-facing root-cause summary for BigRetail's outage", "due_text": "EOD Wednesday", "evidence": "Can you own the customer-facing version? Draft due EOD Wednesday."},
+        {"kind": "note", "owner": "unknown", "counterparty": null, "text": "Engineering timeline for the outage is in incident doc INC-778", "due_text": null, "evidence": "engineering timeline is in the incident doc INC-778"}
+      ],
+      "people": [{"name": "Fatima Khan", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-006", "split": "heldout", "tags": ["slack", "done_evidence"],
+    "app": "Slack", "title": "#design - Northwind - Slack", "source": "app:slack.exe",
+    "captured_at": "2026-10-22T11:58:00+05:30",
+    "text": "#design\nAsha Verma 11:52 AM\ncopy for the three empty states is in the Figma comments now, let me know if the tone is off\nDaniel Ortiz 11:57 AM\nlooks great, shipping it",
+    "expected": {
+      "facts": [
+        {"kind": "note", "owner": "me", "counterparty": null, "text": "Delivered copy for the three empty states in Figma comments", "due_text": null, "evidence": "copy for the three empty states is in the Figma comments now"},
+        {"kind": "decision", "owner": "Daniel Ortiz", "counterparty": null, "text": "Empty-state copy approved for shipping", "due_text": null, "evidence": "looks great, shipping it"}
+      ],
+      "people": [{"name": "Daniel Ortiz", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-007", "split": "heldout", "tags": ["teams", "event"],
+    "app": "Microsoft Teams", "title": "Chat | Arjun Rao | Microsoft Teams", "source": "app:ms-teams.exe",
+    "captured_at": "2026-10-20T09:40:00+05:30",
+    "text": "Arjun Rao\n9:31 AM\nMorning! BigRetail exec sync is confirmed for Thursday 22 Oct, 4:30 PM IST. I've sent the invite.\n9:33 AM\nCan you prepare a 5-slide roadmap summary for it?\nAsha Verma\n9:38 AM\nOn it, will share a draft Wednesday evening.",
+    "expected": {
+      "facts": [
+        {"kind": "event", "owner": "unknown", "counterparty": "Arjun Rao", "text": "BigRetail exec sync", "due_text": "Thursday 22 Oct, 4:30 PM IST", "evidence": "BigRetail exec sync is confirmed for Thursday 22 Oct, 4:30 PM IST"},
+        {"kind": "commitment", "owner": "me", "counterparty": "Arjun Rao", "text": "Share a draft 5-slide roadmap summary for the BigRetail exec sync", "due_text": "Wednesday evening", "evidence": "On it, will share a draft Wednesday evening."}
+      ],
+      "people": [{"name": "Arjun Rao", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-008", "split": "dev", "tags": ["teams", "channel", "others"],
+    "app": "Microsoft Teams", "title": "Platform | General | Microsoft Teams", "source": "app:ms-teams.exe",
+    "captured_at": "2026-10-21T14:15:00+05:30",
+    "text": "General\nTom Becker\n2:02 PM\nReminder: the staging database migration runs Saturday 24 Oct at 22:00 IST. Staging will be read-only for ~2 hours.\nKenji Watanabe\n2:07 PM\nI'll pause the nightly e2e suite that night.\nPriya Shah\n2:09 PM\nthanks both",
+    "expected": {
+      "facts": [
+        {"kind": "event", "owner": "unknown", "counterparty": null, "text": "Staging database migration; staging read-only for ~2 hours", "due_text": "Saturday 24 Oct at 22:00 IST", "evidence": "the staging database migration runs Saturday 24 Oct at 22:00 IST"},
+        {"kind": "commitment", "owner": "Kenji Watanabe", "counterparty": null, "text": "Pause the nightly e2e suite on the migration night", "due_text": null, "evidence": "I'll pause the nightly e2e suite that night."}
+      ],
+      "people": [{"name": "Tom Becker", "handle": null}, {"name": "Kenji Watanabe", "handle": null}, {"name": "Priya Shah", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-009", "split": "heldout", "tags": ["teams", "question_to_me"],
+    "app": "Microsoft Teams", "title": "Chat | Lena Fischer | Microsoft Teams", "source": "app:ms-teams.exe",
+    "captured_at": "2026-10-23T16:45:00+05:30",
+    "text": "Lena Fischer\n4:38 PM\nHi Asha, quick one: do you have a customer reference in retail we could quote in the webinar? Ideally someone using the export API.",
+    "expected": {
+      "facts": [
+        {"kind": "question", "owner": "Lena Fischer", "counterparty": "me", "text": "Lena asked for a retail customer reference using the export API for the webinar", "due_text": null, "evidence": "do you have a customer reference in retail we could quote in the webinar?"}
+      ],
+      "people": [{"name": "Lena Fischer", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-010", "split": "heldout", "tags": ["teams", "meeting_chat", "action_items"],
+    "app": "Microsoft Teams", "title": "Weekly product sync | Meeting chat | Microsoft Teams", "source": "app:ms-teams.exe",
+    "captured_at": "2026-10-19T12:35:00+05:30",
+    "text": "Weekly product sync\nMeeting chat\nDaniel Ortiz 12:28 PM\nAction items:\nAsha - share Q4 OKR draft with the leads by Friday\nMeera - user interviews for the mobile flow, 5 sessions before 30 Oct\nDaniel - get budget approval for the research panel\nRecording and transcript are available.",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": "Daniel Ortiz", "text": "Share the Q4 OKR draft with the leads", "due_text": "by Friday", "evidence": "Asha - share Q4 OKR draft with the leads by Friday"},
+        {"kind": "task", "owner": "Meera", "counterparty": null, "text": "Run 5 user interviews for the mobile flow", "due_text": "before 30 Oct", "evidence": "Meera - user interviews for the mobile flow, 5 sessions before 30 Oct"},
+        {"kind": "task", "owner": "Daniel Ortiz", "counterparty": null, "text": "Get budget approval for the research panel", "due_text": null, "evidence": "Daniel - get budget approval for the research panel"}
+      ],
+      "people": [{"name": "Daniel Ortiz", "handle": null}, {"name": "Meera", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-011", "split": "heldout", "tags": ["teams", "status_update", "no_facts"],
+    "app": "Microsoft Teams", "title": "Chat | Sana Qureshi | Microsoft Teams", "source": "app:ms-teams.exe",
+    "captured_at": "2026-10-22T10:10:00+05:30",
+    "text": "Sana Qureshi\n10:02 AM\nhaha yes that meeting was long\nAsha Verma\n10:04 AM\nsooo long. coffee later?\nSana Qureshi\n10:05 AM\nsure",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "ch-012", "split": "dev", "tags": ["teams", "file_reference"],
+    "app": "Microsoft Teams", "title": "Platform | Releases | Microsoft Teams", "source": "app:ms-teams.exe",
+    "captured_at": "2026-10-20T18:20:00+05:30",
+    "text": "Releases\nPriya Shah\n6:12 PM\nRelease notes for 3.14 are in SharePoint > Product > Releases > 3.14-notes.docx. Asha, please review the customer-facing section before Thursday.",
+    "expected": {
+      "facts": [
+        {"kind": "task", "owner": "me", "counterparty": "Priya Shah", "text": "Review the customer-facing section of the 3.14 release notes", "due_text": "before Thursday", "evidence": "Asha, please review the customer-facing section before Thursday."},
+        {"kind": "note", "owner": "Priya Shah", "counterparty": null, "text": "3.14 release notes are at SharePoint > Product > Releases > 3.14-notes.docx", "due_text": null, "evidence": "Release notes for 3.14 are in SharePoint > Product > Releases > 3.14-notes.docx."}
+      ],
+      "people": [{"name": "Priya Shah", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-013", "split": "heldout", "tags": ["whatsapp", "personal", "commitment"],
+    "app": "WhatsApp", "title": "WhatsApp", "source": "https://web.whatsapp.com/",
+    "captured_at": "2026-10-21T20:40:00+05:30",
+    "text": "Rohan\nonline\nRohan: bhai the plumber is coming Saturday 11am, can you be home?\nYou: can't, I have the offsite planning call. I'll ask Mom to be there\nRohan: ok cool",
+    "expected": {
+      "facts": [
+        {"kind": "event", "owner": "unknown", "counterparty": "Rohan", "text": "Plumber visit", "due_text": "Saturday 11am", "evidence": "the plumber is coming Saturday 11am"},
+        {"kind": "commitment", "owner": "me", "counterparty": "Rohan", "text": "Ask Mom to be home for the plumber", "due_text": null, "evidence": "I'll ask Mom to be there"}
+      ],
+      "people": [{"name": "Rohan", "handle": null}, {"name": "Mom", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-014", "split": "heldout", "tags": ["whatsapp", "group", "event"],
+    "app": "WhatsApp", "title": "WhatsApp", "source": "https://web.whatsapp.com/",
+    "captured_at": "2026-10-22T22:05:00+05:30",
+    "text": "College gang\nKaran, Neha, You, +5\nNeha: Reunion dinner is fixed - Sunday 1 Nov, 8pm at Toit Indiranagar\nKaran: I'll book a table for 9\nNeha: everyone pay 1500 to Karan by Friday pls",
+    "expected": {
+      "facts": [
+        {"kind": "event", "owner": "unknown", "counterparty": null, "text": "College reunion dinner at Toit Indiranagar", "due_text": "Sunday 1 Nov, 8pm", "evidence": "Reunion dinner is fixed - Sunday 1 Nov, 8pm at Toit Indiranagar"},
+        {"kind": "commitment", "owner": "Karan", "counterparty": null, "text": "Book a table for 9 for the reunion", "due_text": null, "evidence": "I'll book a table for 9"},
+        {"kind": "task", "owner": "me", "counterparty": "Karan", "text": "Pay 1500 to Karan for the reunion dinner", "due_text": "by Friday", "evidence": "everyone pay 1500 to Karan by Friday pls"}
+      ],
+      "people": [{"name": "Neha", "handle": null}, {"name": "Karan", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-015", "split": "dev", "tags": ["whatsapp", "forward_spam", "no_facts"],
+    "app": "WhatsApp", "title": "WhatsApp", "source": "https://web.whatsapp.com/",
+    "captured_at": "2026-10-20T07:30:00+05:30",
+    "text": "Family\nForwarded many times\nGood morning! Drink warm water with lemon every day to stay healthy. Share with 10 people for good luck!",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "ch-016", "split": "heldout", "tags": ["whatsapp", "work", "question"],
+    "app": "WhatsApp", "title": "WhatsApp", "source": "https://web.whatsapp.com/",
+    "captured_at": "2026-10-23T09:15:00+05:30",
+    "text": "Arjun Rao (Northwind)\nArjun: Asha, BigRetail's CTO is asking if SSO with Okta is on the Q1 roadmap. What should I tell him?\nArjun: need to reply before his 2pm call",
+    "expected": {
+      "facts": [
+        {"kind": "question", "owner": "Arjun Rao", "counterparty": "me", "text": "Arjun asked whether Okta SSO is on the Q1 roadmap for BigRetail's CTO", "due_text": "before his 2pm call", "evidence": "BigRetail's CTO is asking if SSO with Okta is on the Q1 roadmap. What should I tell him?"}
+      ],
+      "people": [{"name": "Arjun Rao", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-017", "split": "heldout", "tags": ["whatsapp", "commitment_by_me", "time"],
+    "app": "WhatsApp", "title": "WhatsApp", "source": "https://web.whatsapp.com/",
+    "captured_at": "2026-10-23T09:20:00+05:30",
+    "text": "Arjun Rao (Northwind)\nYou: Tell him it's planned for Q1 but not committed. I'll send you a one-liner you can forward in 30 mins\nArjun: perfect thanks",
+    "expected": {
+      "facts": [
+        {"kind": "commitment", "owner": "me", "counterparty": "Arjun Rao", "text": "Send Arjun a forwardable one-liner about Okta SSO plans", "due_text": "in 30 mins", "evidence": "I'll send you a one-liner you can forward in 30 mins"},
+        {"kind": "note", "owner": "me", "counterparty": "Arjun Rao", "text": "Okta SSO is planned for Q1 but not committed", "due_text": null, "evidence": "it's planned for Q1 but not committed"}
+      ],
+      "people": [{"name": "Arjun Rao", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-018", "split": "heldout", "tags": ["slack", "edited", "correction"],
+    "app": "Slack", "title": "#launch - Northwind - Slack", "source": "app:slack.exe",
+    "captured_at": "2026-10-22T13:30:00+05:30",
+    "text": "#launch\nPriya Shah 1:21 PM\nlaunch checklist review is Tuesday 27 Oct 11am (edited)\nPriya Shah 1:22 PM\nsorry, typo earlier said Monday",
+    "expected": {
+      "facts": [
+        {"kind": "event", "owner": "unknown", "counterparty": null, "text": "Launch checklist review", "due_text": "Tuesday 27 Oct 11am", "evidence": "launch checklist review is Tuesday 27 Oct 11am"}
+      ],
+      "people": [{"name": "Priya Shah", "handle": null}]
+    }
+  },
+  {
+    "id": "ch-019", "split": "heldout", "tags": ["slack", "bot", "no_facts"],
+    "app": "Slack", "title": "#deploys - Northwind - Slack", "source": "app:slack.exe",
+    "captured_at": "2026-10-21T19:00:00+05:30",
+    "text": "#deploys\nDeployBot APP 6:58 PM\n:white_check_mark: web-app v3.13.7 deployed to production (build 88213)\nDeployBot APP 6:59 PM\n:white_check_mark: worker v3.13.7 deployed to production (build 88214)",
+    "expected": {"facts": [], "people": []}
+  },
+  {
+    "id": "ch-020", "split": "dev", "tags": ["teams", "my_question_answered"],
+    "app": "Microsoft Teams", "title": "Chat | Kenji Watanabe | Microsoft Teams", "source": "app:ms-teams.exe",
+    "captured_at": "2026-10-20T15:05:00+05:30",
+    "text": "Kenji Watanabe\n2:58 PM\nre your question: the webhook retry fix goes out in this Thursday's release (3.14)\nAsha Verma\n3:01 PM\nawesome, I'll tell BigRetail",
+    "expected": {
+      "facts": [
+        {"kind": "note", "owner": "Kenji Watanabe", "counterparty": "me", "text": "Webhook retry fix ships in Thursday's 3.14 release", "due_text": "this Thursday", "evidence": "the webhook retry fix goes out in this Thursday's release (3.14)"},
+        {"kind": "commitment", "owner": "me", "counterparty": "BigRetail", "text": "Tell BigRetail the webhook retry fix ships in 3.14", "due_text": null, "evidence": "I'll tell BigRetail"}
+      ],
+      "people": [{"name": "Kenji Watanabe", "handle": null}]
+    }
+  }
+]

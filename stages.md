@@ -7,7 +7,7 @@ Effort is in full-time-equivalent weeks for one developer; double it for part-ti
 
 | Stage | Name | Effort | Depends on | Status |
 |---|---|---|---|---|
-| 0 | Feasibility and model benchmark | 2 wk | — | Not started |
+| 0 | Feasibility and model benchmark | 2 wk | — | **In progress** — tooling done; model gates unverified; S1 WebView2 finding open ([results](docs/stage0/results.md)) |
 | 1 | Foundation, capture, memory, baseline guardrails | 5 wk | 0 | Not started |
 | 2 | Understanding pipeline | 4 wk | 1 | Not started |
 | 3 | Notch UI | 3 wk | 1 | Not started |
@@ -27,18 +27,20 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 
 **Goal:** prove the 4B model, capture stack and hardware budget before building the app.
 
-**Exit criteria (go / no-go):**
-- [ ] VRAM peak ≤ 5.2 GB with vision at 8 k ctx on the RTX 4050 6 GB.
-- [ ] Extraction: JSON valid ≥ 99 %, task/commitment F1 ≥ 0.65, p50 latency ≤ 8 s for a 1 500-token item.
-- [ ] Ask: p50 time to first token ≤ 2.5 s with 1 500 tokens of snippets.
-- [ ] Draft: blind self-rating ≥ 3/5 average on the 20 scenarios.
-- [ ] UIA or OCR yields usable text for ≥ 16 of the top 20 apps.
+**Exit criteria (go / no-go):** (status 2026-10-26 in brackets; details in `docs/stage0/results.md`)
+- [ ] VRAM peak ≤ 5.2 GB with vision at 8 k ctx on the RTX 4050 6 GB. *(unverified: no target GPU, no model)*
+- [ ] Extraction: JSON valid ≥ 99 %, task/commitment F1 ≥ 0.65, p50 latency ≤ 8 s for a 1 500-token item. *(unverified; harness + 80-item eval set ready)*
+- [ ] Ask: p50 time to first token ≤ 2.5 s with 1 500 tokens of snippets. *(unverified; 60-question set ready)*
+- [ ] Draft: blind self-rating ≥ 3/5 average on the 20 scenarios. *(unverified; 20 scenarios ready)*
+- [ ] UIA or OCR yields usable text for ≥ 16 of the top 20 apps. *(7 tested, 7 usable; 13 not installed or need the owner's accounts)*
+- [ ] WebView2 network spike: no unexpected outbound connection over 2 h. *(**fails** in 10/5/4-min runs: one Microsoft 443 connection from WebView2 — ADR-0002)*
+- [x] Dependency spike: no network-capable crate reachable outside `tsr-net`, default and `updater` builds. *(passes; checker self-tested on bad fixtures)*
 
 **If it fails:** Q5_K_M or 8B on bigger GPUs; split models (text-only 4B + VLM only for rung 3); 4 k ctx; narrow v1 to search + brief.
 
-**Also measured:** 2 h WebView2 network spike (plan §13.5); `cargo deny check bans` dependency spike with `fastembed`/`ort` at `default-features = false` (plan §10.1).
+**Also measured:** live WebView2 settings read-back; SQLCipher + FTS5 encryption tests; pinned ONNX Runtime loading; UIA/WGC/OCR timings (`docs/app-compatibility.md`).
 
-**Main risks:** 4B quality too low; WebView2 transparency/animation; WGC yellow border; WebView2 background network traffic; default crate features pulling in network code.
+**Main risks:** 4B quality too low; WebView2 transparency/animation; WGC yellow border (Stage 0: borderless capture granted, no border); WebView2 background network traffic (**observed**, ADR-0002); default crate features pulling in network code (handled, ADR-0001); Windows' own `onnxruntime.dll` (handled, ADR-0001).
 
 ## Stage 1 — Foundation, capture, memory, baseline guardrails
 
@@ -47,6 +49,8 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 - [ ] No image files ever written (Process Monitor + FS-watcher test on data dir and `%TEMP%`).
 - [ ] Blocklisted apps and private windows produce zero items.
 - [ ] Title rules don't over-block: ordinary non-browser windows titled with "login", "sign in" or "password" are still captured.
+- [ ] A UIA read never blocks the caller beyond 300 ms wall-clock, including against Word (Stage 0 measured 2.8 s without a deadline); late results are discarded.
+- [ ] SQLCipher's own logging is off (`cipher_log_level = NONE`): a wrong-key open writes nothing to stderr.
 - [ ] Password text from a test WinForms/WPF app never appears in items.
 - [ ] Redaction corpus: 100 % of seeded secrets redacted; false positives ≤ 2 % on the clean corpus.
 - [ ] DB unreadable without the key; no canary strings in a hex scan.
@@ -60,6 +64,8 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 - [ ] Injection corpus (≥ 50 cases): no injected instruction stored as a user task (unless genuinely addressed to the user); nothing triggers an action.
 - [ ] A 2-hour synthetic workload is fully processed within 30 min after it ends.
 - [ ] GPU idle when nothing is queued; model unloads after the idle timeout on battery.
+- [ ] Sidecar runs with a cleared environment: setting `LLAMA_ARG_AGENT=1` or `LLAMA_ARG_HF_REPO` in the parent has no effect (tested).
+- [ ] Embedders only ever use the pinned ONNX Runtime (`load_pinned`); a test confirms `System32\onnxruntime.dll` is never mapped.
 
 **Main risks:** prompt injection producing misleading memory; llama.cpp flag/API changes; VRAM contention.
 
@@ -111,6 +117,6 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 
 - **8 — Meetings and translation:** WASAPI audio in RAM only, per-meeting consent, whisper.cpp STT, Opus-MT translation (NLLB is non-commercial).
 - **9 — Closed beta:** 10–20 testers on varied hardware; content-free diagnostics bundle the tester reviews before sending.
-- **10 — Release:** signed NSIS installer and sidecar, opt-in signed updater (behind the `updater` feature, the one network exception outside `tsr-net`), SBOM per release.
+- **10 — Release:** signed NSIS installer and sidecar, opt-in signed updater (behind the `updater` feature, the one network exception outside `tsr-net`), SBOM per release. Gate: `cargo deny --features tessara/updater check` passes — currently blocked by `zip` advisories in `tauri-plugin-updater` 2.14.0 (ADR-0003).
 
 See plan §17 for details.

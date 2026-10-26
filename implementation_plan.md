@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| Status | Draft v0.1 — design phase, nothing implemented |
+| Status | Draft v0.2 — design phase, nothing implemented (v0.2: clipboard cloud exclusion, embedder build features, WebView2 network, updater exception, scoped title blocklist) |
 | Scope of this document | MVP (Stages 0–7) in full detail; Stages 8–10 in outline |
 | Target hardware | Windows 11, NVIDIA GPU with 6 GB VRAM (RTX 4050 laptop class), 16 GB RAM |
 | Last updated | 2026-10-26 |
@@ -84,10 +84,10 @@ Short ADR-style log. Each entry is revisited at the end of Stage 0 with benchmar
 | D4 | Text-first acquisition ladder: UIA → Windows OCR → VLM | UIA/OCR are cheap and precise; VLM is the expensive last resort | — |
 | D5 | SQLCipher via `rusqlite` (`bundled-sqlcipher-vendored-openssl`) | Whole-database encryption, FTS5 included, one file | Build friction on Windows CI (fallback: system SQLCipher via vcpkg) |
 | D6 | Vectors stored as BLOBs, **brute-force cosine in memory** for MVP; `sqlite-vec` deferred | `sqlite-vec` has a reported incompatibility with `rusqlite`'s bundled SQLCipher; brute force over ≤ 200 k 384-d int8 vectors is a few ms | Item count > 200 k or search p95 > 50 ms |
-| D7 | Embeddings with `fastembed` (ONNX Runtime, CPU), loaded **from local files only** | No GPU contention with the LLM; local-file init avoids implicit downloads | — |
+| D7 | Embeddings with `fastembed` (ONNX Runtime, CPU), loaded **from local files only**; `fastembed` and `ort` built with `default-features = false` (no Hugging Face hub client, no build-time ONNX Runtime download); `onnxruntime.dll` shipped from a pinned, hash-checked copy (§10.1) | No GPU contention with the LLM; local-file init avoids implicit downloads; default features would pull HTTP/TLS crates into `tsr-retrieval` and fail the `cargo-deny` network ban (§20.3) | — |
 | D8 | All model outputs are JSON constrained by schema, then validated by code | A 4B model is much more reliable under a grammar; code owns dates, citations, policy | — |
 | D9 | One unified `facts` table (task, commitment, decision, event, question, note) | Simpler queries, rollups and deletion than one table per kind | Kinds diverge strongly in fields |
-| D10 | Network code confined to one crate (`tsr-net`), enforced by `cargo-deny` | Makes the "nothing leaves your PC" claim auditable | — |
+| D10 | Network code confined to one crate (`tsr-net`), enforced by `cargo-deny`. **One documented exception:** `tauri-plugin-updater` (Stage 10), compiled only behind an off-by-default `updater` Cargo feature in `src-tauri` and listed as a second allowed wrapper in `deny.toml` (§20.3) | Makes the "nothing leaves your PC" claim auditable; the updater does its own HTTPS fetch, so it cannot live inside `tsr-net` without re-implementing signature checks and install | Updater needs grow, or a `tsr-net`-based check + signed-installer handoff becomes simpler than the plugin |
 | D11 | No low-level keyboard or mouse hooks | Avoid keylogger-like behaviour and AV false positives; use `RegisterHotKey` (via Tauri global-shortcut) and UIA focus events | — |
 | D12 | App starts **paused** after install until the user finishes onboarding and presses Start | Consent by default | — |
 
@@ -300,11 +300,14 @@ Evaluated on every foreground change, before any capture call.
 | Kind | Match on | Built-in defaults (user can disable individually, and add more) |
 |---|---|---|
 | Process | image file name, full path | `KeePass*.exe`, `KeePassXC.exe`, `1Password.exe`, `Bitwarden.exe`, `Dashlane*.exe`, `LastPass*.exe`, `mstsc.exe` (optional), `CredentialUIBroker.exe`, `consent.exe`, Windows Security, banking/UPI desktop apps the user adds |
-| Window title | regex | `InPrivate`, `Incognito`, `Private Browsing`, `\bpassword\b`, `\bOTP\b`, `sign in`, `log ?in` (title-only heuristics, user-tunable) |
+| Window title — all apps | regex | `\bOTP\b`, `\bone-time (pass)?code\b`, `\b(enter\|change\|reset) (your )?password\b` (narrow phrases only, user-tunable) |
+| Window title — browsers only | regex, applied only when the process is a known browser | `InPrivate`, `Incognito`, `Private Browsing`, `\bsign[ -]?in\b`, `\blog ?in\b`, `\bpassword\b`. A second layer behind the URL check, for login pages whose URL is not on the list |
 | URL | host / path pattern | `accounts.google.com`, `login.microsoftonline.com`, `*.bank*`, common Indian bank and UPI domains (curated list in `tsr-guard/data/url_block.toml`), `chrome://*`, `edge://*`, `about:*`, password manager web vaults |
 | Private browsing | browser-specific UIA signals | Edge `[InPrivate]` in title; Firefox "Private Browsing" in title; Chromium incognito via toolbar UIA indicator. **If a browser window's private state cannot be determined, it is treated as private (fail closed).** |
 
 Each match emits an audit event (`blocked_window{kind}`) — never the title or URL.
+
+**Why title patterns are scoped:** broad words like "sign in", "login" or "password" appear in many ordinary window titles (a doc titled "Login flow redesign", a Jira ticket, a VS Code file `password_reset.rs`). Applied to every app, they would silently drop large parts of the user's work from memory. Outside browsers, the process blocklist and password masking (§6.2) already cover credential prompts, so only narrow phrases apply there. Each blocklist rule stores its scope (`all` / `browser`). The settings page shows how many windows each rule blocked in the last 7 days (counts only), so over-broad rules are visible.
 
 ### 6.2 Password masking
 
@@ -588,6 +591,7 @@ CREATE TABLE briefs (day TEXT PRIMARY KEY, json TEXT NOT NULL, created_at INTEGE
 
 CREATE TABLE blocklist (
   id INTEGER PRIMARY KEY, kind TEXT NOT NULL CHECK (kind IN ('process','title','url')),
+  scope TEXT NOT NULL DEFAULT 'all' CHECK (scope IN ('all','browser')),
   pattern TEXT NOT NULL, is_regex INTEGER NOT NULL, builtin INTEGER NOT NULL, enabled INTEGER NOT NULL
 );
 CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);   -- JSON values
@@ -619,6 +623,7 @@ Crate: `tsr-retrieval`.
 ### 10.1 Embedder
 
 - `fastembed` `TextEmbedding` initialised **from local ONNX + tokenizer files** (user-defined model path), never from the hub at runtime.
+- **Build features:** both `fastembed` and `ort` default features reach the network — `fastembed`'s Hugging Face hub client (TLS HTTP at runtime) and `ort`'s `download-binaries` (fetches ONNX Runtime during the build). Depend on both with `default-features = false`, enable only what is needed (`ort`'s `load-dynamic`), and ship `onnxruntime.dll` from a pinned release with its SHA-256 in `tools/sidecar.lock`, verified at load like the sidecar. Feature names change between releases: confirm against the pinned versions in Stage 0 and let `cargo deny check bans` (§20.3) catch regressions.
 - Candidates compared in Stage 0: `multilingual-e5-small` (384-d, handles Hindi/Hinglish and mixed scripts) vs `bge-small-en-v1.5` (384-d, English). Default to the multilingual model unless it loses by > 5 points recall@10 on the English set.
 - E5 needs `query:` / `passage:` prefixes; the embedder adds them.
 
@@ -713,7 +718,7 @@ Hotkey (Ctrl+Alt+D)
 
 - Default: **Insert** = restore focus to the original HWND, verify the focused element's RuntimeId is unchanged, then paste via clipboard:
   1. save the current clipboard text;
-  2. set clipboard with the draft plus the `ExcludeClipboardContentFromMonitorProcessing` and `CanIncludeInClipboardHistory = 0` formats so it stays out of clipboard history and cloud clipboard;
+  2. set clipboard with the draft plus three registered formats: `ExcludeClipboardContentFromMonitorProcessing` (any data), `CanIncludeInClipboardHistory` (DWORD 0) and `CanUploadToCloudClipboard` (DWORD 0), so it stays out of Win+V history **and** cloud clipboard sync (history exclusion alone does not stop cloud upload);
   3. `SendInput` Ctrl+V;
   4. restore the previous clipboard after 500 ms.
 - Fallbacks: `ValuePattern.SetValue` only for empty single-line fields (it would overwrite existing text), else **Copy** and tell the user to paste.
@@ -771,6 +776,11 @@ Resize strategy: on expand, grow the (transparent) window first, then animate co
 - Strict CSP (`default-src 'self'`; no remote origins; `connect-src` limited to Tauri IPC). No `dangerouslySetInnerHTML`; markdown renderer with raw HTML and auto-links disabled.
 - Tauri capabilities: each window gets only the commands it needs; no `fs`, `shell`, `http` or `opener` plugin exposed to the webview; DevTools disabled in release.
 - No content in `localStorage`/IndexedDB; UI state that persists (tab, panel size) holds no memory text.
+- **WebView2's own network traffic.** The WebView2 runtime can open connections that our code never asks for (SmartScreen reputation checks, background services). Even though the UI only loads local assets, this would fail S1 (§1.3). Mitigations, all measured in Stage 0:
+  - turn off SmartScreen for our webviews (`CoreWebView2Settings.IsReputationCheckingRequired = false`, or the `msSmartScreenProtection` feature flag);
+  - pass Chromium background-networking switches through Tauri's `additionalBrowserArgs`. **Setting this field replaces Tauri's defaults** (`--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection`), so copy those into our value;
+  - no navigation outside the app origin (Tauri navigation handler denies it) and no remote origins in the CSP.
+  - The WebView2 runtime's own updater (`msedgeupdate`, a system service, not a child of Tessara) is out of our control; it is excluded from the S1 process set and documented in `privacy.md`.
 
 ---
 
@@ -841,6 +851,7 @@ Audio (Stage 8): RAM ring buffer ─► transcript (RAM) ─► summary + action
 - Default: zero outbound connections.
 - `tsr-net` makes requests only from explicit user actions (model download, "check for updates") and shows the exact host before connecting. Hosts: Hugging Face (model files, pinned revisions), GitHub Releases (optional update check).
 - `cargo-deny` bans HTTP/TLS crates outside `tsr-net` (§20.3). A CI test scans the dependency graph for socket-capable crates.
+- The only exception is the opt-in updater (D10): it is compiled in only with the `updater` feature, runs only when the user has turned updates on, and contacts only the GitHub Releases host shown in settings. Builds without the feature contain no network code outside `tsr-net`.
 
 ### 15.5 User controls
 
@@ -1040,6 +1051,8 @@ Tasks:
    - `multilingual-e5-small` vs `bge-small-en-v1.5`: recall@10 on the Ask set.
    - UIA coverage spike: a throwaway Rust CLI that dumps UIA text for the top 20 apps → `docs/app-compatibility.md` (Chrome, Edge, Firefox, Outlook (new and classic), Gmail web, Teams, Slack, Discord, WhatsApp Desktop, VS Code, Word, Excel, PowerPoint, OneNote, Notion, Obsidian, Figma, Telegram, Zoom, File Explorer).
    - WGC single-frame grab: latency, yellow border behaviour, borderless access.
+   - WebView2 network spike: an empty Tauri window with the planned settings (§13.5), left open for 2 h under Sysmon Event ID 3. Record every remote connection from `msedgewebview2.exe` children; any that cannot be switched off goes into an ADR and a revised S1 wording.
+   - Dependency spike: `cargo deny check bans` over a skeleton workspace with `fastembed`/`ort` (§10.1), `rusqlite` (SQLCipher) and Tauri, to confirm no HTTP/TLS crate leaks in outside `tsr-net`.
 5. Write ADR updates for D3, D6, D7 with numbers.
 
 **Exit criteria (go / no-go):**
@@ -1069,6 +1082,7 @@ Tasks:
 - 8-hour run on the dev laptop: no crash, background CPU ≤ 3 %, app RAM ≤ 250 MB.
 - No image files ever written (Process Monitor capture filtered on the process shows no image writes; automated FS-watcher test over the data dir and `%TEMP%`).
 - Blocklisted apps and private windows produce zero items (scripted test with fixture windows).
+- Title rules don't over-block: a fixture set of ordinary non-browser windows whose titles contain "login", "sign in" or "password" is captured normally.
 - A test WinForms/WPF app with password boxes: password text never appears in items.
 - Redaction corpus: 100 % of seeded secrets redacted, false-positive rate ≤ 2 % on the clean corpus.
 - DB file is unreadable without the key (opening with plain SQLite fails; no canary strings in a hex scan).
@@ -1123,7 +1137,7 @@ Tasks: focus-target capture, editability and password checks, thread context, st
 **Exit criteria:**
 - Works in Gmail web, Outlook (new), Teams, Slack, WhatsApp Desktop and a plain text field (compat table updated).
 - Never inserts into a password field or a changed target (tested).
-- Clipboard restored after insertion; draft never appears in Win+V history.
+- Clipboard restored after insertion; draft never appears in Win+V history or cloud clipboard (tested with clipboard sync on).
 - Time to first visible draft text ≤ 3 s p50; complete ≤ 8 s p50.
 - 0 unsupported dates/amounts/names shown without a flag on the 20-scenario set.
 
@@ -1166,7 +1180,7 @@ Tasks:
 ### Stage 10 — Release engineering (~3 weeks)
 
 - NSIS installer via Tauri bundler; Authenticode signing (e.g. Azure Trusted Signing or SignPath for open source); signed sidecar.
-- Opt-in updater (Tauri updater plugin with signature verification); off by default.
+- Opt-in updater (Tauri updater plugin with signature verification); off by default; behind the `updater` Cargo feature and the `deny.toml` exception (D10, §20.3). Re-run the §18.6 network test with updates on and off.
 - SBOM (CycloneDX) per release; reproducible build notes; release checklist including the Stage 7 tests.
 
 ---
@@ -1195,7 +1209,7 @@ Redaction detectors (positive/negative corpora + proptest), date resolver tables
 Fixture screens contain unique canary strings (e.g. `TSRCANARY-7f3a…`). After a 24-hour run, `tools/canary-scan.ps1` searches the whole user profile, `%TEMP%`, `%LOCALAPPDATA%`, `%PROGRAMDATA%`, crash dump folders and the WebView2 profile for the canaries in UTF-8 and UTF-16. Any hit fails the test. (The Windows pagefile and hibernation file are documented as outside the app's control; BitLocker is recommended.)
 
 ### 18.6 Network monitor test
-24-hour run with normal use while capturing: Windows Filtering Platform audit / Sysmon Event ID 3 for `tessara.exe`, `llama-server.exe` and `msedgewebview2.exe` children of Tessara, plus a Wireshark capture on all interfaces. Pass = only 127.0.0.1 traffic (and the user-approved download if performed during the window, logged separately).
+24-hour run with normal use while capturing: Windows Filtering Platform audit / Sysmon Event ID 3 for `tessara.exe`, `llama-server.exe` and `msedgewebview2.exe` children of Tessara, plus a Wireshark capture on all interfaces. Pass = only 127.0.0.1 traffic (and the user-approved download if performed during the window, logged separately). WebView2 children are included on purpose: their background traffic is the most likely cause of a failure (§13.5). The system-wide WebView2/Edge updater service is not a Tessara process and is excluded, which `privacy.md` states.
 
 ### 18.7 Soak and resource tests
 7-day run: memory growth ≤ 5 %/day after warm-up, DB growth within estimate, no handle leaks (Handle count stable), no orphaned sidecar after kill-tests.
@@ -1234,7 +1248,8 @@ Rust stable (MSVC toolchain), Visual Studio Build Tools (C++), Node.js LTS + pnp
 6. Nightly: fuzz (30 min), evals on a self-hosted GPU runner (optional), redaction/injection corpora.
 
 ### 20.3 `deny.toml` highlights
-- `bans.deny`: `reqwest`, `hyper-tls`, `hyper-rustls`, `native-tls`, `rustls`, `ureq` (with TLS) allowed only via `wrappers = ["tsr-net"]`.
+- `bans.deny`: `reqwest`, `hyper-tls`, `hyper-rustls`, `native-tls`, `rustls`, `ureq` (with TLS) allowed only via `wrappers = ["tsr-net", "tauri-plugin-updater"]`. The updater entry is the single documented exception (D10); CI runs `cargo deny check bans` twice: once on the default build (no `updater` feature), where only `tsr-net` may pull in network crates, and once with `--features updater`, where the updater is also allowed.
+- Any new wrapper entry needs an ADR and a line in `privacy.md`.
 - Licence allowlist: MIT, Apache-2.0, BSD-2/3, ISC, Zlib, Unicode, MPL-2.0 (file-level), AGPL-compatible; deny unknown.
 
 ### 20.4 Versioning
@@ -1253,6 +1268,8 @@ SemVer for the app; `prompt_ver` and `schema_ver` tracked separately and stored 
 | `sqlite-vec` + bundled SQLCipher incompatibility | Known | Low | Brute-force in-memory index (D6) |
 | Vendored OpenSSL build friction on Windows | Medium | Low | Document Perl requirement; vcpkg SQLCipher fallback |
 | WebView2 transparency/animation glitches | Low–Medium | Medium | Spike in Stage 0; native notch fallback (D1) |
+| WebView2 runtime makes its own outbound connections, failing S1 | Medium | High | SmartScreen off, background-networking switches, navigation lock (§13.5); 2 h Sysmon spike in Stage 0; native notch fallback (D1) removes WebView2 from the always-on window |
+| A default crate feature pulls in network code (`fastembed`, `ort`, Tauri plugins) | Medium | Medium | `default-features = false` (D7, §10.1); `cargo deny check bans` in CI; dependency spike in Stage 0 |
 | WGC yellow border visible on capture | Medium | Low | Borderless access request; capture rarely (OCR rung is a fallback, not default) |
 | Private-browsing detection misses a browser | Medium | High | Fail closed for undetermined browser windows; per-browser tests |
 | Prompt injection produces misleading memory | Medium | Medium | Evidence check, data-not-instructions prompts, no action path, user-visible sources |

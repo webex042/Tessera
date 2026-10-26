@@ -36,7 +36,9 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 
 **If it fails:** Q5_K_M or 8B on bigger GPUs; split models (text-only 4B + VLM only for rung 3); 4 k ctx; narrow v1 to search + brief.
 
-**Main risks:** 4B quality too low; WebView2 transparency/animation; WGC yellow border; WebView2 background network traffic.
+**Also measured:** 2 h WebView2 network spike (plan §13.5); `cargo deny check bans` dependency spike with `fastembed`/`ort` at `default-features = false` (plan §10.1).
+
+**Main risks:** 4B quality too low; WebView2 transparency/animation; WGC yellow border; WebView2 background network traffic; default crate features pulling in network code.
 
 ## Stage 1 — Foundation, capture, memory, baseline guardrails
 
@@ -44,6 +46,7 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 - [ ] 8-hour run: no crash, background CPU ≤ 3 %, app RAM ≤ 250 MB.
 - [ ] No image files ever written (Process Monitor + FS-watcher test on data dir and `%TEMP%`).
 - [ ] Blocklisted apps and private windows produce zero items.
+- [ ] Title rules don't over-block: ordinary non-browser windows titled with "login", "sign in" or "password" are still captured.
 - [ ] Password text from a test WinForms/WPF app never appears in items.
 - [ ] Redaction corpus: 100 % of seeded secrets redacted; false positives ≤ 2 % on the clean corpus.
 - [ ] DB unreadable without the key; no canary strings in a hex scan.
@@ -108,6 +111,6 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 
 - **8 — Meetings and translation:** WASAPI audio in RAM only, per-meeting consent, whisper.cpp STT, Opus-MT translation (NLLB is non-commercial).
 - **9 — Closed beta:** 10–20 testers on varied hardware; content-free diagnostics bundle the tester reviews before sending.
-- **10 — Release:** signed NSIS installer and sidecar, opt-in signed updater, SBOM per release.
+- **10 — Release:** signed NSIS installer and sidecar, opt-in signed updater (behind the `updater` feature, the one network exception outside `tsr-net`), SBOM per release.
 
 See plan §17 for details.

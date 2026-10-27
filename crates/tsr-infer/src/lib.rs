@@ -11,12 +11,29 @@
 //! 4. [`select`] — rank the options, apply the user's override, always end with CPU, and try
 //!    candidates in order until one starts.
 //!
-//! Prompts and schemas live in `prompts/` (plan §16).
+//! Running the model (Stage 2):
+//!
+//! 5. [`sidecar`] — start one contained llama-server with a cleared environment, an authenticated
+//!    loopback endpoint and a readiness check; [`supervisor`] — its lifecycle state machine
+//!    (health, restart with backoff, restart budget, idle unload).
+//! 6. [`http`] / [`client`] — the minimal loopback-only HTTP client and the chat API on top.
+//! 7. [`sched`] — the priority scheduler with preemption (pure state machine); [`runtime`] — the
+//!    threads that drive it; [`metrics`] — content-free counters and histograms.
+//! 8. [`prompts`] — the versioned templates from `prompts/` (plan §16), with content escaping.
 
 pub mod backend;
+pub mod cancel;
+pub mod client;
 pub mod gguf;
 pub mod hardware;
+pub mod http;
+pub mod metrics;
+pub mod prompts;
+pub mod runtime;
+pub mod sched;
 pub mod select;
+pub mod sidecar;
+pub mod supervisor;
 
 use std::path::Path;
 

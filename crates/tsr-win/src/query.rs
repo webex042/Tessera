@@ -2,7 +2,7 @@
 
 use windows::Win32::Foundation::{CloseHandle, HWND};
 use windows::Win32::System::Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS};
-use windows::Win32::System::SystemInformation::GetTickCount;
+use windows::Win32::System::SystemInformation::{GetTickCount, GlobalMemoryStatusEx, MEMORYSTATUSEX};
 use windows::Win32::System::Threading::{
     OpenProcess, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION, QueryFullProcessImageNameW,
 };
@@ -169,6 +169,66 @@ pub fn power() -> PowerState {
     }
 }
 
+/// Physical memory in MiB (`GlobalMemoryStatusEx`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MemoryInfo {
+    pub total_mib: u64,
+    pub available_mib: u64,
+}
+
+/// Working set and CPU time of a process (the sidecar), for the diagnostics page.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProcessUsage {
+    pub working_set_mib: u64,
+    pub cpu_ms: u64,
+}
+
+pub fn process_usage(pid: u32) -> Option<ProcessUsage> {
+    use windows::Win32::Foundation::FILETIME;
+    use windows::Win32::System::ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS};
+    use windows::Win32::System::Threading::{GetProcessTimes, PROCESS_VM_READ};
+    // SAFETY: limited query handle, closed before returning; out-params sized correctly.
+    unsafe {
+        let h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, false, pid)
+            .or_else(|_| OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid))
+            .ok()?;
+        let mut pmc = PROCESS_MEMORY_COUNTERS {
+            cb: size_of::<PROCESS_MEMORY_COUNTERS>() as u32,
+            ..Default::default()
+        };
+        let mem = GetProcessMemoryInfo(h, &mut pmc, pmc.cb).is_ok();
+        let (mut c, mut e, mut k, mut u) = (
+            FILETIME::default(),
+            FILETIME::default(),
+            FILETIME::default(),
+            FILETIME::default(),
+        );
+        let times = GetProcessTimes(h, &mut c, &mut e, &mut k, &mut u).is_ok();
+        let _ = CloseHandle(h);
+        if !mem || !times {
+            return None;
+        }
+        let ft = |f: FILETIME| ((f.dwHighDateTime as u64) << 32 | f.dwLowDateTime as u64) / 10_000;
+        Some(ProcessUsage {
+            working_set_mib: (pmc.WorkingSetSize as u64) >> 20,
+            cpu_ms: ft(k) + ft(u),
+        })
+    }
+}
+
+pub fn memory() -> Option<MemoryInfo> {
+    let mut m = MEMORYSTATUSEX {
+        dwLength: size_of::<MEMORYSTATUSEX>() as u32,
+        ..Default::default()
+    };
+    // SAFETY: out-param struct with dwLength set.
+    unsafe { GlobalMemoryStatusEx(&mut m) }.ok()?;
+    Some(MemoryInfo {
+        total_mib: m.ullTotalPhys >> 20,
+        available_mib: m.ullAvailPhys >> 20,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -181,6 +241,11 @@ mod tests {
         println!("REAL idle_ms: {}", idle_ms());
         println!("REAL user_state: {:?}", user_state());
         println!("REAL power: {:?}", power());
+        let mem = memory().expect("memory status");
+        println!("REAL memory: {mem:?}");
+        let me = process_usage(std::process::id()).expect("own usage");
+        assert!(me.working_set_mib > 0);
+        assert!(mem.total_mib > 0 && mem.available_mib <= mem.total_mib);
         let me = process_image(std::process::id()).expect("own image path");
         assert!(me.to_ascii_lowercase().ends_with(".exe"));
         assert!(!format!("{fg:?}").contains("title"), "Debug must not print titles");

@@ -1,6 +1,6 @@
 [package]
 name = "tsr-win"
-description = "Tessara safe wrappers over Windows APIs: DPAPI, WinEvent hooks, session/power events, OS state"
+description = "Tessara safe wrappers over Windows APIs: DPAPI, WinEvent hooks, session/power events, OS state, job objects"
 edition.workspace = true
 version.workspace = true
 rust-version.workspace = true
@@ -14,9 +14,15 @@ zeroize.workspace = true
 windows = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_Graphics_Gdi",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_Networking_WinSock",
+    "Win32_Security",
     "Win32_Security_Cryptography",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_JobObjects",
     "Win32_System_LibraryLoader",
     "Win32_System_Power",
+    "Win32_System_ProcessStatus",
     "Win32_System_RemoteDesktop",
     "Win32_System_SystemInformation",
     "Win32_System_SystemServices",

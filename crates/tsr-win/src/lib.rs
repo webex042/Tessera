@@ -13,7 +13,11 @@ pub mod dpapi;
 #[cfg(windows)]
 pub mod events;
 #[cfg(windows)]
+pub mod job;
+#[cfg(windows)]
 pub mod query;
+#[cfg(windows)]
+pub mod tcp;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[error("{op} failed with {code:#010x}")]

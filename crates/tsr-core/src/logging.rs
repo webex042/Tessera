@@ -33,6 +33,14 @@ pub const ALLOWED_MESSAGES: &[&str] = &[
     "started after fallback",
     "backend initialisation failed; trying next",
     "llama.cpp build failed integrity check",
+    "sidecar ready",
+    "sidecar launch failed",
+    "sidecar exited",
+    "sidecar hung",
+    "sidecar restart scheduled",
+    "sidecar restart budget exhausted",
+    "sidecar unloaded",
+    "job preempted",
     // tsr-capture
     "uia: window falls back to OCR",
     // tsr-store

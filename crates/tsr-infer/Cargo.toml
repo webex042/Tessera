@@ -1,6 +1,6 @@
 [package]
 name = "tsr-infer"
-description = "Tessara inference: hardware detection, backend selection, model checks, sidecar integrity"
+description = "Tessara inference: hardware detection, backend selection, sidecar lifecycle, loopback client, scheduler"
 edition.workspace = true
 version.workspace = true
 rust-version.workspace = true
@@ -12,9 +12,12 @@ serde_json.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+tsr-core = { path = "../tsr-core" }
+zeroize.workspace = true
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std", "ansi"] }
 
 [target.'cfg(windows)'.dependencies]
+tsr-win = { path = "../tsr-win" }
 windows = { workspace = true, features = ["Win32_Foundation", "Win32_Graphics_Dxgi", "Win32_System_Threading"] }
 
 [dev-dependencies]

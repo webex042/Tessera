@@ -1,0 +1,62 @@
+name: nightly-evals
+
+# Model and GPU evaluations (plan §18.3, §20.2 step 6). Never part of basic CI.
+#
+# - `cpu-hosted` runs on GitHub's runners: everything that needs no model, plus fuzz-style long
+#   runs of the deterministic evals. It cannot measure model quality.
+# - `self-hosted-model` runs only when the repository variable TESSARA_MODEL_RUNNER is 'true',
+#   on a self-hosted runner labelled `tessara-model` (any GPU vendor, or none). Model files must
+#   already be there (TESSARA_MODELS_DIR); this workflow never downloads models or GPU runtimes.
+#   It records the detected hardware and backend next to every result.
+
+on:
+  schedule:
+    - cron: "30 20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpu-hosted:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Deterministic evaluations
+        run: cargo run -p tsr-evals --bin tsr-eval --locked -- all
+      - name: Oracle extraction on the dev split too
+        run: cargo run -p tsr-evals --bin tsr-eval --locked -- extraction --model oracle --split dev
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nightly-cpu-results
+          path: evals/results/
+
+  self-hosted-model:
+    if: vars.TESSARA_MODEL_RUNNER == 'true'
+    runs-on: [self-hosted, tessara-model]
+    env:
+      TESSARA_MODELS_DIR: ${{ vars.TESSARA_MODELS_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pinned llama.cpp builds (hash-checked); CPU plus vendor-neutral Vulkan
+        # Add vendor builds the runner's GPU supports (e.g. `cuda-12.4-x64` with `cudart-12.4-x64`, `rocm-x64`,
+        # `sycl-x64`) by variant name from tools/sidecar.lock; selection picks the best one.
+        run: |
+          python tools/fetch_sidecar.py llama_cpp cpu-x64
+          python tools/fetch_sidecar.py llama_cpp vulkan-x64
+      - name: Hardware and backend actually detected (recorded with the results)
+        run: |
+          cargo run -p tsr-net --bin tsr-models --locked -- check > evals/results/nightly_hardware.json
+          cargo run -p tsr-net --bin tsr-models --locked -- locate "$env:TESSARA_MODELS_DIR" --verify > evals/results/nightly_models.json
+      - name: Held-out extraction with the real model (F1, hallucination, invalid rows)
+        run: cargo run -p tsr-evals --bin tsr-eval --locked -- extraction --model "$env:TESSARA_MODELS_DIR" --split heldout
+      - name: Injection corpus with the real model
+        run: cargo run -p tsr-evals --bin tsr-eval --locked -- injection --model "$env:TESSARA_MODELS_DIR"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nightly-model-results
+          path: evals/results/

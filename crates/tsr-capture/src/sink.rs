@@ -54,7 +54,7 @@ fn write_item(conn: &mut Connection, f: &Flushed) -> Result<(), tsr_store::Store
             seen_at: f.ended_at,
         },
     )?;
-    insert_item(
+    let item_id = insert_item(
         &tx,
         &NewItem {
             source_id,
@@ -71,6 +71,10 @@ fn write_item(conn: &mut Connection, f: &Flushed) -> Result<(), tsr_store::Store
             redaction_count: f.redactions,
         },
     )?;
+    // Ingest (plan §8.1 steps 4–5): the item is searchable now; embedding and extraction are
+    // queued durably in the same transaction, so a crash cannot lose or duplicate them.
+    tsr_store::jobs::enqueue(&tx, "embed", item_id, f.ended_at)?;
+    tsr_store::jobs::enqueue(&tx, "extract", item_id, f.ended_at)?;
     tx.commit()?;
     Ok(())
 }

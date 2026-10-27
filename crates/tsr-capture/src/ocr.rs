@@ -218,9 +218,196 @@ fn wipe(bmp: &SoftwareBitmap) {
 
 pub use crate::ocr_guard::looks_like_password_screen;
 
+// ---------------------------------------------------------------------------------------------
+// Rung 3 support: one frame kept in memory, and OCR with word boxes (plan §5.4 rung 2 step 4–5,
+// rung 3 step 1). Runs off the capture loop; uses its own device and engine.
+
+use crate::vlm::{Frame, Line, Rect, Word};
+use windows::Graphics::Imaging::BitmapPixelFormat;
+use zeroize::Zeroizing;
+
+/// Copy a BGRA8 SoftwareBitmap into a tight [`Frame`].
+fn frame_from_bitmap(bmp: &SoftwareBitmap) -> Result<Frame, OcrError> {
+    let (w, h) = (bmp.PixelWidth()? as u32, bmp.PixelHeight()? as u32);
+    let buf = bmp.LockBuffer(BitmapBufferAccessMode::Read)?;
+    let plane = buf.GetPlaneDescription(0)?;
+    let reference = buf.CreateReference()?;
+    let access = reference.cast::<IMemoryBufferByteAccess>()?;
+    let mut ptr = std::ptr::null_mut();
+    let mut len = 0u32;
+    // SAFETY: the buffer stays locked while `reference` lives; rows are copied within `len`.
+    unsafe { access.GetBuffer(&mut ptr, &mut len)? };
+    let mut bgra = Zeroizing::new(vec![0u8; (w * h * 4) as usize]);
+    for y in 0..h as usize {
+        let src = plane.StartIndex as usize + y * plane.Stride as usize;
+        let n = w as usize * 4;
+        if src + n > len as usize {
+            return Err(OcrError::Com(E_INVALIDARG.0));
+        }
+        // SAFETY: bounds checked against the locked buffer length above.
+        let row = unsafe { std::slice::from_raw_parts(ptr.add(src), n) };
+        bgra[y * n..(y + 1) * n].copy_from_slice(row);
+    }
+    let _ = reference.Close();
+    let _ = buf.Close();
+    Ok(Frame {
+        width: w,
+        height: h,
+        bgra,
+    })
+}
+
+/// Run WinRT work on a fresh thread in the multithreaded apartment (as the Stage 0 probe did),
+/// independent of the caller's COM state.
+fn on_mta<T: Send>(f: impl FnOnce() -> T + Send) -> T {
+    std::thread::scope(|s| {
+        s.spawn(|| {
+            use windows::Win32::System::Com::{COINIT_MULTITHREADED, CoInitializeEx, CoUninitialize};
+            // SAFETY: balanced with CoUninitialize on this same thread.
+            let init = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
+            let out = f();
+            if init.is_ok() {
+                // SAFETY: matches the successful CoInitializeEx above.
+                unsafe { CoUninitialize() };
+            }
+            out
+        })
+        .join()
+        .expect("capture thread")
+    })
+}
+
+/// Capture one frame of a window into memory (BGRA, wiped on drop).
+pub fn capture_frame(hwnd: HWND) -> Result<Frame, OcrError> {
+    let h = hwnd.0 as isize;
+    on_mta(move || capture_frame_inner(HWND(h as *mut _)))
+}
+
+fn capture_frame_inner(hwnd: HWND) -> Result<Frame, OcrError> {
+    let device = make_device()?;
+    let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
+    // SAFETY: hwnd is a top-level window handle supplied by the caller.
+    let item: GraphicsCaptureItem = unsafe { interop.CreateForWindow(hwnd)? };
+    let pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
+        &device,
+        DirectXPixelFormat::B8G8R8A8UIntNormalized,
+        1,
+        item.Size()?,
+    )?;
+    let session = pool.CreateCaptureSession(&item)?;
+    let _ = session.SetIsCursorCaptureEnabled(false);
+    let _ = session.SetIsBorderRequired(false);
+    session.StartCapture()?;
+    let deadline = Instant::now() + Duration::from_millis(1500);
+    let frame = loop {
+        if let Ok(f) = pool.TryGetNextFrame() {
+            break f;
+        }
+        if Instant::now() > deadline {
+            let _ = session.Close();
+            let _ = pool.Close();
+            return Err(OcrError::Com(E_ABORT.0));
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    let bmp = SoftwareBitmap::CreateCopyFromSurfaceAsync(&frame.Surface()?)?.join()?;
+    let out = frame_from_bitmap(&bmp);
+    let _ = frame.Close();
+    let _ = session.Close();
+    let _ = pool.Close();
+    wipe(&bmp);
+    let _ = bmp.Close();
+    out
+}
+
+/// OCR an in-memory frame and return lines with word boxes in frame pixels. Frames larger than
+/// the engine accepts are downscaled for OCR and the boxes scaled back.
+pub fn ocr_lines(frame: &Frame) -> Result<Vec<Line>, OcrError> {
+    on_mta(|| ocr_lines_inner(frame))
+}
+
+fn ocr_lines_inner(frame: &Frame) -> Result<Vec<Line>, OcrError> {
+    let engine = OcrEngine::TryCreateFromUserProfileLanguages().map_err(|_| OcrError::Unavailable)?;
+    let max = OcrEngine::MaxImageDimension().unwrap_or(0);
+    let small;
+    let (src, scale) = if frame.width.max(frame.height) > max && max > 0 {
+        small = crate::vlm::downscale(frame, max);
+        (&small, frame.width as f32 / small.width as f32)
+    } else {
+        (frame, 1.0)
+    };
+    // Copy the pixels straight into a new bitmap's locked buffer (no intermediate WinRT buffer
+    // that would need wiping separately).
+    let bmp = SoftwareBitmap::Create(BitmapPixelFormat::Bgra8, src.width as i32, src.height as i32)?;
+    {
+        let buf = bmp.LockBuffer(BitmapBufferAccessMode::Write)?;
+        let plane = buf.GetPlaneDescription(0)?;
+        let reference = buf.CreateReference()?;
+        let access = reference.cast::<IMemoryBufferByteAccess>()?;
+        let mut ptr = std::ptr::null_mut();
+        let mut len = 0u32;
+        // SAFETY: the buffer stays locked while `reference` lives; writes stay within `len`.
+        unsafe { access.GetBuffer(&mut ptr, &mut len)? };
+        let n = src.width as usize * 4;
+        for y in 0..src.height as usize {
+            let dst = plane.StartIndex as usize + y * plane.Stride as usize;
+            if dst + n > len as usize {
+                return Err(OcrError::Com(E_INVALIDARG.0));
+            }
+            // SAFETY: bounds checked against the locked buffer length above.
+            unsafe { std::ptr::copy_nonoverlapping(src.bgra[y * n..].as_ptr(), ptr.add(dst), n) };
+        }
+        let _ = reference.Close();
+        let _ = buf.Close();
+    }
+    let result = engine.RecognizeAsync(&bmp).and_then(|op| op.join());
+    wipe(&bmp);
+    let _ = bmp.Close();
+    let r = result?;
+    let mut out = Vec::new();
+    for line in r.Lines()? {
+        let mut l = Line::default();
+        for w in line.Words()? {
+            let b = w.BoundingRect()?;
+            l.words.push(Word {
+                text: Sensitive::new(w.Text()?.to_string()),
+                rect: Rect {
+                    x: (b.X * scale) as i32,
+                    y: (b.Y * scale) as i32,
+                    w: (b.Width * scale).ceil() as i32,
+                    h: (b.Height * scale).ceil() as i32,
+                },
+            });
+        }
+        out.push(l);
+    }
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// REAL: rung-3 frame capture and OCR-with-boxes on the taskbar (no secrets involved).
+    #[test]
+    #[ignore = "captures the taskbar"]
+    fn real_frame_capture_and_word_boxes() {
+        use windows::Win32::UI::WindowsAndMessaging::FindWindowW;
+        use windows::core::w;
+        let Ok(tray) = (unsafe { FindWindowW(w!("Shell_TrayWnd"), None) }) else {
+            return;
+        };
+        eprintln!("step: capture");
+        let f = capture_frame(tray).expect("frame");
+        eprintln!("step: captured {}x{}", f.width, f.height);
+        let lines = ocr_lines(&f).expect("ocr");
+        eprintln!("step: ocr lines {}", lines.len());
+        for l in &lines {
+            for w in &l.words {
+                assert!(w.rect.w > 0 && w.rect.h > 0 && w.rect.x >= 0 && (w.rect.x as u32) < f.width + 2);
+            }
+        }
+    }
 
     /// REAL: capture + OCR the taskbar within the deadline.
     #[test]

@@ -4,6 +4,7 @@
 //! - [`gate`], [`session`], [`simhash`], [`fallback`], [`ocr_guard`]: pure, platform-neutral parts.
 //! - [`uia`], [`ocr`] (Windows): rung 1 and rung 2 readers with wall-clock deadlines
 //!   ([`deadline`]); `platform_win` and `sink` wire them to the OS and the store.
+//! - [`vlm`]: rung 3 — masked frame → vision-language model → validated, redacted text.
 
 pub mod deadline;
 pub mod engine;
@@ -19,3 +20,4 @@ pub mod simhash;
 pub mod sink;
 #[cfg(windows)]
 pub mod uia;
+pub mod vlm;

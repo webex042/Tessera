@@ -10,6 +10,7 @@ publish.workspace = true
 thiserror.workspace = true
 tsr-core = { path = "../tsr-core" }
 tsr-guard = { path = "../tsr-guard" }
+tsr-infer = { path = "../tsr-infer" }
 tsr-store = { path = "../tsr-store" }
 rusqlite.workspace = true
 zeroize.workspace = true

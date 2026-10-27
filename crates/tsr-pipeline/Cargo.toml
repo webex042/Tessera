@@ -18,6 +18,7 @@ tracing.workspace = true
 tsr-core = { path = "../tsr-core" }
 tsr-guard = { path = "../tsr-guard" }
 tsr-infer = { path = "../tsr-infer" }
+tsr-retrieval = { path = "../tsr-retrieval" }
 tsr-store = { path = "../tsr-store" }
 unicode-normalization = "=0.1.25"
 

@@ -44,6 +44,19 @@ jobs:
         run: |
           cargo test -p tsr-retrieval --locked -- --ignored
           cargo test -p tsr-infer --test real_hardware --locked -- --ignored --test-threads=1 real_cpu_only_path real_probe_of_missing_executable_fails_cleanly
+          # Real llama-server (router mode, no model): inherited LLAMA_ARG_* must not reach it.
+          cargo test -p tsr-infer --test sidecar_env --locked -- --ignored --test-threads=1
+      - name: Stage 2 evaluations that need no model (deterministic)
+        # Injection corpus with a SIMULATED compromised model, oracle extraction (pipeline loss),
+        # retrieval with the SIMULATED embedder, backlog drain with assumed costs. Exit 1 = a
+        # threshold failed. Real-model evals run in nightly-evals.yml.
+        run: cargo run -p tsr-evals --bin tsr-eval --locked -- all
+      - name: Keep evaluation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: evals/results/
       - name: CPU-only machine selects CPU (GitHub runners have no GPU)
         shell: pwsh
         run: |
@@ -98,6 +111,12 @@ jobs:
         run: |
           python tools/gen_redaction_corpus.py
           git diff --exit-code -- tests/fixtures/redaction
+      - name: Injection corpus is reproducible from the generator
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python tools/gen_injection_corpus.py
+          git diff --exit-code -- tests/fixtures/injection
       - name: Harness self-tests (SIMULATED server, no model)
         run: python -m unittest discover -s bench/tests -v
 

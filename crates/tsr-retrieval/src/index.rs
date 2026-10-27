@@ -209,10 +209,18 @@ mod tests {
         ix.push(2, 10, 5, 9, &[0, 127, 0], 1.0 / 127.0).unwrap();
         ix.push(3, 11, 0, 4, &[0, 0, 127], 1.0 / 127.0).unwrap();
         let hits = ix.search(&[0.0, 1.0, 0.0], 5, &|_| true);
-        assert_eq!((hits[0].item_id, hits[0].chunk_id, hits[0].start_ch), (10, 2, 5), "best chunk per item");
+        assert_eq!(
+            (hits[0].item_id, hits[0].chunk_id, hits[0].start_ch),
+            (10, 2, 5),
+            "best chunk per item"
+        );
         assert_eq!(hits.len(), 2);
         assert!(ix.search(&[0.0, 1.0], 5, &|_| true).is_empty(), "wrong query size");
-        assert_eq!(ix.search(&[0.0, 1.0, 0.0], 5, &|i| i != 10).len(), 1, "filter applies before ranking");
+        assert_eq!(
+            ix.search(&[0.0, 1.0, 0.0], 5, &|i| i != 10).len(),
+            1,
+            "filter applies before ranking"
+        );
         ix.remove_item(10);
         assert_eq!(ix.len(), 1);
         ix.compact();

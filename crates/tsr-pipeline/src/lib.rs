@@ -8,6 +8,7 @@
 //! - [`people`] — conservative people resolution and the suppression list (§8.5).
 //! - [`extract`] — the extraction job: model call, validation, evidence, second redaction,
 //!   de-duplication and one atomic write (§8.2–8.3).
+//! - [`worker`] — durable `jobs` rows → scheduler jobs, and the runners that execute them.
 
 pub mod audit;
 pub mod dates;
@@ -17,3 +18,4 @@ pub mod guard;
 pub mod normalize;
 pub mod people;
 pub mod schema;
+pub mod worker;

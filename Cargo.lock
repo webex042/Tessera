@@ -4769,6 +4769,7 @@ dependencies = [
  "tracing",
  "tsr-core",
  "tsr-guard",
+ "tsr-infer",
  "tsr-store",
  "tsr-win",
  "windows",
@@ -4856,6 +4857,7 @@ dependencies = [
  "tsr-core",
  "tsr-guard",
  "tsr-infer",
+ "tsr-retrieval",
  "tsr-store",
  "unicode-normalization",
 ]

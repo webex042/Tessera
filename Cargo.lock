@@ -1887,6 +1887,7 @@ dependencies = [
  "defmt",
  "jiff-core",
  "jiff-static",
+ "jiff-tzdb",
  "jiff-tzdb-platform",
  "log",
  "portable-atomic",
@@ -4824,6 +4825,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "tsr-pipeline"
+version = "0.0.1"
+dependencies = [
+ "jiff",
+ "regex",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tracing",
+ "tsr-core",
+ "tsr-guard",
+ "tsr-infer",
+ "tsr-store",
+ "unicode-normalization",
+]
+
+[[package]]
 name = "tsr-retrieval"
 version = "0.0.1"
 dependencies = [
@@ -4840,6 +4860,7 @@ name = "tsr-store"
 version = "0.0.1"
 dependencies = [
  "rusqlite",
+ "sha2 0.11.1",
  "tempfile",
  "thiserror 2.0.21",
  "tracing",
@@ -4885,6 +4906,15 @@ name = "unicode-ident"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
+
+[[package]]
+name = "unicode-normalization"
+version = "0.1.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fd4f6878c9cb28d874b009da9e8d183b5abc80117c40bbd187a1fde336be6e8"
+dependencies = [
+ "tinyvec",
+]
 
 [[package]]
 name = "unicode-normalization-alignments"

@@ -240,3 +240,97 @@ pub fn delete_range(conn: &mut Connection, from_ms: i64, to_ms: i64, dry_run: bo
     }
     Ok(n as u64)
 }
+
+/// An item as read back for the pipeline. Text stays wrapped.
+#[derive(Debug)]
+pub struct ItemRow {
+    pub id: i64,
+    pub source_id: i64,
+    pub started_at: i64,
+    pub ended_at: i64,
+    pub acquisition: String,
+    pub text: Sensitive<String>,
+    pub summary: Option<Sensitive<String>>,
+    pub extraction: String,
+}
+
+pub fn get_item(conn: &Connection, id: i64) -> Result<Option<ItemRow>, StoreError> {
+    use rusqlite::OptionalExtension;
+    Ok(conn
+        .query_row(
+            "SELECT id, source_id, started_at, ended_at, acquisition, text, summary, extraction FROM items WHERE id = ?1",
+            [id],
+            |r| {
+                Ok(ItemRow {
+                    id: r.get(0)?,
+                    source_id: r.get(1)?,
+                    started_at: r.get(2)?,
+                    ended_at: r.get(3)?,
+                    acquisition: r.get(4)?,
+                    text: Sensitive::new(r.get(5)?),
+                    summary: r.get::<_, Option<String>>(6)?.map(Sensitive::new),
+                    extraction: r.get(7)?,
+                })
+            },
+        )
+        .optional()?)
+}
+
+#[derive(Debug)]
+pub struct SourceRow {
+    pub id: i64,
+    pub kind: String,
+    pub app_exe: String,
+    pub app_name: Option<String>,
+    pub window_title: Option<Sensitive<String>>,
+    pub url: Option<Sensitive<String>>,
+    pub file_path: Option<Sensitive<String>>,
+}
+
+pub fn get_source(conn: &Connection, id: i64) -> Result<Option<SourceRow>, StoreError> {
+    use rusqlite::OptionalExtension;
+    Ok(conn
+        .query_row(
+            "SELECT id, kind, app_exe, app_name, window_title, url, file_path FROM sources WHERE id = ?1",
+            [id],
+            |r| {
+                Ok(SourceRow {
+                    id: r.get(0)?,
+                    kind: r.get(1)?,
+                    app_exe: r.get(2)?,
+                    app_name: r.get(3)?,
+                    window_title: r.get::<_, Option<String>>(4)?.map(Sensitive::new),
+                    url: r.get::<_, Option<String>>(5)?.map(Sensitive::new),
+                    file_path: r.get::<_, Option<String>>(6)?.map(Sensitive::new),
+                })
+            },
+        )
+        .optional()?)
+}
+
+/// Record the extraction outcome (`done` also stores the summary; FTS follows via trigger).
+pub fn set_extraction(conn: &Connection, id: i64, state: &str, summary: Option<&str>) -> Result<(), StoreError> {
+    if !["pending", "done", "failed", "skipped"].contains(&state) {
+        return Err(StoreError::Invalid("extraction state"));
+    }
+    conn.execute(
+        "UPDATE items SET extraction = ?2, summary = COALESCE(?3, summary) WHERE id = ?1",
+        params![id, state, summary],
+    )?;
+    Ok(())
+}
+
+/// Delete items by id (user-confirmed, e.g. after "forget a person" listed them).
+pub fn delete_items(conn: &mut Connection, ids: &[i64]) -> Result<u64, StoreError> {
+    let tx = conn.transaction()?;
+    let mut n = 0;
+    for id in ids {
+        n += tx.execute("DELETE FROM items WHERE id = ?1", [id])? as u64;
+    }
+    tx.execute(
+        "DELETE FROM sources WHERE id NOT IN (SELECT DISTINCT source_id FROM items)",
+        [],
+    )?;
+    tx.commit()?;
+    Ok(n)
+}

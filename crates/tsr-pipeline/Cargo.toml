@@ -1,0 +1,25 @@
+[package]
+name = "tsr-pipeline"
+description = "Tessara understanding pipeline: extraction jobs, validation, evidence, dates, people, facts"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+# Bundled IANA time-zone database only: results never depend on the machine's own tz data.
+jiff = { version = "=0.2.38", default-features = false, features = ["std", "tzdb-bundle-always"] }
+regex.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tsr-core = { path = "../tsr-core" }
+tsr-guard = { path = "../tsr-guard" }
+tsr-infer = { path = "../tsr-infer" }
+tsr-store = { path = "../tsr-store" }
+unicode-normalization = "=0.1.25"
+
+[dev-dependencies]
+tempfile = "3"

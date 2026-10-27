@@ -9,6 +9,7 @@ members = [
     "crates/tsr-infer",
     "crates/tsr-capture",
     "crates/tsr-net",
+    "crates/tsr-pipeline",
     "src-tauri",
     "bench/uia-probe",
 ]

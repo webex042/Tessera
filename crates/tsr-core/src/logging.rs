@@ -41,6 +41,11 @@ pub const ALLOWED_MESSAGES: &[&str] = &[
     "sidecar restart budget exhausted",
     "sidecar unloaded",
     "job preempted",
+    // tsr-net
+    "model file downloaded",
+    // tsr-pipeline
+    "extraction finished",
+    "extraction failed",
     // tsr-capture
     "uia: window falls back to OCR",
     // tsr-store
@@ -85,6 +90,10 @@ pub const ALLOWED_FIELDS: &[&str] = &[
     "schema_version",
     "items",
     "bytes",
+    "stored",
+    "merged",
+    "rejected",
+    "needs_review",
 ];
 
 const MAX_STR: usize = 160;

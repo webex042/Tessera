@@ -55,6 +55,10 @@ impl SecretKind {
     }
 }
 
+/// Policy version stored with every redacted output (facts store `redact_ver`). Bump when the
+/// detectors change so stored rows can be re-checked.
+pub const REDACT_VER: &str = "v1";
+
 /// Which optional PII categories to redact. Secrets are always redacted.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Options {

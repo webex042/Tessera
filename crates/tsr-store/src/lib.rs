@@ -6,10 +6,14 @@
 //! Key management (DPAPI wrapping) follows.
 
 pub mod blocklist;
+pub mod chunks;
+pub mod facts;
 pub mod items;
+pub mod jobs;
 #[cfg(windows)]
 pub mod keystore;
 pub mod migrate;
+pub mod people;
 
 use std::path::Path;
 
@@ -45,6 +49,9 @@ pub enum StoreError {
     KeyFile(String),
     #[error("DPAPI error {0:#010x}")]
     Dpapi(i32),
+    /// A value the repository refuses before it reaches SQL (content-free reason).
+    #[error("invalid value: {0}")]
+    Invalid(&'static str),
 }
 
 impl From<rusqlite::Error> for StoreError {

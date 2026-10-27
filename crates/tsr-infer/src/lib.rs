@@ -28,6 +28,8 @@ pub mod gguf;
 pub mod hardware;
 pub mod http;
 pub mod metrics;
+pub mod models;
+pub mod onboard;
 pub mod prompts;
 pub mod runtime;
 pub mod sched;

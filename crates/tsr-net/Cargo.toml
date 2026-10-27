@@ -1,0 +1,21 @@
+[package]
+name = "tsr-net"
+description = "Tessara's only network-capable crate: user-approved, verified, resumable model downloads"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tsr-infer = { path = "../tsr-infer" }
+# TLS through the operating system (SChannel on Windows, using the Windows certificate store), no
+# gzip, no cookies, no JSON helpers. Proxies are disabled in code. See plan §15.4.
+ureq = { version = "=3.5.0", default-features = false, features = ["native-tls-no-default"] }
+
+[dev-dependencies]
+sha2.workspace = true
+tempfile = "3"

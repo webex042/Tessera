@@ -1,0 +1,40 @@
+{
+  "_comment": "Model files Tessara can use (plan §7.1, §10.1). Digests are the trust anchor for downloads (tsr-net) and for 'locate existing files' (tsr-infer::models): a file is usable only if its size and digest match this list. Values were read on 2026-10-27 from the Hugging Face API over TLS at the pinned revisions below (huggingface.co/api/models/<repo>/tree/<revision>): sha256 is the Git LFS object id; small non-LFS files only have a git blob SHA-1 (sha1 of 'blob <len>\\0' + content), recorded as git_blob_sha1. No model file was downloaded to record them. Re-record with the same API when changing a revision.",
+  "models": [
+    {
+      "id": "qwen3-vl-4b-instruct-q4_k_m",
+      "role": "llm",
+      "repo": "Qwen/Qwen3-VL-4B-Instruct-GGUF",
+      "revision": "1cd86afb9a95c410a6038ab3b40d8b578c892266",
+      "license": "Apache-2.0",
+      "files": [
+        { "path": "Qwen3VL-4B-Instruct-Q4_K_M.gguf", "size": 2497281664, "sha256": "66358cb18bb6b3b1b6675aa412c7a88ef01d228f481184d13668e5201c730a0a" }
+      ]
+    },
+    {
+      "id": "qwen3-vl-4b-instruct-mmproj-f16",
+      "role": "mmproj",
+      "repo": "Qwen/Qwen3-VL-4B-Instruct-GGUF",
+      "revision": "1cd86afb9a95c410a6038ab3b40d8b578c892266",
+      "license": "Apache-2.0",
+      "files": [
+        { "path": "mmproj-Qwen3VL-4B-Instruct-F16.gguf", "size": 836180256, "sha256": "256f3a43bd4205ffef48d6b92715e1e70b5b0e9aef06522584967513a9985331" }
+      ]
+    },
+    {
+      "id": "multilingual-e5-small-onnx",
+      "role": "embedder",
+      "repo": "intfloat/multilingual-e5-small",
+      "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+      "license": "MIT",
+      "dims": 384,
+      "files": [
+        { "path": "onnx/model.onnx", "size": 470268510, "sha256": "ca456c06b3a9505ddfd9131408916dd79290368331e7d76bb621f1cba6bc8665" },
+        { "path": "onnx/tokenizer.json", "size": 17082730, "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39" },
+        { "path": "onnx/config.json", "size": 653, "git_blob_sha1": "698e598c24523f3857295b11abec0703d19ea180" },
+        { "path": "onnx/special_tokens_map.json", "size": 167, "git_blob_sha1": "e0b1d18ecd0ae4ff1d47bd297d910c0cf83e504b" },
+        { "path": "onnx/tokenizer_config.json", "size": 443, "git_blob_sha1": "059214673d9d6d2ee319411e2ffec8c024b816d5" }
+      ]
+    }
+  ]
+}

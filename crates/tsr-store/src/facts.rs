@@ -280,9 +280,9 @@ pub fn set_status(conn: &Connection, id: i64, status: &str) -> Result<bool, Stor
     Ok(conn.execute("UPDATE facts SET status = ?2 WHERE id = ?1", params![id, status])? == 1)
 }
 
-/// Keyword search over fact text (hybrid search's fact channel).
+/// Any-term keyword search over fact text (hybrid search's fact channel).
 pub fn search(conn: &Connection, query: &str, limit: u32) -> Result<Vec<(i64, f64)>, StoreError> {
-    let Some(q) = crate::items::fts_query(query) else {
+    let Some(q) = crate::items::fts_query_any(query) else {
         return Ok(Vec::new());
     };
     let mut st = conn.prepare(

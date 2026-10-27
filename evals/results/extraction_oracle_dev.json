@@ -1,0 +1,63 @@
+{
+  "f1": 1.0,
+  "failed_items": 0,
+  "fn": 0,
+  "fp": 0,
+  "hallucinated": 0,
+  "hallucination_rate": 0.0,
+  "injection_failures": 0,
+  "invalid_rows": 0,
+  "items": 22,
+  "label": "oracle",
+  "needs_review": 1,
+  "pass_thresholds": true,
+  "per_kind": {
+    "action": {
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "p": 1.0,
+      "r": 1.0,
+      "tp": 26
+    },
+    "decision": {
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "p": 1.0,
+      "r": 1.0,
+      "tp": 4
+    },
+    "event": {
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "p": 1.0,
+      "r": 1.0,
+      "tp": 5
+    },
+    "note": {
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "p": 1.0,
+      "r": 1.0,
+      "tp": 7
+    },
+    "question": {
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "p": 1.0,
+      "r": 1.0,
+      "tp": 1
+    }
+  },
+  "precision": 1.0,
+  "recall": 1.0,
+  "rejected": {},
+  "simulated": true,
+  "split": "dev",
+  "stored": 43,
+  "tp": 43
+}

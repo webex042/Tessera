@@ -9,8 +9,12 @@ publish.workspace = true
 [dependencies]
 fastembed.workspace = true
 ort.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
+tsr-guard = { path = "../tsr-guard" }
+tsr-store = { path = "../tsr-store" }
 
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = ["Win32_Foundation", "Win32_System_LibraryLoader"] }

@@ -1,0 +1,64 @@
+{
+  "checks": [
+    {
+      "check": "suppressed person: 0 items with the forgotten name returned (filtered 7; 6 first-name-only mentions returned, known limitation)",
+      "pass": true
+    },
+    {
+      "check": "blocklist rule added later: no Slack item returned (filtered 8)",
+      "pass": true
+    },
+    {
+      "check": "redacted OTP value: no keyword match, no returned text contains it",
+      "pass": true
+    },
+    {
+      "check": "duplicate document: both copies ranked (2/2), each with its own item id",
+      "pass": true
+    },
+    {
+      "check": "no vector index: keyword results returned and diagnostics say vector unavailable",
+      "pass": true
+    },
+    {
+      "check": "same query, same ranking",
+      "pass": true
+    }
+  ],
+  "results": {
+    "keyword": {
+      "mrr": 0.8280677655677656,
+      "n": 52,
+      "ndcg10": 0.8564682573047355,
+      "p5": 0.21153846153846143,
+      "r10": 0.9615384615384616,
+      "r5": 0.9423076923076923
+    },
+    "keyword + vector (RRF)": {
+      "mrr": 0.8470543345543345,
+      "n": 52,
+      "ndcg10": 0.8704794719973244,
+      "p5": 0.1999999999999999,
+      "r10": 0.9807692307692307,
+      "r5": 0.9038461538461539
+    },
+    "keyword + vector + facts (RRF)": {
+      "mrr": 0.8446581196581197,
+      "n": 52,
+      "ndcg10": 0.8762323732633754,
+      "p5": 0.21153846153846143,
+      "r10": 1.0,
+      "r5": 0.9423076923076923
+    },
+    "vector (SIMULATED embedder)": {
+      "mrr": 0.6640720390720389,
+      "n": 52,
+      "ndcg10": 0.696891611492082,
+      "p5": 0.1769230769230769,
+      "r10": 0.8461538461538461,
+      "r5": 0.7884615384615384
+    }
+  },
+  "unanswerable_with_hits": 8,
+  "vector_embedder": "sim-hash-v1 (SIMULATED)"
+}

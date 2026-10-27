@@ -4785,6 +4785,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "tsr-evals"
+version = "0.0.1"
+dependencies = [
+ "jiff",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tsr-core",
+ "tsr-guard",
+ "tsr-infer",
+ "tsr-pipeline",
+ "tsr-retrieval",
+ "tsr-store",
+]
+
+[[package]]
 name = "tsr-guard"
 version = "0.0.1"
 dependencies = [
@@ -4849,9 +4866,13 @@ version = "0.0.1"
 dependencies = [
  "fastembed",
  "ort",
+ "rusqlite",
+ "serde",
  "sha2 0.11.1",
  "tempfile",
  "thiserror 2.0.21",
+ "tsr-guard",
+ "tsr-store",
  "windows",
 ]
 

@@ -12,6 +12,7 @@ members = [
     "crates/tsr-pipeline",
     "src-tauri",
     "bench/uia-probe",
+    "evals/runner",
 ]
 
 [workspace.package]

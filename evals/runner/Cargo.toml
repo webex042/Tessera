@@ -1,0 +1,24 @@
+[package]
+name = "tsr-evals"
+description = "Tessara evaluation runners (extraction, injection, search, backlog) over the real pipeline code"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "tsr-eval"
+path = "src/main.rs"
+
+[dependencies]
+jiff = { version = "=0.2.38", default-features = false, features = ["std", "tzdb-bundle-always"] }
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tempfile = "3"
+tsr-core = { path = "../../crates/tsr-core" }
+tsr-guard = { path = "../../crates/tsr-guard" }
+tsr-infer = { path = "../../crates/tsr-infer" }
+tsr-pipeline = { path = "../../crates/tsr-pipeline" }
+tsr-retrieval = { path = "../../crates/tsr-retrieval" }
+tsr-store = { path = "../../crates/tsr-store" }

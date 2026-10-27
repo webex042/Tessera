@@ -182,6 +182,116 @@ pub fn fts_query(user: &str) -> Option<String> {
     (!terms.is_empty()).then(|| terms.join(" "))
 }
 
+/// Function words dropped from natural-language queries (English and common Hinglish).
+const STOPWORDS: &[&str] = &[
+    "a",
+    "about",
+    "after",
+    "all",
+    "am",
+    "an",
+    "and",
+    "any",
+    "are",
+    "as",
+    "at",
+    "be",
+    "been",
+    "before",
+    "but",
+    "by",
+    "can",
+    "could",
+    "did",
+    "do",
+    "does",
+    "done",
+    "for",
+    "from",
+    "get",
+    "got",
+    "had",
+    "has",
+    "have",
+    "he",
+    "her",
+    "him",
+    "his",
+    "how",
+    "i",
+    "if",
+    "in",
+    "into",
+    "is",
+    "it",
+    "its",
+    "me",
+    "my",
+    "no",
+    "not",
+    "of",
+    "on",
+    "or",
+    "our",
+    "out",
+    "she",
+    "should",
+    "so",
+    "that",
+    "the",
+    "their",
+    "them",
+    "there",
+    "they",
+    "this",
+    "to",
+    "up",
+    "was",
+    "we",
+    "were",
+    "what",
+    "when",
+    "where",
+    "which",
+    "who",
+    "whom",
+    "why",
+    "will",
+    "with",
+    "would",
+    "you",
+    "your",
+    "yet",
+    "last",
+    "next",
+    "week",
+    "today",
+    "yesterday",
+    "tomorrow",
+    "kya",
+    "hai",
+    "ka",
+    "ki",
+    "ke",
+    "ko",
+    "se",
+    "mein",
+    "tha",
+    "thi",
+    "aur",
+];
+
+/// Natural-language query → any-term FTS5 query (stop words dropped, terms ORed, quoted).
+pub fn fts_query_any(user: &str) -> Option<String> {
+    let terms: Vec<String> = user
+        .split(|c: char| !(c.is_alphanumeric() || c == '_'))
+        .filter(|t| !t.is_empty() && !STOPWORDS.contains(&t.to_lowercase().as_str()))
+        .take(32)
+        .map(|t| format!("\"{t}\""))
+        .collect();
+    (!terms.is_empty()).then(|| terms.join(" OR "))
+}
+
 #[derive(Debug)]
 pub struct Hit {
     pub item_id: i64,
@@ -192,17 +302,29 @@ pub struct Hit {
     pub snippet: Sensitive<String>,
 }
 
-/// Keyword search over item text and summaries, best matches first.
+/// Keyword search over item text and summaries, best matches first (every word must occur).
 pub fn search(conn: &Connection, query: &str, limit: u32) -> Result<Vec<Hit>, StoreError> {
-    let Some(q) = fts_query(query) else {
-        return Ok(Vec::new());
-    };
+    match fts_query(query) {
+        Some(q) => search_fts(conn, &q, limit),
+        None => Ok(Vec::new()),
+    }
+}
+
+/// Like [`search`], but any content word may match (hybrid search's keyword channel).
+pub fn search_any(conn: &Connection, query: &str, limit: u32) -> Result<Vec<Hit>, StoreError> {
+    match fts_query_any(query) {
+        Some(q) => search_fts(conn, &q, limit),
+        None => Ok(Vec::new()),
+    }
+}
+
+fn search_fts(conn: &Connection, q: &str, limit: u32) -> Result<Vec<Hit>, StoreError> {
     let mut st = conn.prepare(
         "SELECT items.id, items.source_id, items.started_at, bm25(items_fts) AS score,
                 snippet(items_fts, 0, '[', ']', '…', 16)
          FROM items_fts JOIN items ON items.id = items_fts.rowid
          WHERE items_fts MATCH ?1
-         ORDER BY score LIMIT ?2",
+         ORDER BY score, items.id LIMIT ?2",
     )?;
     let hits = st
         .query_map(params![q, limit.min(200)], |r| {

@@ -37,7 +37,7 @@ use tsr_store::people::AliasKind;
 
 use crate::dates::{DateContext, DateOrder, resolve};
 use crate::evidence::{EvidenceError, locate, word_set_similarity};
-use crate::guard::{Class, classify, looks_injected};
+use crate::guard::{Class, classify, looks_injected, obligation};
 use crate::normalize::{char_slice, is_word_char, normalize, words};
 use crate::people::{PersonRef, Resolver, Suppression, normalize_alias};
 use crate::schema::{self, RawFact, SCHEMA_VER};
@@ -346,11 +346,16 @@ pub fn run(
     }
 
     jobs::set_stage(conn, job, "redact", now)?;
+    let item_injected = text.lines().any(looks_injected);
     let summary = summary.and_then(|s| {
         let r = redact(&s, ctx.redact);
         rep.redactions += r.total();
-        if looks_injected(&r.text) {
+        if looks_injected(&r.text) || item_injected {
             rep.reject("summary_injection");
+            None
+        } else if obligation(&r.text) {
+            // Summaries describe; an instruction in one would read as a task for the user.
+            rep.reject("summary_obligation");
             None
         } else if sup.mentions(&r.text) {
             rep.reject("summary_suppressed");

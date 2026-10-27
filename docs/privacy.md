@@ -1,36 +1,59 @@
 # Privacy: what Tessara keeps, sends and cannot control
 
-> Draft started in Stage 0. Plan §15 is the design; this page says what is **true of the code
-> today**. Nothing here claims a guarantee that has not been tested. Final review: Stage 7.
+Plain-language inventory of the code as of 2026-10-28 (Stage 7 review). Every statement points
+to the test or measurement behind it. Where something is not yet tested, it says so.
 
-## Current state (2026-10-26)
+## What Tessara keeps (all on your PC, in `%LOCALAPPDATA%\Tessara`)
 
-Tessara does not capture anything yet. What exists is a pill window, an encrypted-store module, an
-embedding-runtime loader and test tooling.
+| Data | Where | Protection | Evidence |
+|---|---|---|---|
+| Text read from windows you use (after redaction), with app name, window title, time | `tessara.db` | whole-database encryption (SQLCipher, AES-256); key in `key.bin`, wrapped with your Windows login (DPAPI) | store tests; canary scan: no plaintext on disk |
+| Facts (tasks, commitments, decisions, questions…) with the quote they came from | `tessara.db` | same | — |
+| Hour/day/week/month summaries, morning briefs | `tessara.db` | same | — |
+| Content-free logs and audit events (counts, codes, lengths — never text) | `tessara.db`, `logs\` | no content to protect | tracing allowlist test; diagnostics privacy test |
+| Model files you approved | `models\` | checked against pinned SHA-256 digests | `tsr-models locate --verify`; start-up digest check |
+| Diagnostics you choose to save | `diagnostics\` | content-free (counts, states, versions) | `src-tauri/tests/diagnostics.rs` |
 
-## Network
+**Never kept:** screenshots, audio, keystrokes, clipboard contents, drafts (only "inserted / copied
+/ discarded" with a length). Screen images exist in memory only, for reading text.
 
-| Component | Behaviour today | Evidence |
+**Removed before storage or model input:** passwords and password fields, OTPs, card numbers,
+Aadhaar (incl. VID), PAN, passport and voter ID numbers, bank account numbers and IFSC, UPI IDs,
+API keys, tokens and private keys (355 test cases, all redacted; 0.4 % false positives).
+
+**Never captured:** windows on your blocklist (password managers, banking and login pages by
+default), private/incognito browser windows (and any browser window whose private state can't be
+read), and everything while capture is paused. Capture starts paused.
+
+## What Tessara sends
+
+| Component | Behaviour | Evidence |
 |---|---|---|
-| `tessara.exe` (our Rust code) | no outbound connections observed | `tools/netmon.ps1`, 3 runs |
-| Rust dependencies | no network-capable crate in the default build | `tools/check_network_deps.py`, `cargo deny` |
-| WebView2 (UI) | SmartScreen, proxy auto-discovery and Chromium background networking switched off; **one HTTPS connection to a Microsoft address about a minute after start is still made by the WebView2 runtime** and is not yet identified | `docs/stage0/network-test.md`, ADR-0002 |
-| WebView2 runtime updater (`msedgeupdate`) | a Windows system service shared by all apps that use WebView2; Tessara does not start, control or disable it | — |
-| llama-server (sidecar) | not run yet; will start loopback-only with `--offline` and a cleared environment | plan §7.1 |
-| Optional updater | compiled out of every build; blocked by dependency advisories | ADR-0003 |
+| Tessara's own code | no outbound connections; the model runs as a local `llama-server` on 127.0.0.1 with a port-owner check | `tools/netmon.ps1` (see `docs/stage7/verification.md` §D) |
+| Rust dependencies | no network-capable crate in the build except `tsr-net` (model downloads you approve) | `tools/check_network_deps.py`, `cargo deny` |
+| WebView2 (the UI engine) | background networking, SmartScreen and proxy discovery switched off; **Stage 0 found one HTTPS connection to a Microsoft address per run** from the WebView2 runtime (ADR-0002); still open | `docs/stage0/network-test.md` |
+| WebView2 runtime updater (`msedgeupdate`) | a Windows service shared by every app that uses WebView2; Tessara does not control it | — |
+| Updater | compiled out of every build (dependency advisories, ADR-0003) | `cargo deny --features tessara/updater` |
 
-Until ADR-0002 is resolved, the statement "nothing leaves your PC" is **not yet true** for the UI
-process and must not be made in user-facing text.
+Until ADR-0002 is closed, "nothing leaves your PC" is **not** claimed for the UI process.
 
-## Disk
+## What Tessara does with your screen and keyboard
 
-- The store module encrypts the whole database (SQLCipher, AES-256 via OpenSSL); tests confirm no
-  plaintext header and no test canary in the database or its WAL file.
-- Test tooling writes nothing personal into the repository: network logs record local ports only,
-  and Office fixtures are generated in `%TEMP%` because Office stamps the signed-in user's name
-  into files it saves.
+- The notch is hidden from screenshots and screen sharing (verified on pixels with Windows
+  Graphics Capture and GDI; not yet checked inside Teams/Zoom/OBS themselves).
+- Drafts are pasted only after you press Insert, only into the field that was focused when you
+  asked, and never into a password field; Tessara never presses Enter or Send. The clipboard is
+  restored afterwards and the draft is marked to stay out of clipboard history and cloud sync
+  (restore verified; history exclusion untested here because clipboard history is off).
+- Nothing is marked done or deleted from your open loops without your confirmation.
 
-## Outside the app's control
+## Outside Tessara's control
 
-Windows pagefile and hibernation file, malware running as the same user, and the system-wide
-WebView2 runtime updater. See plan §15.2.
+The Windows pagefile and hibernation file (memory may be written there by Windows; not scanned:
+needs elevation), malware running as your user, physical access to an unlocked PC, and the
+system-wide WebView2 updater. See plan §15.2.
+
+## Not yet tested
+
+The 24-hour network and canary runs (S1, S2) — shorter runs passed; the named apps for capture
+exclusion and draft insertion; clipboard history and cloud-clipboard exclusion.

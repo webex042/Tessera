@@ -2,6 +2,29 @@
 
 Newest first. One entry per working session: stage, what changed, what was run and what it showed.
 
+## 2026-10-27/28 — Stages 4–7 built; real-model evals; Stage 7 audit; Stages 8–10 scoped
+
+Reports: `docs/stage{4,5,6,7}/verification.md`; decisions ADR-0008, ADR-0009; status `docs/ledger.md`.
+
+| Command | Result |
+|---|---|
+| `tsr-eval rollup --model DIR` | PASS: 11/11 active hours, 15/15 periods by the model, 0 invalid ids |
+| `tsr-eval draft --model DIR` | 0 unflagged claims (PASS); first text p50 5.9 s, complete 16.4 s (FAIL, iGPU); 17/20 valid |
+| `tsr-eval ask --model DIR` (ask/v1) | 15 % correct (28 % by verified content), 0 fabricated — FAIL; ask/v2 written |
+| `tsr-eval injection --model DIR` (74) | 66 → 70 after guard fixes; all adversarial pass |
+| `tsr-eval injection` (152, SIMULATED) | 126 → 140; held-out half 25 → 27 / 39 |
+| redaction corpus (355) | 48 leaks on new Indian-ID cases → detectors added → 0 leaks, FP 0.41 % |
+| `tools/canary-scan.ps1 -Seconds 60` | 0 plaintext hits, control found |
+| `tools/netmon.ps1 -Minutes 10` | Tessara 0 connections; WebView2 1 HTTPS to Microsoft (ADR-0002) |
+| `cargo deny --offline check` | bans, licences, sources, advisories ok; updater feature still fails (ADR-0003) |
+
+**Bugs found by tests and runs:** the clipboard was never restored after a draft insert (sequence
+number read while open) — the dev machine's clipboard content was lost in that test run; a
+completion for one person proposed another person's loop as done; dedupe swallowed completion
+evidence; the real model copied an injected request into a draft; the date resolver panicked on
+huge offsets; redaction was not idempotent; model files were not digest-checked at start; the
+clipboard save refused HTML/RTF clipboards; text-only clipboard history check skipped (history off).
+
 ## 2026-10-27 — Stage 3: notch UI; first real-model extraction run
 
 Full report: `docs/stage3/verification.md`; decisions: ADR-0007; status of every task:

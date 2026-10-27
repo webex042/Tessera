@@ -17,7 +17,7 @@ use tsr_core::Sensitive;
 use tsr_guard::claims;
 use tsr_infer::cancel::CancelToken;
 use tsr_infer::client::{ChatModel, ChatRequest, ClientError};
-use tsr_infer::prompts::{ASK_V1, escape_content, render};
+use tsr_infer::prompts::{ASK_V2, escape_content, render};
 
 pub const MAX_SNIPPETS: usize = 8;
 /// ≈ 1 500 tokens of snippets in total (plan §10.3 step 5).
@@ -122,7 +122,7 @@ pub fn request(
     weekday: &str,
     label: &dyn Fn(i64) -> String,
 ) -> ChatRequest {
-    let p = &*ASK_V1;
+    let p = &*ASK_V2;
     let lines = snippets
         .iter()
         .map(|s| {

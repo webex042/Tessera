@@ -14,10 +14,10 @@ Effort is in full-time-equivalent weeks for one developer; double it for part-ti
 | 4 | Rollups, morning brief, open loops | 3 wk | 2, 3 | **In progress** — built; replay, drill-down, no-auto-close and brief timing verified; unlock trigger and real-model rollups pending ([verification](docs/stage4/verification.md)) |
 | 5 | Draft assistant | 3 wk | 2, 3 | **In progress** — built; REAL insertion, password/changed-target refusal and clipboard restore verified; named apps, Win+V history (off here) and real-model timings pending ([verification](docs/stage5/verification.md)) |
 | 6 | Ask with sources | 2 wk | 2 | **In progress** — built; SIMULATED eval passes (88 % correct, 100 % verified, 0 fabricated); real-model eval pending ([verification](docs/stage6/verification.md)) |
-| 7 | Security hardening and guardrail audit | 4 wk | 4, 5, 6 | Not started |
-| 8 | Meeting notes and live translation | ~5 wk | 7 | Post-MVP |
-| 9 | Closed beta | ~4 wk | 7 | Post-MVP |
-| 10 | Release engineering | ~3 wk | 9 | Post-MVP |
+| 7 | Security hardening and guardrail audit | 4 wk | 4, 5, 6 | **In progress** — corpora (152 injection / 355 secrets), robustness tests, canary scan, deny/licences, Tauri review, model integrity, privacy/security docs done; S1 fails on the WebView2 connection, S3/S4 fail with the 4B model on this iGPU; 24 h runs need the owner ([verification](docs/stage7/verification.md)) |
+| 8 | Meeting notes and live translation | ~5 wk | 7 | **Blocked** — MVP gate not met; model downloads not approved (ADR-0009) |
+| 9 | Closed beta | ~4 wk | 7 | Post-MVP — content-free diagnostics bundle built; beta needs testers |
+| 10 | Release engineering | ~3 wk | 9 | Post-MVP — NSIS config, SBOM generator, signing guide; installer build and signing need the owner ([release](docs/release/README.md)) |
 
 Stage 3 can run in parallel with Stage 2 if there are two contributors.
 

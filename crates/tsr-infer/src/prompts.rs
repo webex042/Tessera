@@ -48,6 +48,15 @@ pub static ASK_V1: LazyLock<Prompt> = LazyLock::new(|| Prompt {
     schema: Some(serde_json::from_str(include_str!("../prompts/ask/v1/schema.json")).expect("ask schema")),
 });
 
+/// v2 (Stage 6, real-model eval): v1 left "insufficient" undefined and the 4B model set it
+/// on 57 of 60 answers; v2 defines it and asks for exact copies of checkable details.
+pub static ASK_V2: LazyLock<Prompt> = LazyLock::new(|| Prompt {
+    ver: "ask/v2",
+    system: include_str!("../prompts/ask/v2/system.txt"),
+    user: include_str!("../prompts/ask/v2/user.txt"),
+    schema: Some(serde_json::from_str(include_str!("../prompts/ask/v2/schema.json")).expect("ask schema")),
+});
+
 pub static VLM_V1: LazyLock<Prompt> = LazyLock::new(|| Prompt {
     ver: "vlm/v1",
     system: include_str!("../prompts/vlm/v1/system.txt"),

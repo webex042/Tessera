@@ -1,0 +1,5 @@
+Today is {local_date} ({weekday}).
+<memory>
+{snippets}
+</memory>
+Question: {question}

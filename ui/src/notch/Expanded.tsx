@@ -1,12 +1,13 @@
 // Expanded panel (plan §13.2–13.4): tabs Today, Open loops, Search, Timeline (day). Keyboard:
 // Left/Right/Home/End move between tabs, Esc closes. Data comes from Rust; every view has
 // loading, empty and error states.
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { Status } from "../ipc/types";
 import { TodayView } from "./views/TodayView";
 import { OpenLoopsView } from "./views/OpenLoopsView";
 import { SearchView } from "./views/SearchView";
 import { AskView } from "./views/AskView";
+import { DiagnosticsView } from "./views/DiagnosticsView";
 import { TimelineView } from "./views/TimelineView";
 
 export type Tab = "today" | "ask" | "loops" | "search" | "timeline";
@@ -50,6 +51,7 @@ export function Expanded(props: {
     tabRefs.current[next.id]?.focus();
   };
 
+  const [diag, setDiag] = useState(false);
   let view: ReactNode;
   if (tab === "today") view = <TodayView />;
   else if (tab === "loops") view = <OpenLoopsView />;
@@ -92,12 +94,15 @@ export function Expanded(props: {
         </button>
       </div>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
-        {view}
+        {diag ? <DiagnosticsView onBack={() => setDiag(false)} /> : view}
       </div>
       {status && (
         <div className="notch-muted border-t border-[var(--notch-line)] px-3 py-1 text-[11px]">
           Model: {status.model.state.replace(/_/g, " ")}
           {status.model.backend ? ` (${status.model.backend})` : ""} · queued {status.queue[1] + status.queue[2]}
+          <button type="button" className="ml-2 underline" onClick={() => setDiag(true)}>
+            Diagnostics
+          </button>
         </div>
       )}
     </div>

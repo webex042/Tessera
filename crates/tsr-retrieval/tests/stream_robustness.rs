@@ -17,11 +17,26 @@ impl Rng {
     }
 }
 
-const PIECES: &[&str] = &["Ravi", " asked", " {for}", " [the]", " \"sheet\"", " \\ back", " é", " 🙂", ".", ",", " ]}", " {[", "\n", "\t"];
+const PIECES: &[&str] = &[
+    "Ravi",
+    " asked",
+    " {for}",
+    " [the]",
+    " \"sheet\"",
+    " \\ back",
+    " é",
+    " 🙂",
+    ".",
+    ",",
+    " ]}",
+    " {[",
+    "\n",
+    "\t",
+];
 
 #[test]
 fn chunking_never_changes_the_streamed_sentences() {
-    let mut r = Rng(0xa5c_2026_1027);
+    let mut r = Rng(0x0a5c_2026_1027);
     for _ in 0..3_000 {
         let n = r.below(5);
         let sentences: Vec<(String, Vec<i64>)> = (0..n)

@@ -117,6 +117,19 @@ fn job(key: &str, p: Priority) -> JobSpec {
     }
 }
 
+/// Collect completions until `n` jobs have *finished* (Done, Failed or Cancelled). A preemption
+/// is reported too but the job runs again, so it does not count towards `n`.
+fn wait_for_final(rx: &Receiver<Completion>, n: usize, secs: u64) -> Vec<Completion> {
+    let end = Instant::now() + Duration::from_secs(secs);
+    let mut out: Vec<Completion> = Vec::new();
+    while out.iter().filter(|c| c.outcome != Outcome::Preempted).count() < n && Instant::now() < end {
+        if let Ok(c) = rx.recv_timeout(Duration::from_millis(50)) {
+            out.push(c);
+        }
+    }
+    out
+}
+
 fn wait_for(rx: &Receiver<Completion>, n: usize, secs: u64) -> Vec<Completion> {
     let end = Instant::now() + Duration::from_secs(secs);
     let mut out = Vec::new();
@@ -294,15 +307,23 @@ fn request_arriving_during_unload_is_served() {
     let c = wait_for(&rx, 12, 30);
     assert_eq!(c.len(), 12);
     assert!(c.iter().all(|c| c.outcome == Outcome::Done));
+    // On a loaded machine the sidecar start can use up the pauses above, so no unload may have
+    // happened yet. The idle policy guarantees one soon: wait for it, then a request that
+    // arrives after the unload must still be served (found flaky under load, 2026-10-28).
+    let deadline = std::time::Instant::now() + Duration::from_secs(5);
+    while r.snapshot().sidecar.unloads == 0 && std::time::Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(50));
+    }
     let s = r.snapshot();
     println!(
         "SIMULATED unload race: starts={} unloads={}",
         s.sidecar.starts, s.sidecar.unloads
     );
-    assert!(
-        s.sidecar.unloads >= 1,
-        "the timing should have produced at least one unload"
-    );
+    assert!(s.sidecar.unloads >= 1, "the idle policy unloads the model");
+    r.submit(job("after-unload", Priority::P1)).unwrap();
+    let c = wait_for(&rx, 1, 30);
+    assert_eq!(c.len(), 1);
+    assert_eq!(c[0].outcome, Outcome::Done, "a request after an unload is served");
     r.shutdown();
 }
 
@@ -326,7 +347,9 @@ fn concurrent_submissions_complete_exactly_once_one_at_a_time() {
     for h in hs {
         h.join().unwrap();
     }
-    let c = wait_for(&rx, 24, 60);
+    // Preemptions are allowed here (P0 jobs arrive while P1/P2 run); each job must still finish
+    // as Done exactly once.
+    let c = wait_for_final(&rx, 24, 60);
     let done: Vec<_> = c
         .iter()
         .filter(|c| c.outcome == Outcome::Done)

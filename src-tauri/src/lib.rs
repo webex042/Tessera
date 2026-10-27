@@ -9,6 +9,7 @@
 //! `--stage0-report` keeps the Stage 0 WebView2 report mode.
 
 pub mod ask;
+pub mod diagnostics;
 pub mod drafts;
 pub mod services;
 pub mod views;
@@ -156,6 +157,23 @@ fn set_bulk_status(
 #[tauri::command]
 fn ask(state: State<'_, AppState>, question: String) -> Result<ask::AskStart, ApiError> {
     svc(&state)?.asks.start(&question, now_ms(), &local_tz())
+}
+
+/// The diagnostics bundle, for the user to read before deciding to share it.
+#[tauri::command]
+fn get_diagnostics(state: State<'_, AppState>) -> Result<serde_json::Value, ApiError> {
+    Ok(svc(&state)?.diagnostics(state.start_error.as_deref()))
+}
+
+/// Save the bundle the user just reviewed into the data folder; returns the file name.
+#[tauri::command]
+fn save_diagnostics(state: State<'_, AppState>) -> Result<String, ApiError> {
+    let v = svc(&state)?.diagnostics(state.start_error.as_deref());
+    let dir = services::data_dir().join("diagnostics");
+    std::fs::create_dir_all(&dir).map_err(|_| views::E_STORE)?;
+    let name = format!("diagnostics-{}.json", now_ms());
+    std::fs::write(dir.join(&name), serde_json::to_vec_pretty(&v).unwrap_or_default()).map_err(|_| views::E_STORE)?;
+    Ok(name)
 }
 
 /// Draft step 2: generate with the user's optional instruction (streams `draft_chunk`, then
@@ -556,6 +574,8 @@ pub fn run(cleared_env_vars: Vec<String>) {
             search,
             get_item,
             ask,
+            get_diagnostics,
+            save_diagnostics,
             draft_generate,
             draft_insert,
             draft_copy,

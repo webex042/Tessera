@@ -629,3 +629,109 @@ mod tests {
         assert_eq!(verify_file(&p, &f, &c, &mut |_| {}), Err(VerifyError::Cancelled));
     }
 }
+
+/// Digests verified once are recorded here and trusted while each file's size and modification
+/// time are unchanged (start-up cannot hash 3 GB every time). Any change re-verifies. Same-user
+/// tampering that also restores the timestamp is out of scope (plan §15.2).
+pub const STAMP: &str = ".tessara-verified.json";
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, serde::Deserialize)]
+struct StampFile {
+    path: String,
+    size: u64,
+    mtime_ns: u128,
+}
+
+fn stamp_of(dir: &Path, r: &DirReport) -> Vec<StampFile> {
+    let mut v: Vec<StampFile> = r
+        .entries
+        .iter()
+        .flat_map(|e| e.files.iter())
+        .filter(|f| matches!(f.status, FileStatus::SizeOk | FileStatus::Ok { .. }))
+        .filter_map(|f| {
+            let m = std::fs::metadata(dir.join(&f.path)).ok()?;
+            let mtime_ns = m
+                .modified()
+                .ok()?
+                .duration_since(std::time::UNIX_EPOCH)
+                .ok()?
+                .as_nanos();
+            Some(StampFile {
+                path: f.path.clone(),
+                size: m.len(),
+                mtime_ns,
+            })
+        })
+        .collect();
+    v.sort_by(|a, b| a.path.cmp(&b.path));
+    v
+}
+
+/// Like [`inspect_dir`] with digests, but reuses the stamp when nothing changed since the last
+/// full check; files then report `Ok { digest_checked: true }`.
+pub fn inspect_dir_stamped(dir: &Path, manifest: &[ModelEntry], cancel: &CancelToken) -> DirReport {
+    let mut quick = inspect_dir(dir, manifest, false, cancel, &mut |_, _| {});
+    quick.unknown_files.retain(|f| f != STAMP);
+    let now = stamp_of(dir, &quick);
+    let recorded: Option<Vec<StampFile>> = std::fs::read(dir.join(STAMP))
+        .ok()
+        .and_then(|b| serde_json::from_slice(&b).ok());
+    if !now.is_empty() && recorded.as_ref() == Some(&now) {
+        for f in quick.entries.iter_mut().flat_map(|e| e.files.iter_mut()) {
+            if f.status == FileStatus::SizeOk {
+                f.status = FileStatus::Ok { digest_checked: true };
+            }
+        }
+        return quick;
+    }
+    let mut full = inspect_dir(dir, manifest, true, cancel, &mut |_, _| {});
+    full.unknown_files.retain(|f| f != STAMP);
+    let verified = stamp_of(dir, &full);
+    if !verified.is_empty()
+        && let Ok(b) = serde_json::to_vec(&verified)
+    {
+        let _ = std::fs::write(dir.join(STAMP), b);
+    }
+    full
+}
+
+#[cfg(test)]
+mod stamp_tests {
+    use super::*;
+
+    #[test]
+    fn digests_are_rechecked_after_any_change_and_trusted_otherwise() {
+        let d = tempfile::tempdir().unwrap();
+        let body = b"synthetic tokenizer {}";
+        std::fs::write(d.path().join("tokenizer.json"), body).unwrap();
+        let digest: String = Sha256::digest(body).iter().map(|b| format!("{b:02x}")).collect();
+        let lock = format!(
+            r#"{{"models":[{{"id":"t","role":"embedder","repo":"a/b","revision":"{}","license":"MIT","files":[{{"path":"tokenizer.json","size":{},"sha256":"{digest}"}}]}}]}}"#,
+            "0".repeat(40),
+            body.len()
+        );
+        let m = parse_manifest(&lock).unwrap();
+        let ok = |r: &DirReport| {
+            r.entries[0]
+                .files
+                .iter()
+                .all(|f| f.status == FileStatus::Ok { digest_checked: true })
+        };
+        let c = CancelToken::new();
+        assert!(ok(&inspect_dir_stamped(d.path(), &m, &c)), "first use: full check");
+        assert!(d.path().join(STAMP).exists());
+        assert!(
+            ok(&inspect_dir_stamped(d.path(), &m, &c)),
+            "unchanged: trusted via stamp"
+        );
+        // Same size, different bytes, newer mtime: must be re-hashed and rejected.
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        std::fs::write(d.path().join("tokenizer.json"), b"synthetic tokenizer {!").unwrap();
+        let r = inspect_dir_stamped(d.path(), &m, &c);
+        assert!(matches!(r.entries[0].files[0].status, FileStatus::Rejected(_)), "{r:?}");
+        assert!(
+            r.unknown_files.is_empty(),
+            "the stamp is not reported as an unknown file"
+        );
+    }
+}

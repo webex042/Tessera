@@ -1,0 +1,19 @@
+﻿{
+    "measured_at":  "2026-10-28T00:38:21",
+    "run_seconds":  60,
+    "files_scanned":  285,
+    "bytes_scanned":  29872101,
+    "files_skipped":  8,
+    "roots":  [
+                  "data folder",
+                  "WebView2 profile",
+                  "%TEMP% (changed during run)",
+                  "CrashDumps (changed during run)",
+                  "WER (changed during run)"
+              ],
+    "control_found":  true,
+    "plaintext_hits":  [
+
+                       ],
+    "pass":  true
+}

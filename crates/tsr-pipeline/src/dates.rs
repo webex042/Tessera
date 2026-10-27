@@ -19,9 +19,9 @@
 //! and a week later (preferred: a week later, per the plan). A day and month without a year take
 //! the nearest such date (ties prefer the future). A time without a date is its next occurrence.
 
+use jiff::Zoned;
 use jiff::civil::{Date, DateTime, Weekday};
 use jiff::tz::{AmbiguousOffset, Offset, TimeZone};
-use jiff::Zoned;
 use serde::Serialize;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -950,7 +950,9 @@ pub fn resolve(phrase: &str, ctx: &DateContext) -> Resolution {
     // Minute/hour offsets are instants, independent of the calendar.
     if let Some((n, u @ (Unit::Minute | Unit::Hour))) = p.offset {
         let z = match u {
-            Unit::Minute => jiff::Span::new().try_minutes(n).and_then(|sp| reference.checked_add(sp)),
+            Unit::Minute => jiff::Span::new()
+                .try_minutes(n)
+                .and_then(|sp| reference.checked_add(sp)),
             _ => jiff::Span::new().try_hours(n).and_then(|sp| reference.checked_add(sp)),
         };
         return match z {
@@ -1018,7 +1020,10 @@ pub fn resolve(phrase: &str, ctx: &DateContext) -> Resolution {
         let d = match u {
             Unit::Day => add_days(today, n),
             Unit::Week => n.checked_mul(7).and_then(|d| add_days(today, d)),
-            _ => jiff::Span::new().try_months(n).ok().and_then(|sp| today.checked_add(sp).ok()),
+            _ => jiff::Span::new()
+                .try_months(n)
+                .ok()
+                .and_then(|sp| today.checked_add(sp).ok()),
         };
         dates.clear();
         dates.extend(d);
@@ -1098,12 +1103,18 @@ pub fn resolve(phrase: &str, ctx: &DateContext) -> Resolution {
                 dates.extend(add_days(today, ahead));
             }
             Span2::EndOfMonth(n) => {
-                if let Ok(m) = jiff::Span::new().try_months(n).and_then(|sp| today.first_of_month().checked_add(sp)) {
+                if let Ok(m) = jiff::Span::new()
+                    .try_months(n)
+                    .and_then(|sp| today.first_of_month().checked_add(sp))
+                {
                     dates.push(m.last_of_month());
                 }
             }
             Span2::Month(n) => {
-                if let Ok(m) = jiff::Span::new().try_months(n).and_then(|sp| today.first_of_month().checked_add(sp)) {
+                if let Ok(m) = jiff::Span::new()
+                    .try_months(n)
+                    .and_then(|sp| today.first_of_month().checked_add(sp))
+                {
                     dates.push(m.last_of_month());
                     precision = Precision::Month;
                 }

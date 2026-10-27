@@ -80,7 +80,15 @@ pub fn run(dest: &Path, canary: Option<&str>) -> Result<String, String> {
         }
         let at = jiff::Timestamp::now().as_millisecond() - 5 * 60_000;
         let text = format!("Synthetic canary note {tok}. Please send the {tok} report by Friday.");
-        let id = add_item(&c, "Notepad", &format!("{tok} notes"), "app:notepad.exe", at, &text, Acquisition::Uia);
+        let id = add_item(
+            &c,
+            "Notepad",
+            &format!("{tok} notes"),
+            "app:notepad.exe",
+            at,
+            &text,
+            Acquisition::Uia,
+        );
         let fact = json!({"kind": "task", "text": format!("Send the {tok} report"), "owner": "me", "counterparty": null,
                           "due_text": "by Friday", "evidence": format!("Please send the {tok} report by Friday"),
                           "confidence": "high"});

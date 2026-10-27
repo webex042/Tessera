@@ -102,20 +102,16 @@ fn blocklist(conn: &mut rusqlite::Connection) -> Blocklist {
 
 /// Build launch candidates for verified model files in `models`, best backend first.
 fn candidates(models: &Path, third_party: &Path) -> Option<(Vec<tsr_infer::sidecar::SidecarSpec>, Vec<String>)> {
-    use tsr_infer::models::{FileStatus, MANIFEST, inspect_dir};
-    let r = inspect_dir(
-        models,
-        &MANIFEST,
-        false,
-        &tsr_infer::cancel::CancelToken::new(),
-        &mut |_, _| {},
-    );
+    use tsr_infer::models::{FileStatus, MANIFEST, inspect_dir_stamped};
+    // Digests against tools/models.lock: fully on first use or after any change, then trusted
+    // through the stamp while size and modification time are unchanged (Stage 7, ADR-0009).
+    let r = inspect_dir_stamped(models, &MANIFEST, &tsr_infer::cancel::CancelToken::new());
     let ok = |id: &str| {
         r.entries.iter().any(|e| {
             e.id == id
                 && e.files
                     .iter()
-                    .all(|f| matches!(f.status, FileStatus::SizeOk | FileStatus::Ok { .. }))
+                    .all(|f| matches!(f.status, FileStatus::Ok { digest_checked: true }))
         })
     };
     if !ok("qwen3-vl-4b-instruct-q4_k_m") {
@@ -364,6 +360,16 @@ impl Services {
     }
 
     /// Flush sessions, stop capture, stop the sidecar (plan §4.3 step 4).
+    /// Content-free diagnostics bundle (Stage 9); nothing is sent anywhere.
+    pub fn diagnostics(&self, start_error: Option<&str>) -> serde_json::Value {
+        let c = self.brief_conn.lock().unwrap_or_else(|p| p.into_inner());
+        let rt = self
+            .runtime
+            .as_ref()
+            .and_then(|r| serde_json::to_value(r.snapshot()).ok());
+        crate::diagnostics::bundle(&c, &self.status(), rt, start_error)
+    }
+
     /// Make today's brief if it is due (first unlock or start after 05:00 on a new day).
     /// Returns it with how long it took (ms).
     pub fn brief_if_due(&self) -> Option<(tsr_pipeline::brief::Brief, u128)> {

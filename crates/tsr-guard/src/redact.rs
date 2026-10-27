@@ -155,7 +155,9 @@ static PASSPORT: LazyLock<Regex> = LazyLock::new(|| {
     re(r"(?i)\b(?:passport|pp)\b[^\S\n]*(?:no\.?|number|num)?[^\S\n]*[:#\-]?[^\S\n]*([A-Z][1-9]\d{6})\b")
 });
 static VOTER_ID: LazyLock<Regex> = LazyLock::new(|| {
-    re(r"(?i)\b(?:voter[^\S\n]*id|epic|election[^\S\n]*card)\b(?:[^\S\n]*card)?[^\S\n]*(?:no\.?|number|num)?[^\S\n]*[:#\-]?[^\S\n]*([A-Z]{3}\d{7})\b")
+    re(
+        r"(?i)\b(?:voter[^\S\n]*id|epic|election[^\S\n]*card)\b(?:[^\S\n]*card)?[^\S\n]*(?:no\.?|number|num)?[^\S\n]*[:#\-]?[^\S\n]*([A-Z]{3}\d{7})\b",
+    )
 });
 static PAN: LazyLock<Regex> = LazyLock::new(|| re(r"\b[A-Z]{3}[PCHFATBLJG][A-Z]\d{4}[A-Z]\b"));
 static IFSC: LazyLock<Regex> = LazyLock::new(|| re(r"\b[A-Z]{4}0[A-Z0-9]{6}\b"));

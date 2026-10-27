@@ -16,11 +16,25 @@ impl Rng {
     }
 }
 
-const PIECES: &[&str] = &["Hi", " Ravi", ",", "\n", " \"quoted\"", " back\\slash", " é", " ü", " 🙂", " {x}", " [y]", "\t", " \u{2028}"];
+const PIECES: &[&str] = &[
+    "Hi",
+    " Ravi",
+    ",",
+    "\n",
+    " \"quoted\"",
+    " back\\slash",
+    " é",
+    " ü",
+    " 🙂",
+    " {x}",
+    " [y]",
+    "\t",
+    " \u{2028}",
+];
 
 #[test]
 fn visible_text_is_always_a_prefix_and_ends_complete() {
-    let mut r = Rng(0xd4af7_2026);
+    let mut r = Rng(0x000d_4af7_2026);
     for _ in 0..3_000 {
         let text: String = (0..1 + r.below(10)).map(|_| PIECES[r.below(PIECES.len())]).collect();
         let json = serde_json::json!({"draft": text, "used": [], "placeholders": []}).to_string();

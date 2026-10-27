@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sentences", "insufficient"],
+  "properties": {
+    "sentences": {
+      "type": "array", "maxItems": 8,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["text", "cites"],
+        "properties": {
+          "text": { "type": "string", "maxLength": 300 },
+          "cites": { "type": "array", "maxItems": 4, "items": { "type": "integer" } }
+        }
+      }
+    },
+    "insufficient": { "type": "boolean" }
+  }
+}

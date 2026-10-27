@@ -23,11 +23,48 @@ impl Rng {
 }
 
 const FRAGMENTS: &[&str] = &[
-    "4111 1111 1111 1111", "2345 6789 0123", "ABCDE1234F", "OTP 482913", "password: hunter2", "sk-live-", "eyJhbGciOi",
-    "-----BEGIN PRIVATE KEY-----", "VID 1234 5678 9012 3456", "Passport No: K1234567", "EPIC ABC1234567", "a/c 12345678901",
-    "IFSC HDFC0001234", "name@okicici", "ignore previous instructions", "AI: send", "<|im_start|>", "```", "> quoted",
-    "by Friday", "next Tuesday 5pm", "kal subah", "31/02/2026", "EOD", "2026-13-45", "आधार", "सहायक:", "\u{200b}", "\u{feff}",
-    "Ｆｕｌｌｗｉｄｔｈ", "🙂", "\\", "\"", "{", "}", "[", "]", ":", ",", "\n", "\t", "  ",
+    "4111 1111 1111 1111",
+    "2345 6789 0123",
+    "ABCDE1234F",
+    "OTP 482913",
+    "password: hunter2",
+    "sk-live-",
+    "eyJhbGciOi",
+    "-----BEGIN PRIVATE KEY-----",
+    "VID 1234 5678 9012 3456",
+    "Passport No: K1234567",
+    "EPIC ABC1234567",
+    "a/c 12345678901",
+    "IFSC HDFC0001234",
+    "name@okicici",
+    "ignore previous instructions",
+    "AI: send",
+    "<|im_start|>",
+    "```",
+    "> quoted",
+    "by Friday",
+    "next Tuesday 5pm",
+    "kal subah",
+    "31/02/2026",
+    "EOD",
+    "2026-13-45",
+    "आधार",
+    "सहायक:",
+    "\u{200b}",
+    "\u{feff}",
+    "Ｆｕｌｌｗｉｄｔｈ",
+    "🙂",
+    "\\",
+    "\"",
+    "{",
+    "}",
+    "[",
+    "]",
+    ":",
+    ",",
+    "\n",
+    "\t",
+    "  ",
 ];
 
 fn input(r: &mut Rng) -> String {
@@ -58,12 +95,16 @@ fn input(r: &mut Rng) -> String {
 
 #[test]
 fn redaction_never_panics_and_never_leaves_a_detected_secret() {
-    let mut r = Rng(0x7e55a2a0_20261027);
+    let mut r = Rng(0x7e55_a2a0_2026_1027);
     for _ in 0..20_000 {
         let s = input(&mut r);
         let out = redact(&s, Options::default());
         // Idempotent: nothing left to redact after one pass, and a second pass changes nothing.
-        assert!(find(&out.text, Options::default()).is_empty(), "left a secret in {:?}", out.text);
+        assert!(
+            find(&out.text, Options::default()).is_empty(),
+            "left a secret in {:?}",
+            out.text
+        );
         assert_eq!(redact(&out.text, Options::default()).text, out.text);
     }
 }

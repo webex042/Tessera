@@ -4,8 +4,10 @@
 //! Retrieval as the app runs it without an embedder: keyword + facts (RRF), the question's
 //! filters (time, app) applied, top 8 snippets.
 //!
-//! - Correct: answerable → the *verified* sentences contain every `answer_must_contain` and the
-//!   answer is not "insufficient"; unanswerable → "insufficient" or nothing verified.
+//! - Correct: answerable → the *verified* sentences (what the user sees as answered) contain
+//!   every `answer_must_contain`; unanswerable → nothing verified. The model's own
+//!   "insufficient" flag is reported but not used: code verification decides what is shown
+//!   (the first real run scored 15 % with the flag, 28 % by verified content; ask/v1).
 //! - Verified share: verified / shown sentences. Fabricated citations: cited numbers that do not
 //!   exist. Timing (real model): first sentence and full answer, p50.
 //! - Without a model, a SIMULATED oracle answers with the sentences of the gold item that hold
@@ -178,9 +180,9 @@ pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str) -> (bool, Va
                 .join(" "),
         );
         let is_correct = if q.answerable {
-            !a.insufficient && q.answer_must_contain.iter().all(|t| ok_text.contains(&norm(t)))
+            !ok_text.is_empty() && q.answer_must_contain.iter().all(|t| ok_text.contains(&norm(t)))
         } else {
-            a.insufficient || a.sentences.iter().all(|s| !s.verified)
+            a.sentences.iter().all(|s| !s.verified)
         };
         correct += u32::from(is_correct);
         shown += a.sentences.len() as u32;

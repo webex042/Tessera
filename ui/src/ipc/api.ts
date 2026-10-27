@@ -54,6 +54,8 @@ export const api = {
   proposeBulkStatus: (factIds: number[], status: string) => call<string>("propose_bulk_status", { factIds, status }),
   setBulkStatus: (factIds: number[], status: string, token: string) =>
     call<number>("set_bulk_status", { factIds, status, token }),
+  diagnostics: () => call<unknown>("get_diagnostics"),
+  saveDiagnostics: () => call<string>("save_diagnostics"),
   ask: (question: string) => call<AskStart>("ask", { question }),
   draftGenerate: (instruction: string) => call<void>("draft_generate", { instruction }),
   draftInsert: (token: string, edited: string | null) => call<void>("draft_insert", { token, edited }),

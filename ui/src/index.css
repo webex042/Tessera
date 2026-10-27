@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* The notch window is transparent; only the pill itself is painted. */
+/* The notch window is transparent; only the notch surfaces are painted. */
 html,
 body,
 #root {
@@ -9,11 +9,140 @@ body,
   background: transparent;
   overflow: hidden;
   user-select: none;
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
 }
 
+/* Theme tokens: dark by default, light from the system setting (plan §13.4). */
+:root {
+  --notch-bg: rgb(24 24 27 / 0.94);
+  --notch-fg: #f4f4f5;
+  --notch-muted: #a1a1aa;
+  --notch-line: rgb(255 255 255 / 0.1);
+  --notch-hover: rgb(255 255 255 / 0.07);
+  --notch-accent: #38bdf8;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --notch-bg: rgb(250 250 250 / 0.96);
+    --notch-fg: #18181b;
+    --notch-muted: #52525b;
+    --notch-line: rgb(0 0 0 / 0.1);
+    --notch-hover: rgb(0 0 0 / 0.05);
+    --notch-accent: #0369a1;
+    color-scheme: light;
+  }
+}
+
+.notch-surface {
+  background: var(--notch-bg);
+  color: var(--notch-fg);
+  box-shadow: inset 0 0 0 1px var(--notch-line);
+}
+.notch-muted {
+  color: var(--notch-muted);
+}
+.notch-row:hover,
+.notch-row:focus-visible,
+.notch-tab:hover {
+  background: var(--notch-hover);
+}
+.notch-tab[aria-selected="true"],
+.notch-tab[aria-checked="true"] {
+  background: var(--notch-hover);
+  box-shadow: inset 0 -2px 0 var(--notch-accent);
+}
+.notch-button {
+  border-radius: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  box-shadow: inset 0 0 0 1px var(--notch-line);
+}
+.notch-button:hover {
+  background: var(--notch-hover);
+}
+.notch-button:disabled {
+  opacity: 0.4;
+}
+.notch-input {
+  background: var(--notch-hover);
+  color: var(--notch-fg);
+  box-shadow: inset 0 0 0 1px var(--notch-line);
+  user-select: text;
+}
+.notch-chip {
+  font-size: 10px;
+  border-radius: 9999px;
+  padding: 0 0.4rem;
+  box-shadow: inset 0 0 0 1px var(--notch-line);
+  color: var(--notch-muted);
+}
+:focus-visible {
+  outline: 2px solid var(--notch-accent);
+  outline-offset: 1px;
+}
+article,
+.notch-row span {
+  user-select: text;
+}
+
+/* Animations use only transform and opacity (compositor-only), so they hold 60 fps on
+   integrated GPUs (plan §13.4 budget: ≤ 4 ms JS per frame). */
+/* The panel stays mounted while closed: hidden (no paint, no focus, out of the accessibility
+   tree) once the close animation ends; visible at once when opening. */
+.notch-panel {
+  transform: translateY(-8px) scale(0.98);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 160ms linear,
+    visibility 0s linear 160ms;
+}
+.notch-panel.is-shown {
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 160ms linear,
+    visibility 0s;
+}
+.notch-fade-in {
+  animation: notch-fade 140ms ease-out;
+}
+@keyframes notch-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Windows "Show animations" off → no motion. */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  .notch-panel {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* Windows high-contrast themes: let the system colours through. */
+@media (forced-colors: active) {
+  .notch-surface,
+  .notch-input {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid CanvasText;
+    box-shadow: none;
+  }
+  .notch-button,
+  .notch-chip {
+    border: 1px solid ButtonText;
+    box-shadow: none;
+  }
+  .notch-tab[aria-selected="true"],
+  .notch-tab[aria-checked="true"] {
+    outline: 2px solid Highlight;
   }
 }

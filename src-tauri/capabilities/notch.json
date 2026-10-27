@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "notch",
+  "description": "Least privilege for the notch: receive Rust events. App commands are listed in tauri::generate_handler!; no core window, fs, shell or http permissions.",
+  "windows": ["notch"],
+  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten"]
+}

@@ -1,5 +1,6 @@
 //! Safe wrappers over the Windows APIs Tessara uses (plan §3 `tsr-win`, §4.1 T1, §5.1, §5.2).
 //!
+//! - [`display`]: capture exclusion for Tessara's own windows.
 //! - [`dpapi`]: key protection and OS randomness.
 //! - [`events`]: the T1 thread — WinEvent hooks (foreground, title), session lock/unlock,
 //!   suspend/resume, AC/battery and battery-saver notifications.
@@ -8,6 +9,8 @@
 //!
 //! No low-level keyboard or mouse hooks are used anywhere (plan D11).
 
+#[cfg(windows)]
+pub mod display;
 #[cfg(windows)]
 pub mod dpapi;
 #[cfg(windows)]

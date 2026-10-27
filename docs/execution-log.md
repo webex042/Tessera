@@ -2,6 +2,26 @@
 
 Newest first. One entry per working session: stage, what changed, what was run and what it showed.
 
+## 2026-10-27 — Stage 3: notch UI; first real-model extraction run
+
+Full report: `docs/stage3/verification.md`; decisions: ADR-0007; status of every task:
+`docs/ledger.md`.
+
+| Command | Result |
+|---|---|
+| `tsr-models fetch` (approved: Qwen3-VL-4B Q4_K_M + mmproj F16), `tsr-models locate --verify` | both files verified against `tools/models.lock` |
+| `tsr-eval extraction --model DIR --split heldout` (Vulkan, AMD iGPU, 5 h 48 min) | **F1 0.507 (FAIL, ≥ 0.70)**; hallucinated 0 %; 0 invalid rows; 15/58 items failed on invalid JSON twice |
+| `tools/verify-capture-exclusion.ps1 -Panel pill` / `expanded` | PASS: notch 100 % absent from WGC and GDI monitor captures, both controls behave |
+| `tools/measure-notch.ps1 -Cycles 20` | PASS: frame p95 16.8 ms; input-to-visual p95 64 ms; focus 20/20 in, 20/20 back; no steal while a peek showed |
+| `cargo test --workspace` / `clippy -D warnings` / `pnpm build` | 320 passed, 0 failed (13 ignored: real desktop/model tests); clean; clean |
+
+**Mistakes and findings caught by measurement:** the second WGC capture in a process crashed
+(rung 3 would have taken the app down); another app owned Ctrl+Alt+Space so the toggle never
+fired; focus stayed in the hidden notch after closing; input latency started at p95 292 ms (now
+64 ms); `GetDIBits` overran a one-entry colour table; a placement test expected the wrong number.
+Launching the app from the agent's PowerShell host blocked hotkeys; runs from bash did not
+(harness artefact, not an app bug).
+
 ## 2026-10-27 — Stage 2: understanding pipeline (all tasks, no model)
 
 Commits 23c1537 (inference runtime), c05634d (model setup, tsr-net), b7f3225 (extraction, dates,

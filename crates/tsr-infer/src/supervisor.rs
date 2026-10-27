@@ -446,6 +446,56 @@ impl Launch for SpecLauncher {
     }
 }
 
+/// Real launcher over backend candidates (best first, CPU last): tries each in order, and
+/// starts with the one that last worked (plan §7.1 "start with fallback").
+pub struct CandidatesLauncher {
+    pub specs: Vec<crate::sidecar::SidecarSpec>,
+    pub labels: Vec<String>,
+    last_good: Option<usize>,
+}
+
+impl CandidatesLauncher {
+    pub fn new(specs: Vec<crate::sidecar::SidecarSpec>, labels: Vec<String>) -> Self {
+        CandidatesLauncher {
+            specs,
+            labels,
+            last_good: None,
+        }
+    }
+
+    /// Label of the candidate that started last time (diagnostics).
+    pub fn active(&self) -> Option<&str> {
+        self.last_good.and_then(|i| self.labels.get(i)).map(String::as_str)
+    }
+}
+
+impl Launch for CandidatesLauncher {
+    type P = crate::sidecar::SidecarProcess;
+    fn launch(&mut self, cancel: &CancelToken) -> Result<Self::P, LaunchError> {
+        let mut order: Vec<usize> = (0..self.specs.len()).collect();
+        if let Some(g) = self.last_good {
+            order.retain(|&i| i != g);
+            order.insert(0, g);
+        }
+        let mut last = LaunchError::NoPort;
+        for i in order {
+            match crate::sidecar::start(&self.specs[i], cancel) {
+                Ok(p) => {
+                    self.last_good = Some(i);
+                    return Ok(p);
+                }
+                Err(LaunchError::Cancelled) => return Err(LaunchError::Cancelled),
+                Err(e) => {
+                    tracing::warn!(candidate = %self.labels.get(i).map(String::as_str).unwrap_or("?"), error = %e,
+                                   "backend initialisation failed; trying next");
+                    last = e;
+                }
+            }
+        }
+        Err(last)
+    }
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;

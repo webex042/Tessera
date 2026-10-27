@@ -4373,11 +4373,23 @@ dependencies = [
 name = "tessara"
 version = "0.0.1"
 dependencies = [
+ "jiff",
+ "rusqlite",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-updater",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tsr-capture",
+ "tsr-core",
+ "tsr-guard",
+ "tsr-infer",
+ "tsr-pipeline",
+ "tsr-retrieval",
+ "tsr-store",
+ "tsr-win",
  "webview2-com",
  "windows",
 ]
@@ -4764,6 +4776,7 @@ name = "tsr-capture"
 version = "0.0.1"
 dependencies = [
  "rusqlite",
+ "serde_json",
  "tempfile",
  "thiserror 2.0.21",
  "tracing",

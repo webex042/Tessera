@@ -132,11 +132,12 @@ impl<L: Launch + 'static> Runtime<L> {
     }
 
     pub fn submit(&self, spec: JobSpec) -> Result<JobId, SubmitError> {
-        let r = spec.resource;
-        let id = lock(&self.shared.core).submit(spec, Instant::now())?;
-        preempt_if_needed(&self.shared, r);
-        self.shared.cv.notify_all();
-        Ok(id)
+        submit_to(&self.shared, spec)
+    }
+
+    /// A handle other threads can use to submit jobs (e.g. the durable-job feeder).
+    pub fn submitter(&self) -> Submitter<L> {
+        Submitter(self.shared.clone())
     }
 
     /// Cancel a queued or running job.
@@ -228,6 +229,22 @@ impl<L: Launch + 'static> Drop for Runtime<L> {
             self.stop_all();
         }
     }
+}
+
+pub struct Submitter<L: Launch + 'static>(Arc<Shared<L>>);
+
+impl<L: Launch + 'static> Submitter<L> {
+    pub fn submit(&self, spec: JobSpec) -> Result<JobId, SubmitError> {
+        submit_to(&self.0, spec)
+    }
+}
+
+fn submit_to<L: Launch>(s: &Shared<L>, spec: JobSpec) -> Result<JobId, SubmitError> {
+    let r = spec.resource;
+    let id = lock(&s.core).submit(spec, Instant::now())?;
+    preempt_if_needed(s, r);
+    s.cv.notify_all();
+    Ok(id)
 }
 
 fn process_usage(pid: u32) -> ProcessUsage {

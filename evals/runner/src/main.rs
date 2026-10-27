@@ -5,6 +5,7 @@
 //!     tsr-eval search                           retrieval: keyword, vector (SIMULATED embedder), hybrid
 //!     tsr-eval backlog                          2-hour synthetic workload through the real scheduler
 //!     tsr-eval all                              everything that needs no model (CI)
+//!     tsr-eval seed --dest DIR                  synthetic store for manual UI checks (TSR_DATA_DIR=DIR)
 //!
 //! `--model DIR` uses real model files in DIR (verified against tools/models.lock) on the best
 //! backend this machine has. Results go to evals/results/<name>.{json,md}. Exit code 1 if a
@@ -15,6 +16,7 @@ mod common;
 mod extraction;
 mod injection;
 mod search;
+mod seed;
 
 use std::path::PathBuf;
 
@@ -81,6 +83,22 @@ fn main() {
             }
         }
         "search" => finish("search", search::run()),
+        "seed" => match arg(&args, "--dest").map(PathBuf::from) {
+            Some(d) => match seed::run(&d) {
+                Ok(msg) => {
+                    println!("{msg} -> {}", d.display());
+                    true
+                }
+                Err(e) => {
+                    eprintln!("tsr-eval seed: {e}");
+                    std::process::exit(2);
+                }
+            },
+            None => {
+                eprintln!("tsr-eval seed needs --dest DIR");
+                std::process::exit(2);
+            }
+        },
         "backlog" => finish("backlog_simulated", backlog::run()),
         "all" => {
             let a = finish("injection_simulated", injection::run_corpus(None, "simulated"));
@@ -94,7 +112,7 @@ fn main() {
                 "{}",
                 include_str!("main.rs")
                     .lines()
-                    .take(12)
+                    .take(13)
                     .map(|l| l.trim_start_matches("//!"))
                     .collect::<Vec<_>>()
                     .join("\n")

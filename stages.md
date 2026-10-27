@@ -10,7 +10,7 @@ Effort is in full-time-equivalent weeks for one developer; double it for part-ti
 | 0 | Feasibility and model benchmark | 2 wk | — | **In progress** — tooling done; model gates unverified; S1 WebView2 finding open ([results](docs/stage0/results.md)) |
 | 1 | Foundation, capture, memory, baseline guardrails | 5 wk | 0 | **In progress** — store, logging, blocklist, redaction, UIA/OCR rungs, OS events + gates, capture engine + sessions + store writer done (real end-to-end capture verified); UI shell, pause hotkey, onboarding, image-write and password-box fixture tests, 8 h run pending |
 | 2 | Understanding pipeline | 4 wk | 1 | **In progress** — all tasks implemented and tested without a model ([verification](docs/stage2/verification.md)); model-dependent criteria (F1, hallucination with a real model, real GPU idle) unverified: no model on the dev machine |
-| 3 | Notch UI | 3 wk | 1 | Not started |
+| 3 | Notch UI | 3 wk | 1 | **In progress** — all tasks built; 60 fps, input-to-visual p95 64 ms, no focus steal and capture exclusion (WGC + GDI pixels) verified; named-app captures and live monitor/DPI change need the owner ([verification](docs/stage3/verification.md)) |
 | 4 | Rollups, morning brief, open loops | 3 wk | 2, 3 | Not started |
 | 5 | Draft assistant | 3 wk | 2, 3 | Not started |
 | 6 | Ask with sources | 2 wk | 2 | Not started |
@@ -72,10 +72,10 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 ## Stage 3 — Notch UI
 
 **Exit criteria:**
-- [ ] Notch absent from Teams, Zoom, OBS, Snipping Tool and Xbox Game Bar captures.
-- [ ] Expand/collapse at 60 fps; input-to-visual ≤ 100 ms.
-- [ ] No focus stealing during peeks.
-- [ ] Correct placement after monitor plug/unplug and DPI change.
+- [ ] Notch absent from Teams, Zoom, OBS, Snipping Tool and Xbox Game Bar captures. *(PARTIAL: absent from WGC and GDI monitor captures; the apps themselves not run)*
+- [x] Expand/collapse at 60 fps; input-to-visual ≤ 100 ms. *(p95 frame 16.8 ms; input-to-visual p95 64 ms)*
+- [x] No focus stealing during peeks.
+- [ ] Correct placement after monitor plug/unplug and DPI change. *(PARTIAL: unit-tested; needs a live change)*
 
 **Main risks:** WebView2 transparency glitches (fallback: native notch, plan D1).
 

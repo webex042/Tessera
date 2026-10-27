@@ -36,9 +36,9 @@ fn queued_jobs_flow_through_the_scheduler_once() {
     let mut core = SchedulerCore::new(Config::default());
     let now = std::time::Instant::now();
     let mut submit = |s| core.submit(s, now);
-    assert_eq!(submit_pending(&c, 100, &mut submit).unwrap(), 2);
+    assert_eq!(submit_pending(&c, &["embed", "extract"], 100, &mut submit).unwrap(), 2);
     assert_eq!(
-        submit_pending(&c, 100, &mut submit).unwrap(),
+        submit_pending(&c, &["embed", "extract"], 100, &mut submit).unwrap(),
         0,
         "already queued: not submitted twice"
     );
@@ -81,7 +81,7 @@ fn queued_jobs_flow_through_the_scheduler_once() {
     let chunks: i64 = c.query_row("SELECT count(*) FROM chunks", [], |r| r.get(0)).unwrap();
     assert_eq!((tsr_store::facts::all(&c).unwrap().len(), chunks), (1, 1));
     assert_eq!(
-        submit_pending(&c, 100, &mut |s| core.submit(s, now)).unwrap(),
+        submit_pending(&c, &["embed", "extract"], 100, &mut |s| core.submit(s, now)).unwrap(),
         0,
         "done jobs are not resubmitted"
     );
@@ -94,7 +94,7 @@ fn preempted_or_missing_model_requeues_without_writing() {
     jobs::enqueue(&c, "extract", it, T0).unwrap();
     let mut core = SchedulerCore::new(Config::default());
     let now = std::time::Instant::now();
-    submit_pending(&c, 10, &mut |s| core.submit(s, now)).unwrap();
+    submit_pending(&c, &["embed", "extract"], 10, &mut |s| core.submit(s, now)).unwrap();
     let path = d.path().join("t.db");
     let mut ex = ExtractRunner {
         conn: tsr_store::open_encrypted(&path, &[9u8; tsr_store::KEY_LEN]).unwrap(),

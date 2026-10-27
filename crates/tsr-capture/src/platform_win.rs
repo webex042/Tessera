@@ -121,8 +121,9 @@ impl<S: Sink + Send + 'static> CaptureHandle<S> {
     }
 }
 
-fn to_signal(e: OsEvent) -> Signal {
-    match e {
+/// Capture-relevant OS events; display, settings and hotkey events belong to the UI.
+fn to_signal(e: OsEvent) -> Option<Signal> {
+    Some(match e {
         OsEvent::Foreground { .. } => Signal::ForegroundChanged,
         OsEvent::TitleChanged { .. } => Signal::TitleChanged,
         OsEvent::SessionLocked => Signal::Locked,
@@ -131,7 +132,14 @@ fn to_signal(e: OsEvent) -> Signal {
         OsEvent::Resumed => Signal::Resumed,
         OsEvent::PowerSource { on_ac } => Signal::PowerSource { on_ac },
         OsEvent::BatterySaver { on } => Signal::BatterySaver { on },
-    }
+        OsEvent::DisplayChanged
+        | OsEvent::SettingsChanged
+        | OsEvent::Hotkey { .. }
+        | OsEvent::HotkeyUnavailable { .. }
+        | OsEvent::HotkeyRegistered { .. } => {
+            return None;
+        }
+    })
 }
 
 /// Start the capture thread and the OS-events thread feeding it. Capture starts **paused**.
@@ -149,7 +157,8 @@ where
         .name("tsr-os-forward".into())
         .spawn(move || {
             for e in os_rx {
-                if fwd.send(Control::Os(to_signal(e))).is_err() {
+                let Some(sig) = to_signal(e) else { continue };
+                if fwd.send(Control::Os(sig)).is_err() {
                     break;
                 }
             }

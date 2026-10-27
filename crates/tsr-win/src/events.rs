@@ -30,15 +30,60 @@ pub type Hwnd = isize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OsEvent {
-    Foreground { hwnd: Hwnd, pid: u32 },
-    TitleChanged { hwnd: Hwnd },
+    Foreground {
+        hwnd: Hwnd,
+        pid: u32,
+    },
+    TitleChanged {
+        hwnd: Hwnd,
+    },
     SessionLocked,
     SessionUnlocked,
     Suspending,
     Resumed,
-    PowerSource { on_ac: bool },
-    BatterySaver { on: bool },
+    PowerSource {
+        on_ac: bool,
+    },
+    BatterySaver {
+        on: bool,
+    },
+    /// Monitors were added, removed, rearranged or changed resolution (`WM_DISPLAYCHANGE`).
+    DisplayChanged,
+    /// A system setting changed (theme, high contrast, animations) — `WM_SETTINGCHANGE`.
+    SettingsChanged,
+    /// A registered global hotkey was pressed (`RegisterHotKey`; not a keyboard hook, D11).
+    Hotkey {
+        id: i32,
+    },
+    /// Neither the hotkey nor any alternate could be registered (other apps own them).
+    HotkeyUnavailable {
+        id: i32,
+    },
+    /// The hotkey is active as this chord (the primary, or the first free alternate).
+    HotkeyRegistered {
+        id: i32,
+        modifiers: u32,
+        vk: u32,
+    },
 }
+
+/// A global hotkey: Win32 `MOD_*` flags and a virtual-key code, plus alternates tried in order
+/// when another app already owns the chord (`ERROR_HOTKEY_ALREADY_REGISTERED`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Hotkey {
+    pub id: i32,
+    pub modifiers: u32,
+    pub vk: u32,
+    pub alternates: &'static [(u32, u32)],
+}
+
+pub const MOD_ALT: u32 = 0x1;
+pub const MOD_CONTROL: u32 = 0x2;
+pub const MOD_SHIFT: u32 = 0x4;
+const MOD_NOREPEAT_: u32 = 0x4000;
+const WM_HOTKEY_: u32 = 0x0312;
+const WM_DISPLAYCHANGE_: u32 = 0x007E;
+const WM_SETTINGCHANGE_: u32 = 0x001A;
 
 const WM_WTSSESSION_CHANGE_: u32 = 0x02B1;
 const WTS_SESSION_LOCK_: usize = 0x7;
@@ -142,6 +187,9 @@ fn read_u32(setting: &POWERBROADCAST_SETTING) -> Option<u32> {
 
 unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     match msg {
+        WM_HOTKEY_ => send(OsEvent::Hotkey { id: wparam.0 as i32 }),
+        WM_DISPLAYCHANGE_ => send(OsEvent::DisplayChanged),
+        WM_SETTINGCHANGE_ => send(OsEvent::SettingsChanged),
         WM_WTSSESSION_CHANGE_ => match wparam.0 {
             WTS_SESSION_LOCK_ => send(OsEvent::SessionLocked),
             WTS_SESSION_UNLOCK_ => send(OsEvent::SessionUnlocked),
@@ -201,6 +249,11 @@ impl Drop for OsEventThread {
 
 /// Start T1. Returns once hooks and the notification window are registered.
 pub fn spawn(tx: Sender<OsEvent>) -> Result<OsEventThread, WinError> {
+    spawn_with(tx, Vec::new())
+}
+
+/// Like [`spawn`], also registering global hotkeys (reported as [`OsEvent::Hotkey`]).
+pub fn spawn_with(tx: Sender<OsEvent>, hotkeys: Vec<Hotkey>) -> Result<OsEventThread, WinError> {
     let (ready_tx, ready_rx) = std::sync::mpsc::channel::<Result<u32, WinError>>();
     let join = std::thread::Builder::new()
         .name("tsr-os-events".into())
@@ -233,16 +286,18 @@ pub fn spawn(tx: Sender<OsEvent>) -> Result<OsEventThread, WinError> {
                     ..Default::default()
                 };
                 RegisterClassW(&wc);
+                // A hidden top-level tool window, never shown: unlike a message-only window it
+                // receives broadcasts (WM_DISPLAYCHANGE, WM_SETTINGCHANGE).
                 let hwnd = match CreateWindowExW(
-                    WINDOW_EX_STYLE(0),
+                    WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
                     class,
                     w!(""),
-                    WINDOW_STYLE(0),
+                    WS_POPUP,
                     0,
                     0,
                     0,
                     0,
-                    Some(HWND_MESSAGE),
+                    None,
                     None,
                     Some(hinst.into()),
                     None,
@@ -260,6 +315,25 @@ pub fn spawn(tx: Sender<OsEvent>) -> Result<OsEventThread, WinError> {
                 let h = HANDLE(hwnd.0);
                 let _ = RegisterPowerSettingNotification(h, &GUID_ACDC_POWER_SOURCE, DEVICE_NOTIFY_WINDOW_HANDLE);
                 let _ = RegisterPowerSettingNotification(h, &GUID_POWER_SAVING_STATUS, DEVICE_NOTIFY_WINDOW_HANDLE);
+                for hk in &hotkeys {
+                    use windows::Win32::UI::Input::KeyboardAndMouse::{HOT_KEY_MODIFIERS, RegisterHotKey};
+                    let chords = std::iter::once((hk.modifiers, hk.vk)).chain(hk.alternates.iter().copied());
+                    let mut active = None;
+                    for (m, vk) in chords {
+                        if RegisterHotKey(Some(hwnd), hk.id, HOT_KEY_MODIFIERS(m | MOD_NOREPEAT_), vk).is_ok() {
+                            active = Some((m, vk));
+                            break;
+                        }
+                    }
+                    send(match active {
+                        Some((modifiers, vk)) => OsEvent::HotkeyRegistered {
+                            id: hk.id,
+                            modifiers,
+                            vk,
+                        },
+                        None => OsEvent::HotkeyUnavailable { id: hk.id },
+                    });
+                }
 
                 // Report the window that already has focus, so consumers need not wait for a change.
                 let cur = GetForegroundWindow();

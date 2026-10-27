@@ -257,37 +257,68 @@ fn frame_from_bitmap(bmp: &SoftwareBitmap) -> Result<Frame, OcrError> {
     })
 }
 
-/// Run WinRT work on a fresh thread in the multithreaded apartment (as the Stage 0 probe did),
-/// independent of the caller's COM state.
-fn on_mta<T: Send>(f: impl FnOnce() -> T + Send) -> T {
-    std::thread::scope(|s| {
-        s.spawn(|| {
-            use windows::Win32::System::Com::{COINIT_MULTITHREADED, CoInitializeEx, CoUninitialize};
-            // SAFETY: balanced with CoUninitialize on this same thread.
-            let init = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
-            let out = f();
-            if init.is_ok() {
-                // SAFETY: matches the successful CoInitializeEx above.
-                unsafe { CoUninitialize() };
-            }
-            out
-        })
-        .join()
-        .expect("capture thread")
-    })
+/// Run WinRT work on one long-lived thread in the multithreaded apartment, independent of the
+/// caller's COM state.
+///
+/// One persistent thread, not a fresh thread per call: with a new thread (and COM init/uninit)
+/// per capture, the *second* `SoftwareBitmap::CreateCopyFromSurfaceAsync` in a process crashed
+/// with an access violation (reproduced by tests/wgc_repeat_real.rs, 2026-10-27). The OCR
+/// reader, which keeps one thread, never did. The worker never uninitializes COM, so WinRT
+/// objects cached by the bindings stay valid for the life of the process.
+fn on_mta<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> T {
+    use std::sync::OnceLock;
+    use std::sync::mpsc;
+    type Job = Box<dyn FnOnce() + Send>;
+    static WORKER: OnceLock<mpsc::Sender<Job>> = OnceLock::new();
+    let tx = WORKER.get_or_init(|| {
+        let (tx, rx) = mpsc::channel::<Job>();
+        std::thread::Builder::new()
+            .name("tsr-winrt-mta".into())
+            .spawn(move || {
+                use windows::Win32::System::Com::{COINIT_MULTITHREADED, CoInitializeEx};
+                // SAFETY: joins the MTA for the life of this thread; deliberately never left.
+                let _ = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
+                for job in rx {
+                    job();
+                }
+            })
+            .expect("spawn WinRT worker");
+        tx
+    });
+    let (rtx, rrx) = mpsc::sync_channel(1);
+    let job: Job = Box::new(move || {
+        let _ = rtx.send(std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)));
+    });
+    tx.send(job).expect("WinRT worker alive");
+    match rrx.recv().expect("WinRT worker result") {
+        Ok(v) => v,
+        Err(p) => std::panic::resume_unwind(p),
+    }
 }
 
 /// Capture one frame of a window into memory (BGRA, wiped on drop).
 pub fn capture_frame(hwnd: HWND) -> Result<Frame, OcrError> {
     let h = hwnd.0 as isize;
-    on_mta(move || capture_frame_inner(HWND(h as *mut _)))
+    on_mta(move || {
+        let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
+        // SAFETY: hwnd is a top-level window handle supplied by the caller.
+        capture_item(unsafe { interop.CreateForWindow(HWND(h as *mut _))? })
+    })
 }
 
-fn capture_frame_inner(hwnd: HWND) -> Result<Frame, OcrError> {
+/// Capture one frame of a whole monitor, the way screen sharing does. Used only by the
+/// capture-exclusion verifier (tools/verify-capture-exclusion.ps1); the app captures windows.
+pub fn capture_monitor_frame(hmonitor: isize) -> Result<Frame, OcrError> {
+    on_mta(move || {
+        let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
+        let m = windows::Win32::Graphics::Gdi::HMONITOR(hmonitor as *mut _);
+        // SAFETY: hmonitor comes from MonitorFromWindow/MonitorFromPoint in the caller.
+        capture_item(unsafe { interop.CreateForMonitor(m)? })
+    })
+}
+
+fn capture_item(item: GraphicsCaptureItem) -> Result<Frame, OcrError> {
     let device = make_device()?;
-    let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
-    // SAFETY: hwnd is a top-level window handle supplied by the caller.
-    let item: GraphicsCaptureItem = unsafe { interop.CreateForWindow(hwnd)? };
     let pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
         &device,
         DirectXPixelFormat::B8G8R8A8UIntNormalized,
@@ -323,7 +354,13 @@ fn capture_frame_inner(hwnd: HWND) -> Result<Frame, OcrError> {
 /// OCR an in-memory frame and return lines with word boxes in frame pixels. Frames larger than
 /// the engine accepts are downscaled for OCR and the boxes scaled back.
 pub fn ocr_lines(frame: &Frame) -> Result<Vec<Line>, OcrError> {
-    on_mta(|| ocr_lines_inner(frame))
+    // The worker needs an owned copy; it is wiped on drop like the original.
+    let owned = Frame {
+        width: frame.width,
+        height: frame.height,
+        bgra: Zeroizing::new(frame.bgra.to_vec()),
+    };
+    on_mta(move || ocr_lines_inner(&owned))
 }
 
 fn ocr_lines_inner(frame: &Frame) -> Result<Vec<Line>, OcrError> {

@@ -37,11 +37,12 @@ pub fn spec(kind: &str, item_id: i64) -> Option<JobSpec> {
 /// Returns how many were newly accepted.
 pub fn submit_pending(
     conn: &Connection,
+    kinds: &[&str],
     limit: u32,
     submit: &mut dyn FnMut(JobSpec) -> Result<u64, SubmitError>,
 ) -> Result<usize, StoreError> {
     let mut n = 0;
-    for kind in ["embed", "extract"] {
+    for &kind in kinds {
         for (_, item) in tsr_store::jobs::queued(conn, kind, limit)? {
             match submit(spec(kind, item).expect("known kind")) {
                 Ok(_) => n += 1,

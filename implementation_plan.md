@@ -208,7 +208,7 @@ Crate: `tsr-capture` (+ `tsr-win`).
 ### 5.1 Foreground tracking
 
 - `SetWinEventHook(EVENT_SYSTEM_FOREGROUND, …, WINEVENT_OUTOFCONTEXT)` on T1 for focus changes.
-- `EVENT_OBJECT_NAMECHANGE` filtered to the current foreground HWND and `OBJID_WINDOW` for title changes (new tab, new email opened).
+- `EVENT_OBJECT_NAMECHANGE` filtered to the current foreground HWND and `OBJID_WINDOW` for title changes (new tab, new email opened). **Implemented** (`tsr-win::events`): the name-change hook is registered for the foreground *process only* and re-registered on every focus change, because a system-wide hook fires for every renamed control in every app. Lock/unlock, suspend/resume, AC/DC and battery saver arrive on a hidden message-only window; verified on the dev machine.
 - Process identity: `GetWindowThreadProcessId` → `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)` → `QueryFullProcessImageNameW`. Cache per PID.
 - Ignore our own windows, the shell (`Shell_TrayWnd`, `Progman`, `WorkerW`), lock screen and UAC desktop.
 
@@ -278,7 +278,7 @@ Used only when: OCR quality score < 0.55, or the app is on the "visual apps" lis
 
 ### 5.6 Window sessions
 
-A **session** is continuous attention on one (process, window, URL/document) tuple. The SessionActor keeps the session's text in memory and flushes when:
+A **session** is continuous attention on one (process, window, URL/document) tuple — implemented as (exe, HWND, URL or redacted title with unread counters like "(3)" removed) in `tsr-capture::session`. The SessionActor keeps the session's text in memory and flushes when:
 
 - focus leaves for > 30 s, or
 - 5 min of continuous use pass, or
@@ -303,7 +303,7 @@ Evaluated on every foreground change, before any capture call.
 | Window title — all apps | regex | `\bOTP\b`, `\bone-time (pass)?code\b`, `\b(enter\|change\|reset) (your )?password\b` (narrow phrases only, user-tunable) |
 | Window title — browsers only | regex, applied only when the process is a known browser | `InPrivate`, `Incognito`, `Private Browsing`, `\bsign[ -]?in\b`, `\blog ?in\b`, `\bpassword\b`. A second layer behind the URL check, for login pages whose URL is not on the list |
 | URL | host / path pattern | `accounts.google.com`, `login.microsoftonline.com`, `*.bank*`, common Indian bank and UPI domains (curated list in `tsr-guard/data/url_block.toml`), `chrome://*`, `edge://*`, `about:*`, password manager web vaults |
-| Private browsing | browser-specific UIA signals | Edge `[InPrivate]` in title; Firefox "Private Browsing" in title; Chromium incognito via toolbar UIA indicator. **If a browser window's private state cannot be determined, it is treated as private (fail closed).** |
+| Private browsing | browser-specific UIA signals | Edge `[InPrivate]` in title; Firefox "Private Browsing" in title; Chromium incognito via toolbar UIA indicator. **If a browser window's private state cannot be determined, it is treated as private (fail closed).** **Verified 2026-10-27:** Chrome's Incognito window *title is identical* to a normal one, so title rules never see it. Implemented (`tsr-capture::uia`): a bounded walk of the browser UI (never into the page) reads the `BrowserRootView` name (`... - Google Chrome (Incognito)`, `... - Microsoft Edge (InPrivate)`), the profile button and the address bar (`OmniboxViewViews`). Only a root name ending in the plain product name counts as not private; other UI languages, other Chromium browsers and Firefox are Unknown, so blocked until verified. |
 
 Each match emits an audit event (`blocked_window{kind}`) — never the title or URL.
 

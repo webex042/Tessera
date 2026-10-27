@@ -12,6 +12,13 @@
 //!    caps are 3 000 nodes, depth 40, 50 000 chars. Text is ordered top-to-bottom, left-to-right.
 //!
 //! [`UiaText`]'s `Debug` output never contains the text.
+//!
+//! The same worker also reads **browser facts** for the blocklist ([`BrowserFacts`]): the address
+//! bar URL and whether the window is private. Verified against Chrome and Edge (2026-10-27):
+//! Chrome's Incognito window title is identical to a normal one, so the private state is read
+//! from the `BrowserRootView` element's name (`... - Google Chrome (Incognito)`,
+//! `... - Microsoft Edge (InPrivate)`) and the profile button. Anything not positively "normal" is
+//! [`PrivateState::Unknown`], which the blocklist blocks (fail closed).
 
 use std::fmt;
 use std::time::Duration;
@@ -21,6 +28,9 @@ use windows::Win32::System::Com::{CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED, Co
 use windows::Win32::System::Variant::VARIANT;
 use windows::Win32::UI::Accessibility::*;
 use windows::core::Interface;
+
+use tsr_core::Sensitive;
+use tsr_guard::blocklist::PrivateState;
 
 use crate::deadline::{DeadlineError, DeadlineWorker};
 
@@ -81,9 +91,26 @@ struct WorkerState {
     uia: Option<IUIAutomation>,
 }
 
+/// What the blocklist needs from a browser window. `url` is content.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserFacts {
+    pub url: Option<Sensitive<String>>,
+    pub private: PrivateState,
+}
+
+enum Request {
+    Text(isize),
+    Browser(isize),
+}
+
+enum Response {
+    Text(Result<UiaText, UiaError>),
+    Browser(Result<BrowserFacts, UiaError>),
+}
+
 /// Reads windows through UIA on a dedicated thread with a wall-clock deadline.
 pub struct UiaReader {
-    worker: DeadlineWorker<isize, Result<UiaText, UiaError>>,
+    worker: DeadlineWorker<Request, Response>,
     pub deadline: Duration,
 }
 
@@ -108,9 +135,12 @@ impl UiaReader {
                 }
                 WorkerState { uia }
             },
-            |st: &mut WorkerState, hwnd: isize| {
-                let uia = st.uia.as_ref().ok_or(UiaError::Unavailable)?;
-                read_window(uia, HWND(hwnd as *mut _))
+            |st: &mut WorkerState, req: Request| {
+                let uia = st.uia.as_ref().ok_or(UiaError::Unavailable);
+                match req {
+                    Request::Text(h) => Response::Text(uia.and_then(|u| read_window(u, HWND(h as *mut _)))),
+                    Request::Browser(h) => Response::Browser(uia.and_then(|u| browser_facts(u, HWND(h as *mut _)))),
+                }
             },
         )?;
         Ok(UiaReader {
@@ -121,7 +151,19 @@ impl UiaReader {
 
     /// Read a window. Returns within `self.deadline` (plus scheduling jitter), always.
     pub fn read(&self, hwnd: HWND) -> Result<UiaText, UiaError> {
-        self.worker.call(hwnd.0 as isize, self.deadline)?
+        match self.worker.call(Request::Text(hwnd.0 as isize), self.deadline)? {
+            Response::Text(r) => r,
+            Response::Browser(_) => Err(UiaError::Unavailable),
+        }
+    }
+
+    /// Address-bar URL and private state of a Chromium-based browser window. On any failure
+    /// (including the deadline) the caller must treat the window as private.
+    pub fn browser(&self, hwnd: HWND) -> Result<BrowserFacts, UiaError> {
+        match self.worker.call(Request::Browser(hwnd.0 as isize), self.deadline)? {
+            Response::Browser(r) => r,
+            Response::Text(_) => Err(UiaError::Unavailable),
+        }
     }
 
     /// For diagnostics: wait until an abandoned read has finished; returns how long it took.
@@ -256,6 +298,118 @@ unsafe fn walk_tree(uia: &IUIAutomation, hwnd: HWND) -> Result<UiaText, UiaError
     }
 }
 
+/// Product names that end a *normal* window's root-view name, matched after removing zero-width
+/// characters (Edge writes "Microsoft<U+200B> Edge" in its window title).
+const NORMAL_SUFFIXES: &[&str] = &[" - Google Chrome", " - Microsoft Edge", " - Chromium"];
+/// Profile-button names of private windows (English UI; other languages fall to Unknown).
+const PRIVATE_AVATARS: &[&str] = &["Incognito", "InPrivate browsing", "InPrivate"];
+
+fn strip_zero_width(s: &str) -> String {
+    s.chars()
+        .filter(|c| !matches!(*c, '\u{200B}' | '\u{200C}' | '\u{200D}' | '\u{FEFF}'))
+        .collect()
+}
+
+/// Decide the private state from the root-view and profile-button names. Fails closed: only a
+/// root-view name ending exactly in a known product name counts as "not private".
+pub fn classify_private(root_name: Option<&str>, avatar_name: Option<&str>) -> PrivateState {
+    if avatar_name
+        .map(strip_zero_width)
+        .is_some_and(|a| PRIVATE_AVATARS.contains(&a.trim()))
+    {
+        return PrivateState::Private;
+    }
+    let Some(root) = root_name.map(strip_zero_width) else {
+        return PrivateState::Unknown;
+    };
+    let root = root.trim_end();
+    if NORMAL_SUFFIXES.iter().any(|s| root.ends_with(s)) {
+        return PrivateState::NotPrivate;
+    }
+    // "... - Google Chrome (Incognito)" in any UI language.
+    if root.ends_with(')')
+        && NORMAL_SUFFIXES
+            .iter()
+            .any(|s| root.contains(s.trim_start_matches(" - ")))
+    {
+        return PrivateState::Private;
+    }
+    PrivateState::Unknown
+}
+
+/// Browser UI elements are found by a bounded walk of the control view that never enters the
+/// page (`Document`) subtree: a "find descendant" search would crawl the whole web page's
+/// accessibility tree and blow the per-call UIA timeout (seen on Chrome, 2026-10-27).
+const BROWSER_WALK_MAX_NODES: u32 = 300;
+const BROWSER_WALK_MAX_DEPTH: u32 = 12;
+
+/// The address bar's text: the Value pattern, with the LegacyIAccessible value as a fallback.
+/// TextPattern is deliberately *not* used: on an empty box it returns the placeholder
+/// ("Address and search bar"), which must never be taken for a URL.
+unsafe fn omnibox_value(el: &IUIAutomationElement) -> Option<String> {
+    let non_empty = |s: String| (!s.trim().is_empty()).then_some(s);
+    unsafe {
+        el.GetCurrentPatternAs::<IUIAutomationValuePattern>(UIA_ValuePatternId)
+            .ok()
+            .and_then(|vp| vp.CurrentValue().ok())
+            .map(|b| b.to_string())
+            .and_then(non_empty)
+            .or_else(|| {
+                el.GetCurrentPatternAs::<IUIAutomationLegacyIAccessiblePattern>(UIA_LegacyIAccessiblePatternId)
+                    .ok()
+                    .and_then(|lp| lp.CurrentValue().ok())
+                    .map(|b| b.to_string())
+                    .and_then(non_empty)
+            })
+    }
+}
+
+fn browser_facts(uia: &IUIAutomation, hwnd: HWND) -> Result<BrowserFacts, UiaError> {
+    // SAFETY: COM calls on objects owned by this worker thread.
+    unsafe {
+        let root = uia.ElementFromHandle(hwnd)?;
+        let walker = uia.ControlViewWalker()?;
+        let (mut root_name, mut avatar_name, mut url) = (None::<String>, None::<String>, None::<String>);
+        let mut nodes = 0u32;
+        let mut stack: Vec<(IUIAutomationElement, u32)> = vec![(root, 0)];
+        while let Some((el, depth)) = stack.pop() {
+            nodes += 1;
+            if nodes > BROWSER_WALK_MAX_NODES || (root_name.is_some() && avatar_name.is_some() && url.is_some()) {
+                break;
+            }
+            let class = el.CurrentClassName().map(|b| b.to_string()).unwrap_or_default();
+            match class.as_str() {
+                "BrowserRootView" => root_name = el.CurrentName().ok().map(|b| b.to_string()),
+                "AvatarToolbarButton" | "EdgeAvatarToolbarButton" => {
+                    avatar_name = el.CurrentName().ok().map(|b| b.to_string())
+                }
+                "OmniboxViewViews" => {
+                    url = omnibox_value(&el);
+                    continue;
+                }
+                _ => {}
+            }
+            if depth >= BROWSER_WALK_MAX_DEPTH || el.CurrentControlType().is_ok_and(|t| t == UIA_DocumentControlTypeId)
+            {
+                continue; // never walk into the web page
+            }
+            let mut children = Vec::new();
+            let mut c = walker.GetFirstChildElement(&el).ok();
+            while let Some(ch) = c {
+                c = walker.GetNextSiblingElement(&ch).ok();
+                children.push(ch);
+            }
+            for ch in children.into_iter().rev() {
+                stack.push((ch, depth + 1));
+            }
+        }
+        Ok(BrowserFacts {
+            url: url.filter(|u| !u.trim().is_empty()).map(Sensitive::new),
+            private: classify_private(root_name.as_deref(), avatar_name.as_deref()),
+        })
+    }
+}
+
 /// Collapse runs of whitespace inside lines and drop empty lines.
 pub fn normalise(s: &str) -> String {
     s.lines()
@@ -280,6 +434,53 @@ mod tests {
         };
         let d = format!("{t:?}");
         assert!(!d.contains("TSRCANARY") && d.contains("chars: 16"), "{d}");
+    }
+
+    /// Names observed on real Chrome/Edge windows (2026-10-27), plus fail-closed cases.
+    #[test]
+    fn private_state_classification() {
+        use PrivateState::*;
+        assert_eq!(
+            classify_private(Some("TSR fixture chat - Google Chrome"), Some("Sign in to Chrome?")),
+            NotPrivate
+        );
+        assert_eq!(
+            classify_private(Some("TSR fixture chat - Google Chrome (Incognito)"), Some("Incognito")),
+            Private
+        );
+        assert_eq!(
+            classify_private(Some("TSR fixture chat - Microsoft Edge"), Some("Personal Profile")),
+            NotPrivate
+        );
+        assert_eq!(
+            classify_private(
+                Some("TSR fixture chat - Microsoft Edge (InPrivate)"),
+                Some("InPrivate browsing")
+            ),
+            Private
+        );
+        assert_eq!(
+            classify_private(Some("Seite - Google Chrome (Inkognito)"), Some("Inkognito")),
+            Private,
+            "other languages"
+        );
+        assert_eq!(
+            classify_private(Some("Page - Brave"), None),
+            Unknown,
+            "unverified browser"
+        );
+        assert_eq!(classify_private(None, None), Unknown);
+        assert_eq!(
+            classify_private(Some("Inbox (3) - Google Chrome"), None),
+            NotPrivate,
+            "page-title brackets"
+        );
+        assert_eq!(
+            classify_private(Some("x - Google Chrome"), Some("Incognito")),
+            Private,
+            "avatar wins"
+        );
+        assert_eq!(classify_private(Some("x - Microsoft\u{200B} Edge"), None), NotPrivate);
     }
 
     #[test]

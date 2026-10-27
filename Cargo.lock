@@ -4669,9 +4669,16 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 name = "tsr-capture"
 version = "0.0.1"
 dependencies = [
+ "rusqlite",
+ "tempfile",
  "thiserror 2.0.21",
  "tracing",
+ "tsr-core",
+ "tsr-guard",
+ "tsr-store",
+ "tsr-win",
  "windows",
+ "zeroize",
 ]
 
 [[package]]
@@ -4735,6 +4742,7 @@ dependencies = [
 name = "tsr-win"
 version = "0.0.1"
 dependencies = [
+ "tempfile",
  "thiserror 2.0.21",
  "windows",
  "zeroize",

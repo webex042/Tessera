@@ -38,6 +38,7 @@ pub const ALLOWED_MESSAGES: &[&str] = &[
     // tsr-store
     "store opened",
     "store key created",
+    "store write failed",
 ];
 
 /// Field names that may be written. Values must still be numbers, bools or short ASCII.

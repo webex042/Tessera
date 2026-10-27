@@ -16,8 +16,6 @@
 
 #[cfg(windows)]
 mod quality;
-#[cfg(windows)]
-mod wgc;
 
 #[cfg(not(windows))]
 fn main() {
@@ -63,9 +61,17 @@ fn main() -> anyhow::Result<()> {
     unsafe { CoInitializeEx(None, COINIT_MULTITHREADED).ok()? };
     // The production rung-1 reader (tsr-capture): dedicated thread, 300 ms wall-clock deadline.
     let uia = tsr_capture::uia::UiaReader::new()?;
-    let cap = if no_ocr { None } else { Some(wgc::Capturer::new()?) };
+    // The production rung-2 reader (tsr-capture): one WGC frame + Windows OCR, 485 ms deadline.
+    let cap = if no_ocr {
+        None
+    } else {
+        Some(tsr_capture::ocr::OcrReader::new()?)
+    };
     if let Some(c) = &cap {
-        println!("borderless capture access: {}", c.borderless_access);
+        println!(
+            "borderless capture access: {}",
+            if c.borderless { "allowed" } else { "not granted" }
+        );
     }
 
     let header = "label,exe,class,uia_method,uia_ms,uia_nodes,uia_pw_skipped,uia_chars,uia_quality,\
@@ -77,8 +83,8 @@ wgc_ms,wgc_w,wgc_h,wgc_border_free,ocr_ms,ocr_chars,ocr_quality,usable,error,uia
     for w in windows_for(&exes, &pids, title_contains.as_deref()) {
         let u = read_uia(&uia, w.hwnd);
         let uq = quality::score(&u.text, None);
-        let o = cap.as_ref().map(|c| c.capture_and_ocr(w.hwnd)).unwrap_or_default();
-        let oq = quality::score(&o.text, (o.height > 0).then_some(o.height as u32));
+        let o = cap.as_ref().map(|c| read_ocr(c, w.hwnd)).unwrap_or_default();
+        let oq = quality::score(&o.text, (o.height > 0).then_some(o.height));
         // "Usable" per Stage 0 exit criterion: either rung yields >= 40 chars at quality >= 0.55.
         let usable = (u.text.chars().count() >= 40 && uq >= 0.55) || (o.text.chars().count() >= 40 && oq >= 0.55);
         let err = [u.error.clone(), o.error.clone()]
@@ -280,6 +286,41 @@ fn read_uia(r: &tsr_capture::uia::UiaReader, hwnd: windows::Win32::Foundation::H
                 ms,
                 error: Some(e.to_string()),
                 abandoned_ms,
+                ..Default::default()
+            }
+        }
+    }
+}
+
+/// Rung-2 result in the probe's table shape.
+#[cfg(windows)]
+#[derive(Default)]
+struct ProbeOcr {
+    capture_ms: u32,
+    ocr_ms: u32,
+    width: u32,
+    height: u32,
+    border_free: bool,
+    text: String,
+    error: Option<String>,
+}
+
+#[cfg(windows)]
+fn read_ocr(r: &tsr_capture::ocr::OcrReader, hwnd: windows::Win32::Foundation::HWND) -> ProbeOcr {
+    match r.read(hwnd) {
+        Ok(o) => ProbeOcr {
+            capture_ms: o.capture_ms,
+            ocr_ms: o.ocr_ms,
+            width: o.width,
+            height: o.height,
+            border_free: o.border_free,
+            text: o.text.expose().clone(),
+            error: None,
+        },
+        Err(e) => {
+            r.wait_idle(std::time::Duration::from_secs(10));
+            ProbeOcr {
+                error: Some(format!("ocr {e}")),
                 ..Default::default()
             }
         }

@@ -43,6 +43,13 @@ impl<T: Zeroize> fmt::Display for Sensitive<T> {
     }
 }
 
+/// Hashing does not reveal the value, so sensitive values can be map keys.
+impl<T: Zeroize + std::hash::Hash> std::hash::Hash for Sensitive<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
 impl<T: Zeroize> From<T> for Sensitive<T> {
     fn from(v: T) -> Self {
         Sensitive(v)

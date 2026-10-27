@@ -8,7 +8,7 @@ Effort is in full-time-equivalent weeks for one developer; double it for part-ti
 | Stage | Name | Effort | Depends on | Status |
 |---|---|---|---|---|
 | 0 | Feasibility and model benchmark | 2 wk | — | **In progress** — tooling done; model gates unverified; S1 WebView2 finding open ([results](docs/stage0/results.md)) |
-| 1 | Foundation, capture, memory, baseline guardrails | 5 wk | 0 | **In progress** — store (DPAPI key, migrations, sources/items/FTS), content-free logging, scoped blocklist, redaction v1, UIA deadline done; capture actors, sessions, tsr-win hooks, UI pending |
+| 1 | Foundation, capture, memory, baseline guardrails | 5 wk | 0 | **In progress** — store, logging, blocklist, redaction, UIA/OCR rungs, OS events + gates, capture engine + sessions + store writer done (real end-to-end capture verified); UI shell, pause hotkey, onboarding, image-write and password-box fixture tests, 8 h run pending |
 | 2 | Understanding pipeline | 4 wk | 1 | Not started |
 | 3 | Notch UI | 3 wk | 1 | Not started |
 | 4 | Rollups, morning brief, open loops | 3 wk | 2, 3 | Not started |
@@ -47,7 +47,7 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 **Exit criteria:**
 - [ ] 8-hour run: no crash, background CPU ≤ 3 %, app RAM ≤ 250 MB.
 - [ ] No image files ever written (Process Monitor + FS-watcher test on data dir and `%TEMP%`).
-- [ ] Blocklisted apps and private windows produce zero items.
+- [x] Blocklisted apps and private windows produce zero items. *(engine tests with simulated windows + real encrypted store; private-state detection verified on real Chrome/Edge normal and private windows; unknown → blocked)*
 - [x] Title rules don't over-block: ordinary non-browser windows titled with "login", "sign in" or "password" are still captured. *(policy-level: `tsr-guard` test `generic_words_do_not_block_non_browser_windows`; end-to-end with fixture windows once capture exists)*
 - [x] A UIA read never blocks the caller beyond 300 ms wall-clock, including against Word (Stage 0 measured 2.8 s without a deadline); late results are discarded. *(`tsr-capture` deadline worker; real run over 16 windows/9 apps: max 294 ms; Word/PowerPoint/Explorer cut at 285–294 ms while their abandoned reads ran to 290–732 ms)*
 - [x] SQLCipher's own logging is off (`cipher_log_level = NONE`): a wrong-key open writes nothing to stderr. *(`tsr-store` test `wrong_key_writes_nothing_to_stderr`, child-process stderr capture)*

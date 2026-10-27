@@ -72,9 +72,11 @@ Stage 0 checks and how to reproduce each one: [`docs/stage0/results.md`](docs/st
 
 ## Repository layout
 
-See [`implementation_plan.md` §3](implementation_plan.md#3-repository-layout). What exists today:
-`crates/tsr-store`, `crates/tsr-retrieval`, `crates/tsr-infer/prompts`, `src-tauri`, `ui`,
-`bench/` (benchmark harness and capture probe), `evals/` (synthetic eval sets), `tools/`, `docs/`.
+See [`implementation_plan.md` §3](implementation_plan.md#3-repository-layout). What exists today: `crates/tsr-core` (Sensitive<T>, content-free logging), `tsr-win` (DPAPI, OS
+events and state), `tsr-guard` (blocklist, redaction), `tsr-store` (encrypted store, schema,
+search), `tsr-capture` (gates, UIA/OCR rungs, sessions, capture engine), `tsr-infer` (hardware
+detection, backend selection, prompts), `tsr-retrieval` (pinned ONNX Runtime), `src-tauri`, `ui`,
+`bench/`, `evals/`, `tools/`, `docs/`. Capture works end to end but has no UI controls yet.
 
 ## License
 

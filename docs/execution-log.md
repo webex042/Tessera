@@ -2,6 +2,26 @@
 
 Newest first. One entry per working session: stage, what changed, what was run and what it showed.
 
+## 2026-10-27 — Stage 1: OS events, gates, capture engine, sessions, store writer
+
+- `tsr-win`: T1 events thread (foreground, per-process title hook, WTS lock/unlock, suspend/resume,
+  AC/DC, battery saver) and OS queries (foreground facts, idle, fullscreen/presentation, power).
+- `tsr-capture`: gates (§5.2), SimHash (§5.5), window sessions with delta lines and flush rules
+  (§5.6), browser facts with fail-closed private detection, OCR rung (moved from the probe; frame
+  wiped; 485 ms deadline), OCR password-screen check (§6.2), capture engine (§4.2), store writer
+  (§4.1 T4), Windows platform and capture thread.
+
+| Command | Result |
+|---|---|
+| `cargo test -p tsr-win -- --include-ignored` | 5 passed (REAL power, foreground and title events; OS queries) |
+| `cargo test -p tsr-capture --test browser_real -- --ignored` | REAL Chrome/Edge normal → NotPrivate, Incognito/InPrivate → Private, URL read |
+| `cargo test -p tsr-capture --test engine` | 8 passed (simulated windows, real encrypted store) |
+| `cargo test -p tsr-capture --test capture_real -- --ignored` | REAL Notepad note stored redacted via UIA; no plaintext on disk |
+
+**Mistakes caught by tests:** a session test assumed a one-word change in a 13-word line is
+"unchanged" (it is not); an engine test put "OTP" in a title, which the blocklist rightly blocks;
+the browser test passed a verbatim path that blanks Chrome's address bar; an over-wide UIA search.
+
 ## 2026-10-26 (evening) — Stage 1: logging, DPAPI key, items/FTS, redaction
 
 - `tsr-core`: `Sensitive<T>` (formats as `<redacted>`, zeroized on drop); `logging::ContentFreeLayer`

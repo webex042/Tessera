@@ -166,3 +166,19 @@ accepted, and that `--offline` blocks every download path.
 - Repo in OneDrive: directory deletes fail ("Access denied") while OneDrive holds handles;
   `fetch_sidecar.py` clears files instead of removing folders. `third_party/` is uploaded by
   OneDrive unless excluded.
+
+## 10. Capture pipeline (Stage 1)
+
+- **Chrome Incognito windows have the same window title as normal ones** (verified with
+  throwaway profiles). The plan's title rule cannot detect them; the UIA `BrowserRootView` name
+  and the profile button can. Edge InPrivate puts `[InPrivate]` in both the title and the root name.
+- A UIA "find descendant" search for the address bar crawls the page's accessibility tree and hit
+  the per-call timeout; a bounded walk that skips `Document` subtrees finds it in about 18 steps.
+- An empty address-bar value during testing was caused by the test passing a verbatim (`\\?\`)
+  path to Chrome; with a `file:///` URL the value reads.
+- Windows 11 Notepad rewrites its window title from the open tab right after an external
+  `WM_SETTEXT`; tests must not assume a title sticks.
+- The WinEvent name-change hook is per foreground process (re-registered on focus change); a
+  system-wide one fires for every renamed control everywhere.
+- Real end-to-end run (Notepad fixture, capture restricted to notepad.exe): 1 item stored via UIA
+  in 12 s, OTP and card redacted, no plaintext in the DPAPI-keyed database files.

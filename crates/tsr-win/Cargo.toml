@@ -1,6 +1,6 @@
 [package]
 name = "tsr-win"
-description = "Tessara safe wrappers over Windows APIs (DPAPI so far)"
+description = "Tessara safe wrappers over Windows APIs: DPAPI, WinEvent hooks, session/power events, OS state"
 edition.workspace = true
 version.workspace = true
 rust-version.workspace = true
@@ -11,4 +11,21 @@ thiserror.workspace = true
 zeroize.workspace = true
 
 [target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = ["Win32_Foundation", "Win32_Security_Cryptography"] }
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Security_Cryptography",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Power",
+    "Win32_System_RemoteDesktop",
+    "Win32_System_SystemInformation",
+    "Win32_System_SystemServices",
+    "Win32_System_Threading",
+    "Win32_UI_Accessibility",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+tempfile = "3"

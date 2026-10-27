@@ -334,6 +334,8 @@ A pipeline of detectors returning `(span, kind)`; matches are replaced with type
 
 Rules: secrets always redacted; PII categories configurable; redaction counts are stored per item, the redacted values never are. A fuzz target exercises every detector (§18.4).
 
+**Implemented (Stage 1, `tsr-guard::redact`, ADR-0005):** generic secrets use entropy ≥ 3.0 bits/char plus mixed letters/digits (hex keys cannot reach 4.0); a bare 12-digit Aadhaar needs an Aadhaar keyword nearby (grouped 4-4-4 always redacted); cards need Luhn + network prefix but no keyword. Measured: 290/290 seeded secrets, 0.43 % false positives on 235 clean documents.
+
 ### 6.4 Untrusted-content handling (prompt-injection defence)
 
 1. Screen text, OCR text, VLM transcriptions and retrieved memory are **data**. They are wrapped in `<screen_content>` / `<memory>` blocks; any occurrence of those tag names inside the content is escaped first.
@@ -361,7 +363,7 @@ enum ActionProposal {
 
 ### 6.6 Logging and audit
 
-- `tracing` with a custom layer in `tsr-core` that **drops every field not on an allowlist** (event names, durations, counts, enum values, error codes). Strings from content cannot be logged by construction: content lives in `Sensitive<String>` wrappers whose `Debug`/`Display` print `<redacted>`.
+- `tracing` with a custom layer in `tsr-core` that **drops every field not on an allowlist** (event names, durations, counts, enum values, error codes). Strings from content cannot be logged by construction: content lives in `Sensitive<String>` wrappers whose `Debug`/`Display` print `<redacted>`. **Implemented:** `tsr_core::logging` keeps a message only if it is in `ALLOWED_MESSAGES`, a field only if its name is in `ALLOWED_FIELDS` and its value is a number, bool or ≤ 160 printable-ASCII chars; everything else is dropped and counted. A test scans every `tracing::` call in the workspace against both lists.
 - Audit log table (§9) records events such as `paused`, `resumed`, `blocked_window`, `item_stored`, `deleted_range`, `draft_inserted`, `model_downloaded` — with counts and IDs, never text.
 - Panic hook writes a content-free message; Windows Error Reporting full dumps are not requested (`WerAddExcludedApplication` for the app in release builds, documented in `privacy.md`).
 
@@ -494,7 +496,7 @@ Crate: `tsr-store`.
 ### 9.1 Files and keys
 
 - Data dir: `%LOCALAPPDATA%\Tessara\` → `tessara.db` (SQLCipher), `key.bin` (DPAPI blob), `models\`, `logs\` (content-free), `EBWebView\` (WebView2 profile).
-- Key: 32 random bytes from `BCryptGenRandom`, wrapped with `CryptProtectData` (current-user scope, `CRYPTPROTECT_UI_FORBIDDEN`, app-specific entropy). Passed to SQLCipher as a raw key: `PRAGMA key = "x'…'"`. Unwrapped key bytes are zeroized after `PRAGMA key`.
+- Key: 32 random bytes from `BCryptGenRandom`, wrapped with `CryptProtectData` (current-user scope, `CRYPTPROTECT_UI_FORBIDDEN`, app-specific entropy). Passed to SQLCipher as a raw key: `PRAGMA key = "x'…'"`. Unwrapped key bytes are zeroized after `PRAGMA key`. **Implemented** (`tsr-win::dpapi`, `tsr_store::keystore::open_store`): `key.bin` = `TSRK` + version byte + DPAPI blob, written via temp file + fsync + rename; a key is created only when neither file exists — a database without its key is an error, never a new key.
 - PRAGMAs on open: `cipher_memory_security = ON`, `secure_delete = ON`, `journal_mode = WAL`, `synchronous = NORMAL`, `foreign_keys = ON`, `temp_store = MEMORY` (so temp B-trees never hit disk unencrypted), and `cipher_log_level = NONE` (Stage 0: SQLCipher otherwise writes its own error lines to stderr, outside our content-free tracing layer).
 - Verified in Stage 0 (`crates/tsr-store`): SQLCipher 4.19.0 on SQLite 3.53.4, OpenSSL provider, FTS5 compiled in; wrong key rejected; no plaintext header or canary in DB/WAL.
 - Optional passphrase mode (v1.1): key derived from passphrase + DPAPI, so a stolen disk image plus Windows login is still not enough.
@@ -535,7 +537,8 @@ CREATE VIRTUAL TABLE items_fts USING fts5(
   text, summary, content='items', content_rowid='id',
   tokenize = 'unicode61 remove_diacritics 2'
 );
--- AFTER INSERT/UPDATE/DELETE triggers keep items_fts in sync.
+-- AFTER INSERT/UPDATE/DELETE triggers keep items_fts in sync; FTS5 'secure-delete' is on so deleted
+-- terms leave the index immediately (implemented: crates/tsr-store/migrations/0002_*.sql).
 
 CREATE TABLE chunks (
   id        INTEGER PRIMARY KEY,

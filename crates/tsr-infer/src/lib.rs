@@ -42,7 +42,7 @@ pub fn detect(third_party: &Path, adapters: &dyn AdapterSource, probe: &dyn Back
     let found: Result<Vec<Adapter>, DetectError> = adapters.adapters();
     if let Ok(a) = &found {
         for x in a {
-            tracing::info!(index = x.index, name = %x.name, vendor = %x.vendor.as_str(), dedicated_mib = x.dedicated_mib,
+            tracing::info!(index = x.index, adapter_name = %x.name, vendor = %x.vendor.as_str(), dedicated_mib = x.dedicated_mib,
                            shared_mib = x.shared_mib, software = x.software, "gpu adapter");
         }
     }

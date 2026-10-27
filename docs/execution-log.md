@@ -2,6 +2,26 @@
 
 Newest first. One entry per working session: stage, what changed, what was run and what it showed.
 
+## 2026-10-26 (evening) — Stage 1: logging, DPAPI key, items/FTS, redaction
+
+- `tsr-core`: `Sensitive<T>` (formats as `<redacted>`, zeroized on drop); `logging::ContentFreeLayer`
+  with reviewed message/field allowlists; workspace-wide test that audits every `tracing::` call
+  (it immediately caught a generic `name` field in tsr-infer, renamed `adapter_name`).
+- `tsr-win`: DPAPI `protect`/`unprotect` + `BCryptGenRandom` (real tests on this machine).
+- `tsr-store`: `open_store` (key file, refuse-to-replace-key rule), migration 0002 (sources, items,
+  items_fts with triggers and FTS5 secure-delete), repository: source upsert, URL credential
+  stripping, insert, injection-safe search (incl. Hindi/Hinglish), range delete with dry run.
+- `tsr-guard`: redaction v1 (11 secret kinds + optional phone/e-mail), generated corpora
+  (`tools/gen_redaction_corpus.py`), random-input idempotence test. ADR-0005.
+
+| Command | Result |
+|---|---|
+| `cargo test -p tsr-core` | 5 passed (incl. canary-never-logged, workspace tracing audit) |
+| `cargo test -p tsr-win` | 3 passed (REAL DPAPI) |
+| `cargo test -p tsr-store` | 27 passed (REAL DPAPI open_store ×4, items/FTS ×6, migrations ×8, SQLCipher ×5, …) |
+| `cargo test -p tsr-guard` | 19 passed; corpus: 290/290 secrets, 0.43 % false positives |
+| `cargo test --workspace` | 102 passed, 0 failed; clippy `-D warnings` and rustfmt clean |
+
 ## 2026-10-26 (later still) — Stage 1: UIA wall-clock deadline
 
 - `crates/tsr-capture`: `DeadlineWorker` (dedicated thread, caller waits at most the deadline,

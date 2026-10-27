@@ -6,6 +6,9 @@
 //! Key management (DPAPI wrapping) follows.
 
 pub mod blocklist;
+pub mod items;
+#[cfg(windows)]
+pub mod keystore;
 pub mod migrate;
 
 use std::path::Path;
@@ -35,6 +38,13 @@ pub enum StoreError {
     /// A blocklist rule was rejected (empty, too long, or a regex that does not compile).
     #[error("invalid blocklist rule")]
     InvalidRule,
+    /// The database exists but its key file does not (never silently create a new key).
+    #[error("database exists but key file is missing")]
+    KeyMissing,
+    #[error("key file problem: {0}")]
+    KeyFile(String),
+    #[error("DPAPI error {0:#010x}")]
+    Dpapi(i32),
 }
 
 impl From<rusqlite::Error> for StoreError {

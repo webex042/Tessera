@@ -4675,10 +4675,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "tsr-core"
+version = "0.0.1"
+dependencies = [
+ "tracing",
+ "tracing-subscriber",
+ "zeroize",
+]
+
+[[package]]
 name = "tsr-guard"
 version = "0.0.1"
 dependencies = [
  "regex",
+ "serde_json",
 ]
 
 [[package]]
@@ -4714,7 +4724,19 @@ dependencies = [
  "rusqlite",
  "tempfile",
  "thiserror 2.0.21",
+ "tracing",
+ "tsr-core",
  "tsr-guard",
+ "tsr-win",
+ "zeroize",
+]
+
+[[package]]
+name = "tsr-win"
+version = "0.0.1"
+dependencies = [
+ "thiserror 2.0.21",
+ "windows",
  "zeroize",
 ]
 

@@ -5,3 +5,4 @@
 
 pub mod blocklist;
 mod glob;
+pub mod redact;

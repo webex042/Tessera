@@ -8,9 +8,14 @@ publish.workspace = true
 
 [dependencies]
 rusqlite.workspace = true
+tsr-core = { path = "../tsr-core" }
 tsr-guard = { path = "../tsr-guard" }
 thiserror.workspace = true
+tracing.workspace = true
 zeroize.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+tsr-win = { path = "../tsr-win" }
 
 [dev-dependencies]
 tempfile = "3"

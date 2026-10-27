@@ -94,6 +94,10 @@ jobs:
           python-version: "3.13"
       - name: Validate synthetic eval sets
         run: python evals/validate.py
+      - name: Redaction corpora are reproducible from the generator
+        run: |
+          python tools/gen_redaction_corpus.py
+          git diff --exit-code -- tests/fixtures/redaction
       - name: Harness self-tests (SIMULATED server, no model)
         run: python -m unittest discover -s bench/tests -v
 

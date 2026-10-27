@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/tsr-core",
+    "crates/tsr-win",
     "crates/tsr-store",
     "crates/tsr-retrieval",
     "crates/tsr-guard",

@@ -14,11 +14,18 @@ pub struct Migration {
     pub sql: &'static str,
 }
 
-pub const MIGRATIONS: &[Migration] = &[Migration {
-    version: 1,
-    name: "blocklist_audit_settings",
-    sql: include_str!("../migrations/0001_blocklist_audit_settings.sql"),
-}];
+pub const MIGRATIONS: &[Migration] = &[
+    Migration {
+        version: 1,
+        name: "blocklist_audit_settings",
+        sql: include_str!("../migrations/0001_blocklist_audit_settings.sql"),
+    },
+    Migration {
+        version: 2,
+        name: "sources_items_fts",
+        sql: include_str!("../migrations/0002_sources_items_fts.sql"),
+    },
+];
 
 pub fn current_version(conn: &Connection) -> Result<u32, StoreError> {
     Ok(conn.query_row("PRAGMA user_version", [], |r| r.get(0))?)

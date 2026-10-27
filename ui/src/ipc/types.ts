@@ -136,6 +136,8 @@ export type DraftDto = {
   flags: DraftFlag[];
   placeholders: string[];
   used: number[];
+  /** The conversation contains text that tries to instruct AI tools. */
+  thread_injected: boolean;
   first_text_ms: number | null;
   total_ms: number;
   token: string;

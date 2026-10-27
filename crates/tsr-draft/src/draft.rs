@@ -35,6 +35,8 @@ pub struct Draft {
     pub used: Vec<i64>,
     pub placeholders: Vec<String>,
     pub flags: Vec<Flag>,
+    /// The thread itself contains text that tries to instruct AI tools (banner in the UI).
+    pub thread_injected: bool,
     pub first_text_ms: Option<u64>,
     pub total_ms: u64,
 }
@@ -228,12 +230,15 @@ pub fn run(
             }
         })?;
         if let Ok((text, used, placeholders)) = parse(r.content.expose(), input.memory.len(), input.memory) {
-            let flags = check(&text, &context);
+            let mut flags = check(&text, &context);
+            flags.extend(crate::factcheck::echoes_injection(&text, input.thread));
+            flags.sort_by_key(|f| (f.start, f.end));
             return Ok(Draft {
                 text,
                 used,
                 placeholders,
                 flags,
+                thread_injected: input.thread.lines().any(tsr_pipeline::guard::looks_injected),
                 first_text_ms: first,
                 total_ms: t0.elapsed().as_millis() as u64,
             });

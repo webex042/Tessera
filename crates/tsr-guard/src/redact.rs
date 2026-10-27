@@ -24,6 +24,8 @@ pub enum SecretKind {
     Card,
     Aadhaar,
     Pan,
+    /// Passport or voter ID (EPIC) number.
+    GovId,
     BankAccount,
     Ifsc,
     Upi,
@@ -43,6 +45,7 @@ impl SecretKind {
             SecretKind::Card => "card",
             SecretKind::Aadhaar => "aadhaar",
             SecretKind::Pan => "pan",
+            SecretKind::GovId => "gov_id",
             SecretKind::BankAccount => "account",
             SecretKind::Ifsc => "ifsc",
             SecretKind::Upi => "upi",
@@ -57,7 +60,8 @@ impl SecretKind {
 
 /// Policy version stored with every redacted output (facts store `redact_ver`). Bump when the
 /// detectors change so stored rows can be re-checked.
-pub const REDACT_VER: &str = "v1";
+/// v2 (Stage 7): Aadhaar VID, passport and voter ID detectors.
+pub const REDACT_VER: &str = "v2";
 
 /// Which optional PII categories to redact. Secrets are always redacted.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -142,6 +146,17 @@ static OTP_BEFORE: LazyLock<Regex> = LazyLock::new(|| {
 static AADHAAR: LazyLock<Regex> = LazyLock::new(|| re(r"\b[2-9]\d{3}[ -]?\d{4}[ -]?\d{4}\b"));
 static AADHAAR_WORD: LazyLock<Regex> = LazyLock::new(|| re(r"(?i)\b(?:aadhaa?r|uid|uidai|e-?kyc)\b|आधार"));
 static CARD: LazyLock<Regex> = LazyLock::new(|| re(r"\b\d(?:[ -]?\d){12,18}\b"));
+/// Aadhaar Virtual ID: 16 digits (Verhoeff), only after a VID keyword.
+static AADHAAR_VID: LazyLock<Regex> = LazyLock::new(|| re(r"\b[2-9]\d{3}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b"));
+static VID_WORD: LazyLock<Regex> = LazyLock::new(|| re(r"(?i)\b(?:vid|virtual\s+id)\b"));
+/// Indian passport (letter + 7 digits) and voter ID / EPIC (3 letters + 7 digits), only right
+/// after their keyword: on their own they look like product codes and ticket ids.
+static PASSPORT: LazyLock<Regex> = LazyLock::new(|| {
+    re(r"(?i)\b(?:passport|pp)\b[^\S\n]*(?:no\.?|number|num)?[^\S\n]*[:#\-]?[^\S\n]*([A-Z][1-9]\d{6})\b")
+});
+static VOTER_ID: LazyLock<Regex> = LazyLock::new(|| {
+    re(r"(?i)\b(?:voter[^\S\n]*id|epic|election[^\S\n]*card)\b(?:[^\S\n]*card)?[^\S\n]*(?:no\.?|number|num)?[^\S\n]*[:#\-]?[^\S\n]*([A-Z]{3}\d{7})\b")
+});
 static PAN: LazyLock<Regex> = LazyLock::new(|| re(r"\b[A-Z]{3}[PCHFATBLJG][A-Z]\d{4}[A-Z]\b"));
 static IFSC: LazyLock<Regex> = LazyLock::new(|| re(r"\b[A-Z]{4}0[A-Z0-9]{6}\b"));
 static ACCOUNT: LazyLock<Regex> = LazyLock::new(|| {
@@ -320,6 +335,23 @@ pub fn find(text: &str, opts: Options) -> Vec<Span> {
             push(m.start(), m.end(), SecretKind::Aadhaar);
         }
     }
+    for m in AADHAAR_VID.find_iter(text) {
+        let d = digits(m.as_str());
+        let context = &text[floor_char(text, m.start().saturating_sub(40))..m.start()];
+        if d.len() == 16 && verhoeff_ok(&d) && VID_WORD.is_match(context) {
+            push(m.start(), m.end(), SecretKind::Aadhaar);
+        }
+    }
+    for c in PASSPORT.captures_iter(text) {
+        if let Some(v) = c.get(1) {
+            push(v.start(), v.end(), SecretKind::GovId);
+        }
+    }
+    for c in VOTER_ID.captures_iter(text) {
+        if let Some(v) = c.get(1) {
+            push(v.start(), v.end(), SecretKind::GovId);
+        }
+    }
     for m in PAN.find_iter(text) {
         push(m.start(), m.end(), SecretKind::Pan);
     }
@@ -360,6 +392,24 @@ pub fn find(text: &str, opts: Options) -> Vec<Span> {
 }
 
 pub fn redact(text: &str, opts: Options) -> Redacted {
+    // One pass can reveal another secret: replacing the first of two codes after "OTP" brings
+    // the second into the keyword's window (found by tests/robustness.rs). Repeat until
+    // nothing is found; each pass only shrinks secret-like spans, so a few passes suffice.
+    let mut r = redact_once(text, opts);
+    for _ in 0..4 {
+        if find(&r.text, opts).is_empty() {
+            break;
+        }
+        let next = redact_once(&r.text, opts);
+        for (k, n) in next.counts {
+            *r.counts.entry(k).or_insert(0) += n;
+        }
+        r.text = next.text;
+    }
+    r
+}
+
+fn redact_once(text: &str, opts: Options) -> Redacted {
     let spans = find(text, opts);
     let mut out = String::with_capacity(text.len());
     let mut counts = BTreeMap::new();

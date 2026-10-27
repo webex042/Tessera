@@ -115,7 +115,7 @@ fn main() {
             rollup::run(real_dyn, &label),
         ),
         "seed" => match arg(&args, "--dest").map(PathBuf::from) {
-            Some(d) => match seed::run(&d) {
+            Some(d) => match seed::run(&d, arg(&args, "--canary").as_deref()) {
                 Ok(msg) => {
                     println!("{msg} -> {}", d.display());
                     true

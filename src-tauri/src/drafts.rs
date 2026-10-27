@@ -57,6 +57,8 @@ pub struct DraftDto {
     pub flags: Vec<tsr_draft::factcheck::Flag>,
     pub placeholders: Vec<String>,
     pub used: Vec<i64>,
+    /// The conversation contains text that tries to instruct AI tools.
+    pub thread_injected: bool,
     pub first_text_ms: Option<u64>,
     pub total_ms: u64,
     pub token: String,
@@ -382,6 +384,7 @@ impl Runner for DraftRunner {
                     flags: d.flags,
                     placeholders: d.placeholders,
                     used: d.used,
+                    thread_injected: d.thread_injected,
                     first_text_ms: d.first_text_ms,
                     total_ms: d.total_ms,
                     token,

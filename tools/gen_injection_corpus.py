@@ -380,6 +380,11 @@ for h in H:
     h["heldout"] = True
 C.extend(H)
 
+# Stage 7 held-out batch (tools/injection_stage7.py), loaded by path so `python -I` works.
+_s7 = {}
+exec(compile((Path(__file__).resolve().parent / "injection_stage7.py").read_text(encoding="utf-8"), "injection_stage7.py", "exec"), _s7)
+C.extend(_s7["S7"])
+
 
 def main() -> None:
     ids = [c["id"] for c in C]

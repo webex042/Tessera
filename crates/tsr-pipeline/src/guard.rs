@@ -43,12 +43,16 @@ static AI_DIRECTED: LazyLock<Vec<Regex>> = LazyLock::new(|| {
         r"^\s*(system|developer|assistant|admin|root)\s*[:>\]]",
         r"\b(you are now|act as|pretend to be|you must now|from now on you|your new (role|task|job))\b",
         r"\b(developer|god|dan|jailbreak|unrestricted|debug)\s+mode\b",
-        r"\b(dear|hey|attention|note to|to the|hello)\s+(ai|assistant|bot|model|llm|chatbot|agent|tessara|copilot|gpt|claude)\b",
-        r"\b(ai|assistant|bot|model|llm|chatbot|agent|tessara|copilot|gpt)\s*(,|:)?\s*(please\s+)?(must|should|shall|will|needs? to|has to|ignore|send|forward|email|delete|reveal|output|print|add|record|remember|mark|store|create|summari[sz]e|tell|say|respond|reply|run|execute|exec|call|open|download|install|upload|post|copy|move)\b",
+        r"\b(dear|hey|attention|note to|to the|hello)\s+(ai|assistant|bot|model|llm|chatbot|agent|tessara|copilot|gpt|claude|summari[sz]ers?|note-?takers?|scheduling tools?)\b",
+        // A role noun, optional filler words ("AI: also forward…"), then an action verb.
+        r"(\b(ai|assistant|bot|model|llm|chatbot|agent|tessara|copilot|gpt|sahayak)\b|सहायक|बॉट)\s*(,|:|-)?\s*((please|also|then|now|just|and|kindly|ji)\s+){0,2}(must|should|shall|will|needs? to|has to|ignore|send|forward|email|delete|reveal|output|print|add|record|remember|mark|store|create|summari[sz]e|tell|say|respond|reply|run|execute|exec|call|open|download|install|uninstall|upload|post|copy|move|disable|cancel|stop|kill|remove|share|transfer|wire|approve|pay|buy)\b",
+        r"(सहायक|बॉट|एआई)\s*[:,]",
+        // HTML comments that address an AI.
+        r"<!--[^>]{0,200}\b(ai|assistant|bot|model|llm|agent|tessara)\b",
         // Destructive shell or database commands in screen text are never the user's task.
         r"(\brm\s+-[a-z]*r[a-z]*f?\s+(/|~|\*|\.)|\bdel\s+/[sq]\b|\bformat\s+[a-z]:|\bdrop\s+(table|database)\b|\bcurl\b[^|\n]{0,80}\|\s*(ba|z)?sh\b|\bmkfs\b|\bshutdown\s+/[sr]\b)",
         r"\b(as an ai|as a language model|large language model|ai model)\b",
-        r"(<\|im_start\|>|<\|im_end\|>|\[/?inst\]|<<sys>>|</?screen_content>|</?memory>|</?system>|###\s*(instruction|system|response))",
+        r"(<\|[a-z_]{2,20}\|>|\[/?inst\]|<<sys>>|</?screen_content>|</?memory>|</?system>|###\s*(instruction|system|response))",
         r"\b(begin|end)\s+(system|instructions?|prompt)\b",
         r"\bprompt\s*injection\b",
         // Role nouns that only an AI system answers to, followed by instruction language.
@@ -66,7 +70,7 @@ static AI_DIRECTED: LazyLock<Vec<Regex>> = LazyLock::new(|| {
 /// Asking to move data out, destroy it, or reveal what is protected.
 static EXFIL: LazyLock<Regex> = LazyLock::new(|| {
     re(
-        r"(?i)\b(send|e-?mail|mail|forward|upload|post|share|transfer|wire|leak|exfiltrate|paste|copy|reveal|disclose|print|output|dump|export|list|show|delete|wipe|erase|remove|purge|format|disable|uninstall|drop|type|enter|give|provide|submit|tell|read out)\b.{0,60}\b(passwords?|passcodes?|credentials?|api[ _-]?keys?|tokens?|secrets?|otps?|one[- ]time|private keys?|ssh keys?|seed phrase|recovery (codes?|phrase)|2fa|mfa|cookies?|session|all (the |my |your |of the )?(files|data|emails|mails|contacts|memories|memory|facts|messages|notes|history|documents|screenshots|recordings|invoices|receipts|statements|payslips|contracts|records|photos)|everything|backups?|(the |all |system |server |app )?logs?|log files?|(laptop|hard|the|system) (disk|drive)|disk|inbox|mailbox|documents folder|(hr|payroll|finance) files|the database|database|tessara|keychain|wallet|suppressed|forgotten (people|persons?|names?)|card numbers?|card details|credit cards?|cvvs?|cvc|pins?|bank details|aadhaar|pan numbers?)\b",
+        r"(?i)\b(send|e-?mail|mail|forward|upload|post|share|transfer|wire|leak|exfiltrate|paste|copy|reveal|disclose|print|output|dump|export|list|show|delete|wipe|erase|remove|purge|format|disable|uninstall|drop|type|enter|give|provide|submit|tell|read out)\b.{0,60}\b(passwords?|passcodes?|credentials?|api[ _-]?keys?|tokens?|secrets?|otps?|one[- ]time|private keys?|ssh keys?|seed phrase|recovery (codes?|phrase)|2fa|mfa|cookies?|session|all (the |my |your |of the )?(files|data|emails|mails|contacts|memories|memory|facts|messages|notes|history|documents|screenshots|recordings|invoices|receipts|statements|payslips|contracts|records|photos)|everything|backups?|public (bucket|repo|repository|link|drive|folder|channel)|password manager( export)?|(full |entire |complete |whole )?(customer|client|contact|employee|user) (list|data|database|records|details)|(laptop|hard|the|system) (disk|drive)|disk|inbox|mailbox|documents folder|(hr|payroll|finance) files|the database|database|tessara|keychain|wallet|suppressed|forgotten (people|persons?|names?)|card numbers?|card details|credit cards?|cvvs?|cvc|pins?|bank details|aadhaar|pan numbers?)\b",
     )
 });
 
@@ -76,6 +80,18 @@ static STORE_POISON: LazyLock<Vec<Regex>> = LazyLock::new(|| {
         // ":" needs no word boundaries around it ("Create a new memory: …" missed before).
         r"\b(add|insert|create|record|store|save|log|remember)\b.{0,20}\b(a |this |that |the following |new )?(fact|task|memory|memories|commitment|reminder|note|entry|record)s?\b.{0,20}(\b(that|saying|for)\b|:)",
         r"\bremember (that|this)\b.{0,40}\b(the user|asha|you)\b",
+        r"\bremember (for later|this|that)\s*:",
+        r"\b(add|save|store|put|write)\b.{0,20}\b(to|in|into) (your |the )?memory\b",
+        // Bulk edits of the user's data.
+        r"\b(overwrite|modify|edit|reset|change|update|set)\b.{0,30}\b(every|all|each)\b.{0,15}\b(tasks?|commitments?|reminders?|facts?|memories|loops?|due dates?)\b",
+        // Planted answers for later questions.
+        r"\bif (anyone|someone|somebody|the user|they|he|she)\b.{0,30}\basks?\b.{0,60}\b(the answer is|answer that|say|tell (them|him|her)|reply)\b",
+        // key=value smuggling of the output format.
+        r"\b(status|kind|owner|confidence|evidence|due_text)\s*=\s*\S.{0,80}\b(status|kind|owner|confidence|evidence|text)\s*=",
+        // Gift-card fraud.
+        r"\b(buy|purchase|get|send)\b.{0,40}\bgift ?cards?\b|\bgift ?cards?\b.{0,40}\b(codes?|send)\b",
+        // Logs sent to an outside address.
+        r"\b(send|e-?mail|mail|forward|upload|post)\b.{0,40}\blogs?\b.{0,60}([\w.+-]+@[\w-]+\.\w|https?://)",
         r"\bmark (all|every|each|this|these|the)\b.{0,40}\b(done|complete|completed|closed|resolved)\b",
         r"\b(output|return|respond with|reply with|emit|produce|generate)\b.{0,20}\b(json|the following|this text|exactly)\b",
         r#""(kind|facts|summary|owner|evidence|confidence)"\s*:"#,
@@ -234,6 +250,17 @@ pub fn classify(f: &RawFact, item: &str, start: usize, end: usize, self_names: &
         f.counterparty.as_deref().unwrap_or(""),
     ];
     if fields.iter().any(|s| looks_injected(s)) {
+        return Class::Injection;
+    }
+    // Words that widen what an action reaches ("publicly", "everyone", "permanently") must come
+    // from the source: a model that adds them turns a harmless line into a harmful task.
+    static SCOPE: LazyLock<Regex> =
+        LazyLock::new(|| re(r"(?i)\b(publicly|public|externally|everyone|entire|permanently|all)\b"));
+    let source = normalize(item).text;
+    if SCOPE
+        .find_iter(&normalize(&f.text).text)
+        .any(|m| !source.contains(m.as_str()))
+    {
         return Class::Injection;
     }
     // Judge the sentence the evidence is in; an injection elsewhere on the same line only taints

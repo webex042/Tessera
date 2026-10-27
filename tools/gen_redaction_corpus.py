@@ -204,6 +204,44 @@ for i in range(26):
     add("password", t.format(v=v), v)
 
 # --- clean corpus -------------------------------------------------------------------------------
+# --- Stage 7 additions: more Indian identifiers (own RNG, so earlier cases are unchanged) --------
+rng7 = random.Random(20261027)
+
+
+def vid() -> str:
+    body = str(rng7.randint(2, 9)) + "".join(str(rng7.randint(0, 9)) for _ in range(14))
+    return body + verhoeff_check_digit(body)
+
+
+for _ in range(20):
+    v = vid()
+    shown = group(v, [4, 4, 4, 4], rng7.choice([" ", "-", ""]))
+    t = rng7.choice(["Aadhaar VID: {v}", "virtual ID {v} for e-KYC", "UIDAI VID {v}", "Your VID is {v}. Do not share it."])
+    add("aadhaar", t.format(v=shown), shown)
+
+for _ in range(15):
+    acc = "".join(str(rng7.randint(0, 9)) for _ in range(rng7.randint(11, 16)))
+    bank = rng7.choice(["SBIN", "HDFC", "ICIC", "UTIB", "KKBK", "PUNB"])
+    ifsc = bank + "0" + "".join(rng7.choice("0123456789") for _ in range(6))
+    t = rng7.choice([
+        "Beneficiary: Meera Shah, A/c {a}, IFSC {i}",
+        "acc no. {a} ({i})",
+        "NEFT details - Account Number: {a} | IFSC: {i}",
+        "khata number {a}, IFSC {i} pe bhej dena",
+    ])
+    add("account", t.format(a=acc, i=ifsc), acc, ifsc)
+
+for _ in range(15):
+    pp = rng7.choice("ABCDEFGHJKLMNPRSTUVWZ") + str(rng7.randint(1, 9)) + "".join(str(rng7.randint(0, 9)) for _ in range(6))
+    t = rng7.choice(["Passport No: {v}", "passport number {v}, expires 2031", "Passport #{v} (scan attached)", "pp no. {v}"])
+    add("passport", t.format(v=pp), pp)
+
+for _ in range(15):
+    epic = "".join(rng7.choice("ABCDEFGHJKLMNPRSTUVWXYZ") for _ in range(3)) + "".join(str(rng7.randint(0, 9)) for _ in range(7))
+    t = rng7.choice(["Voter ID: {v}", "EPIC no. {v}", "voter id card number {v}", "Election card {v} for address proof"])
+    add("voter_id", t.format(v=epic), epic)
+
+
 clean: list[str] = []
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 for i in range(40):
@@ -253,6 +291,13 @@ prose = [
     "PIN code 560038 (Indiranagar)",
     "Pay 1500 to Karan by Friday for the reunion",
     "Product SKU 4006381333931 restocked",
+    "Flight AI2207 departs 06:40 from gate B12",
+    "Invoice INV2026001234 is due on 30 Oct",
+    "The passport office opens at 9:30; bring the old passport and two photos",
+    "Voter list revision camp on Sunday at the school",
+    "Order ID 4021-7788-1201-5530 shipped",
+    "Ticket ABC1234 assigned to the infra team",
+    "Model K1234 router firmware 2.3.7",
 ]
 clean.extend(prose)
 

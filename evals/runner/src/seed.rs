@@ -21,7 +21,9 @@ use crate::common::*;
 /// Marker written into a seeded directory; seeding refuses any other non-empty directory.
 const MARKER: &str = "SYNTHETIC-SEED";
 
-pub fn run(dest: &Path) -> Result<String, String> {
+/// `canary`: also store one item whose text, title, fact and summary carry this token
+/// (tools/canary-scan.ps1 then checks that it never appears on disk in plaintext).
+pub fn run(dest: &Path, canary: Option<&str>) -> Result<String, String> {
     if dest.exists() {
         let non_empty = std::fs::read_dir(dest)
             .map_err(|e| format!("{:?}", e.kind()))?
@@ -71,6 +73,30 @@ pub fn run(dest: &Path) -> Result<String, String> {
         if extract(&mut c, id, &oracle, &ctx, &CancelToken::new()).is_ok() {
             n_facts += tsr_store::facts::for_item(&c, id).map(|v| v.len()).unwrap_or(0);
         }
+    }
+    if let Some(tok) = canary {
+        if !tok.chars().all(|c| c.is_ascii_alphanumeric()) || tok.len() < 12 {
+            return Err("canary must be 12+ ASCII letters/digits".into());
+        }
+        let at = jiff::Timestamp::now().as_millisecond() - 5 * 60_000;
+        let text = format!("Synthetic canary note {tok}. Please send the {tok} report by Friday.");
+        let id = add_item(&c, "Notepad", &format!("{tok} notes"), "app:notepad.exe", at, &text, Acquisition::Uia);
+        let fact = json!({"kind": "task", "text": format!("Send the {tok} report"), "owner": "me", "counterparty": null,
+                          "due_text": "by Friday", "evidence": format!("Please send the {tok} report by Friday"),
+                          "confidence": "high"});
+        let out = json!({"summary": format!("Asked to send the {tok} report."), "facts": [fact], "people": []});
+        let ctx = Ctx {
+            user_name: "Asha Verma",
+            user_aliases: &["Asha"],
+            tz: "Asia/Kolkata",
+            date_order: DateOrder::Dmy,
+            blocklist: &bl,
+            redact: Options::default(),
+            model_id: "oracle",
+            now_ms: at,
+        };
+        let _ = extract(&mut c, id, &Scripted::one(out.to_string()), &ctx, &CancelToken::new());
+        n_items += 1;
     }
     Ok(format!(
         "seeded {n_items} synthetic items and {n_facts} facts (SIMULATED oracle extraction)"

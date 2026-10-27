@@ -1,0 +1,1081 @@
+{
+  "accuracy": 0.15,
+  "correct": 9,
+  "fabricated_citations": 0,
+  "first_sentence_ms_p50": 23729,
+  "invalid": 0,
+  "label": "qwen3-vl-4b-instruct-q4_k_m on vulkan on Vulkan0 (AMD Radeon (TM) Graphics)",
+  "pass": false,
+  "questions": 60,
+  "rows": [
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "commitment",
+        "range": false
+      },
+      "first_sentence_ms": 23815,
+      "gold_retrieved": true,
+      "id": "ask-001",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            2
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            21
+          ],
+          "text": "I promised to send the revised sheet by Friday.",
+          "verified": true
+        }
+      ],
+      "total_ms": 24495
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-002",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 21929
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-003",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 21965
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 32424,
+      "gold_retrieved": true,
+      "id": "ask-004",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            23
+          ],
+          "text": "Asha asked Fatima to confirm if the renewal includes the extra 200 support seats and the new price per seat before legal reviews on 28 Oct.",
+          "verified": true
+        },
+        {
+          "cites": [
+            2
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            48
+          ],
+          "text": "The vendor proposal pricing is INR 12 lakh per year, but no confirmation from Fatima is recorded.",
+          "verified": true
+        },
+        {
+          "cites": [
+            3
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            68
+          ],
+          "text": "Fatima was asked to confirm data-residency answer, but no response is recorded.",
+          "verified": true
+        }
+      ],
+      "total_ms": 50963
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-005",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 27283
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-006",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 22424
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-007",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 18609
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-008",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 20718
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-009",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 29044
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-010",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 28294
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 26183,
+      "gold_retrieved": true,
+      "id": "ask-011",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            34
+          ],
+          "text": "The CloudHost invoice INV-2291 is for INR 1,84,500.",
+          "verified": true
+        },
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            34
+          ],
+          "text": "It is due on 05/11/2026.",
+          "verified": true
+        }
+      ],
+      "total_ms": 34904
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-012",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 16387
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 11967,
+      "gold_retrieved": false,
+      "id": "ask-013",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            62
+          ],
+          "text": "The memory snippet does not indicate whether you declined anything recently.",
+          "verified": false
+        }
+      ],
+      "total_ms": 12641
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-014",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 13070
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-015",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 15070
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-016",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 23237
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-017",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 13238
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-018",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 20359
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-019",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 16693
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-020",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 22649
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-021",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 5453
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": "Microsoft Teams",
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 11310,
+      "gold_retrieved": true,
+      "id": "ask-022",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            9
+          ],
+          "text": "Lena asked for a customer reference in retail for the webinar, preferably someone using the export API.",
+          "verified": true
+        }
+      ],
+      "total_ms": 11940
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "task",
+        "range": false
+      },
+      "first_sentence_ms": 32282,
+      "gold_retrieved": true,
+      "id": "ask-023",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            7
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            10
+          ],
+          "text": "Your action items from the weekly product sync are: Asha to share Q4 OKR draft with leads by Friday, Meera to conduct user interviews for the mobile flow by 30 Oct, and Daniel to get budget approval for the research panel.",
+          "verified": true
+        }
+      ],
+      "total_ms": 33024
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-024",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 22130
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-025",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 4769
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-026",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 4920
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 8624,
+      "gold_retrieved": true,
+      "id": "ask-027",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            14
+          ],
+          "text": "The reunion is at Toit Indiranagar on Sunday, 1 Nov, at 8pm.",
+          "verified": true
+        }
+      ],
+      "total_ms": 9230
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-028",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 16587
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-029",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 21935
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-030",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 20323
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 16424,
+      "gold_retrieved": true,
+      "id": "ask-031",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            52
+          ],
+          "text": "Snippet 1 lists Jira tickets for Sprint 45 but does not indicate ownership.",
+          "verified": false
+        },
+        {
+          "cites": [
+            3
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            35
+          ],
+          "text": "Snippet 3 mentions Tom Becker’s actions but does not link to Jira tickets.",
+          "verified": false
+        }
+      ],
+      "total_ms": 23029
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-032",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 17576
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-033",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 18544
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-034",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 13586
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-035",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 19074
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-036",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 20121
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-037",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 18496
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 29184,
+      "gold_retrieved": true,
+      "id": "ask-038",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            2
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            64
+          ],
+          "text": "The launch tracker shows Asha has two items: 'Help center articles' due 28-10-26 and 'In-app announcement' due 03-11-26.",
+          "verified": true
+        }
+      ],
+      "total_ms": 29886
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-039",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 18191
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-040",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 17306
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-041",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 16086
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-042",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 9128
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-043",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 18757
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "question",
+        "range": false
+      },
+      "first_sentence_ms": 25466,
+      "gold_retrieved": true,
+      "id": "ask-044",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            73
+          ],
+          "text": "The SSO redirect loop is a blocker for users with uppercase emails, as noted by Fatima Khan.",
+          "verified": true
+        },
+        {
+          "cites": [
+            5
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            16
+          ],
+          "text": "Arjun Rao asked about SSO with Okta being on the Q1 roadmap, but this is unrelated to the redirect loop blocker.",
+          "verified": true
+        }
+      ],
+      "total_ms": 32808
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 12255,
+      "gold_retrieved": true,
+      "id": "ask-045",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            75
+          ],
+          "text": "The dentist appointment is scheduled for Saturday, 31 October, from 09:00 to 10:00.",
+          "verified": true
+        }
+      ],
+      "total_ms": 12858
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "commitment",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-046",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 18279
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-047",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 19624
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-048",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 16999
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-049",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 15626
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 23729,
+      "gold_retrieved": true,
+      "id": "ask-050",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            40
+          ],
+          "text": "The export v2 beta is for BigRetail and two other pilots only.",
+          "verified": true
+        }
+      ],
+      "total_ms": 24435
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-051",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 8817
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-052",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 17255
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-053",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 14729
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-054",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 15987
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "question",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-055",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 16269
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-056",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 15280
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 10131,
+      "gold_retrieved": false,
+      "id": "ask-057",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            49
+          ],
+          "text": "Yes, you agreed to wire money, as per the commitment noted in the memory snippet.",
+          "verified": false
+        }
+      ],
+      "total_ms": 10728
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-058",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 8125
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-059",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 7208
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 11517,
+      "gold_retrieved": false,
+      "id": "ask-060",
+      "insufficient": true,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            38
+          ],
+          "text": "The Diwali party venue is being finalized, but no attendees are mentioned in the memory.",
+          "verified": true
+        }
+      ],
+      "total_ms": 12116
+    }
+  ],
+  "shown_sentences": 19,
+  "simulated": false,
+  "split": "all",
+  "total_ms_p50": 18191,
+  "verified_sentences": 15,
+  "verified_share": 0.7894736842105263
+}

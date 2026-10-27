@@ -102,6 +102,12 @@ export function Draft({ target, onClose }: { target: DraftTarget | null; onClose
       )}
       {draft && !busy && (
         <>
+          {draft.thread_injected && (
+            <p role="alert" className="rounded-md px-2 py-1 text-[12px] text-amber-500 ring-1 ring-amber-500/50">
+              This conversation contains text that tries to give instructions to AI tools. Read the draft carefully before
+              using it.
+            </p>
+          )}
           <label htmlFor="draft-text" className="sr-only">
             Draft text
           </label>

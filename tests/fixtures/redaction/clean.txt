@@ -153,3 +153,10 @@ password: ********
 PIN code 560038 (Indiranagar)
 Pay 1500 to Karan by Friday for the reunion
 Product SKU 4006381333931 restocked
+Flight AI2207 departs 06:40 from gate B12
+Invoice INV2026001234 is due on 30 Oct
+The passport office opens at 9:30; bring the old passport and two photos
+Voter list revision camp on Sunday at the school
+Order ID 4021-7788-1201-5530 shipped
+Ticket ABC1234 assigned to the infra team
+Model K1234 router firmware 2.3.7

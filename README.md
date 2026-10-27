@@ -76,7 +76,7 @@ See [`implementation_plan.md` §3](implementation_plan.md#3-repository-layout). 
 events and state), `tsr-guard` (blocklist, redaction), `tsr-store` (encrypted store, schema,
 search), `tsr-capture` (gates, UIA/OCR rungs, sessions, capture engine), `tsr-infer` (hardware
 detection, backend selection, prompts), `tsr-retrieval` (pinned ONNX Runtime), `src-tauri`, `ui`,
-`bench/`, `evals/`, `tools/`, `docs/`. Capture works end to end but has no UI controls yet.
+`bench/`, `evals/`, `tools/`, `docs/`. `tsr-net` (approved, verified model downloads), `tsr-pipeline` (extraction, dates, people, facts), `evals/runner` (`tsr-eval`). Capture, extraction and search work and are tested, but the app does not assemble them yet and no model has been run; see `docs/stage2/verification.md`.
 
 ## License
 

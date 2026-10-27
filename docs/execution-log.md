@@ -2,6 +2,18 @@
 
 Newest first. One entry per working session: stage, what changed, what was run and what it showed.
 
+## 2026-10-27 — Stage 2: understanding pipeline (all tasks, no model)
+
+Commits 23c1537 (inference runtime), c05634d (model setup, tsr-net), b7f3225 (extraction, dates,
+people, facts store), d20d7be (retrieval, injection corpus, eval runners), ec8b1a5 (VLM rung 3,
+ingest worker, CI). Full report: `docs/stage2/verification.md`; decisions: ADR-0006.
+
+**Mistakes and findings caught by tests:** `INSERT OR IGNORE` swallowed a CHECK failure and stored
+a fact without evidence; the injection corpus's first run found 11 leaks (mostly summaries), and
+the untuned held-out cases passed only 6/12 before the guard was generalised; Windows OCR skipped a
+card-number line, so masking missed it; an OCR input path through `IBuffer` crashed the process;
+a test runner left Notepad open after a crash (its children inherited the output pipe).
+
 ## 2026-10-27 — Stage 1: OS events, gates, capture engine, sessions, store writer
 
 - `tsr-win`: T1 events thread (foreground, per-process title hook, WTS lock/unlock, suspend/resume,

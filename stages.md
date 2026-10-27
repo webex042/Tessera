@@ -9,7 +9,7 @@ Effort is in full-time-equivalent weeks for one developer; double it for part-ti
 |---|---|---|---|---|
 | 0 | Feasibility and model benchmark | 2 wk | — | **In progress** — tooling done; model gates unverified; S1 WebView2 finding open ([results](docs/stage0/results.md)) |
 | 1 | Foundation, capture, memory, baseline guardrails | 5 wk | 0 | **In progress** — store, logging, blocklist, redaction, UIA/OCR rungs, OS events + gates, capture engine + sessions + store writer done (real end-to-end capture verified); UI shell, pause hotkey, onboarding, image-write and password-box fixture tests, 8 h run pending |
-| 2 | Understanding pipeline | 4 wk | 1 | Not started |
+| 2 | Understanding pipeline | 4 wk | 1 | **In progress** — all tasks implemented and tested without a model ([verification](docs/stage2/verification.md)); model-dependent criteria (F1, hallucination with a real model, real GPU idle) unverified: no model on the dev machine |
 | 3 | Notch UI | 3 wk | 1 | Not started |
 | 4 | Rollups, morning brief, open loops | 3 wk | 2, 3 | Not started |
 | 5 | Draft assistant | 3 wk | 2, 3 | Not started |
@@ -60,12 +60,12 @@ Stage 3 can run in parallel with Stage 2 if there are two contributors.
 ## Stage 2 — Understanding pipeline
 
 **Exit criteria:**
-- [ ] Extraction F1 ≥ 0.70 on the held-out set; hallucinated facts ≤ 3 %; 0 schema-invalid rows stored.
-- [ ] Injection corpus (≥ 50 cases): no injected instruction stored as a user task (unless genuinely addressed to the user); nothing triggers an action.
-- [ ] A 2-hour synthetic workload is fully processed within 30 min after it ends.
-- [ ] GPU idle when nothing is queued; model unloads after the idle timeout on battery.
-- [ ] Sidecar runs with a cleared environment: setting `LLAMA_ARG_AGENT=1` or `LLAMA_ARG_HF_REPO` in the parent has no effect (tested).
-- [ ] Embedders only ever use the pinned ONNX Runtime (`load_pinned`); a test confirms `System32\onnxruntime.dll` is never mapped.
+- [ ] Extraction F1 ≥ 0.70 on the held-out set; hallucinated facts ≤ 3 %; 0 schema-invalid rows stored. *(unverified: needs a model. Pipeline side measured with the oracle: 0 schema-invalid rows, 0 hallucinated stored facts, no gold fact dropped by the validators; runner ready: `tsr-eval extraction --model DIR`)*
+- [ ] Injection corpus (≥ 50 cases): no injected instruction stored as a user task (unless genuinely addressed to the user); nothing triggers an action. *(code-level part met: 69 adversarial + 5 control cases pass with a SIMULATED model that obeys every injection; held-out first run was 6/12 before the guard was generalised; real-model run unverified)*
+- [ ] A 2-hour synthetic workload is fully processed within 30 min after it ends. *(SIMULATED: real scheduler with assumed job costs drains 25 s after the window; real model throughput unmeasured)*
+- [ ] GPU idle when nothing is queued; model unloads after the idle timeout on battery. *(tested with the SIMULATED sidecar: zero model requests when idle, unload after the battery timeout, lazy restart, unload/request race; GPU utilisation with a real model unmeasured)*
+- [x] Sidecar runs with a cleared environment: setting `LLAMA_ARG_AGENT=1` or `LLAMA_ARG_HF_REPO` in the parent has no effect (tested). *(REAL llama-server b11900 in router mode: inherited `LLAMA_ARG_LOG_FILE` writes a log in a control run and nothing when Tessara starts it; fake sidecar reports only allow-listed variable names)*
+- [ ] Embedders only ever use the pinned ONNX Runtime (`load_pinned`); a test confirms `System32\onnxruntime.dll` is never mapped. *(the embedder can only be built from a `PinnedRuntime`'s environment; the existing pinned-runtime test checks the mapped module; no embedding model to run end to end)*
 
 **Main risks:** prompt injection producing misleading memory; llama.cpp flag/API changes; VRAM contention.
 

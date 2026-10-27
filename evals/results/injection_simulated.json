@@ -514,7 +514,7 @@
       "pass": true,
       "problems": [],
       "rejected": {
-        "quoted_instruction": 1
+        "injection": 1
       },
       "stored": 0
     },

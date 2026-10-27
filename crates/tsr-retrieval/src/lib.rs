@@ -8,6 +8,7 @@
 //! - [`hybrid`] — keyword + vector + fact search fused with Reciprocal Rank Fusion.
 //! - [`ingest`] — the embedding job.
 
+pub mod ask;
 pub mod chunk;
 pub mod embed;
 pub mod hybrid;

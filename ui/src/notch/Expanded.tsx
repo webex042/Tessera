@@ -1,17 +1,19 @@
 // Expanded panel (plan §13.2–13.4): tabs Today, Open loops, Search, Timeline (day). Keyboard:
 // Left/Right/Home/End move between tabs, Esc closes. Data comes from Rust; every view has
-// loading, empty and error states. Ask arrives in Stage 6.
+// loading, empty and error states.
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 import type { Status } from "../ipc/types";
 import { TodayView } from "./views/TodayView";
 import { OpenLoopsView } from "./views/OpenLoopsView";
 import { SearchView } from "./views/SearchView";
+import { AskView } from "./views/AskView";
 import { TimelineView } from "./views/TimelineView";
 
-export type Tab = "today" | "loops" | "search" | "timeline";
+export type Tab = "today" | "ask" | "loops" | "search" | "timeline";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "today", label: "Today" },
+  { id: "ask", label: "Ask" },
   { id: "loops", label: "Open loops" },
   { id: "search", label: "Search" },
   { id: "timeline", label: "Timeline" },
@@ -52,6 +54,7 @@ export function Expanded(props: {
   if (tab === "today") view = <TodayView />;
   else if (tab === "loops") view = <OpenLoopsView />;
   else if (tab === "search") view = <SearchView />;
+  else if (tab === "ask") view = <AskView />;
   else view = <TimelineView />;
 
   return (

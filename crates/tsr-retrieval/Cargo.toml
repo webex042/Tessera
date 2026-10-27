@@ -11,9 +11,12 @@ fastembed.workspace = true
 ort.workspace = true
 rusqlite.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
+tsr-core = { path = "../tsr-core" }
 tsr-guard = { path = "../tsr-guard" }
+tsr-infer = { path = "../tsr-infer" }
 tsr-store = { path = "../tsr-store" }
 
 [target.'cfg(windows)'.dependencies]

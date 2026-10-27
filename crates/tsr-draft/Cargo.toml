@@ -1,0 +1,17 @@
+[package]
+name = "tsr-draft"
+description = "Tessara draft assistant: request, streaming, code fact check (plan §12)"
+edition.workspace = true
+version.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tsr-core = { path = "../tsr-core" }
+tsr-guard = { path = "../tsr-guard" }
+tsr-infer = { path = "../tsr-infer" }
+tsr-pipeline = { path = "../tsr-pipeline" }

@@ -10,12 +10,16 @@
 //!   de-duplication and one atomic write (§8.2–8.3).
 //! - [`worker`] — durable `jobs` rows → scheduler jobs, and the runners that execute them.
 
+pub mod askq;
 pub mod audit;
+pub mod brief;
 pub mod dates;
 pub mod evidence;
 pub mod extract;
 pub mod guard;
+pub mod loops;
 pub mod normalize;
 pub mod people;
+pub mod rollup;
 pub mod schema;
 pub mod worker;

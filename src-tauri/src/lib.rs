@@ -8,6 +8,8 @@
 //! Commands are thin wrappers that validate input and return content-free error codes.
 //! `--stage0-report` keeps the Stage 0 WebView2 report mode.
 
+pub mod ask;
+pub mod drafts;
 pub mod services;
 pub mod views;
 pub mod webview_policy;
@@ -106,6 +108,110 @@ fn search(
 #[tauri::command]
 fn get_item(state: State<'_, AppState>, item_id: i64) -> Result<ItemDetail, ApiError> {
     svc(&state)?.views.item(item_id)
+}
+
+#[tauri::command]
+fn get_brief(state: State<'_, AppState>) -> Result<tsr_pipeline::brief::Brief, ApiError> {
+    svc(&state)?.views.brief(now_ms(), &local_tz())
+}
+
+#[tauri::command]
+fn get_loop_groups(state: State<'_, AppState>) -> Result<views::LoopGroups, ApiError> {
+    svc(&state)?.views.loop_groups(now_ms())
+}
+
+#[tauri::command]
+fn get_rollups(state: State<'_, AppState>, level: String, at_ms: i64) -> Result<views::RollupView, ApiError> {
+    if !(0..=4_102_444_800_000).contains(&at_ms) {
+        return Err(E_INVALID);
+    }
+    svc(&state)?.views.rollups(&level, at_ms, &local_tz())
+}
+
+#[tauri::command]
+fn get_items(state: State<'_, AppState>, item_ids: Vec<i64>) -> Result<Vec<views::ItemCard>, ApiError> {
+    svc(&state)?.views.items_by_ids(&item_ids)
+}
+
+#[tauri::command]
+fn propose_bulk_status(state: State<'_, AppState>, fact_ids: Vec<i64>, status: String) -> Result<String, ApiError> {
+    svc(&state)?
+        .views
+        .propose_bulk_status(&fact_ids, &status, Instant::now())
+}
+
+#[tauri::command]
+fn set_bulk_status(
+    state: State<'_, AppState>,
+    fact_ids: Vec<i64>,
+    status: String,
+    token: String,
+) -> Result<u32, ApiError> {
+    svc(&state)?
+        .views
+        .set_bulk_status(&fact_ids, &status, &token, Instant::now())
+}
+
+/// Ask: sources at once; with a model, `ask_sentence` events then `ask_done`.
+#[tauri::command]
+fn ask(state: State<'_, AppState>, question: String) -> Result<ask::AskStart, ApiError> {
+    svc(&state)?.asks.start(&question, now_ms(), &local_tz())
+}
+
+/// Draft step 2: generate with the user's optional instruction (streams `draft_chunk`, then
+/// `draft_ready` or `draft_error`).
+#[tauri::command]
+fn draft_generate(state: State<'_, AppState>, instruction: String) -> Result<(), ApiError> {
+    svc(&state)?.drafts.generate(&instruction)
+}
+
+/// Draft step 3: give focus back to the target and paste there, only with the draft's token and
+/// only into the same, still editable, non-password field.
+#[tauri::command]
+fn draft_insert(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    token: String,
+    edited: Option<String>,
+) -> Result<(), ApiError> {
+    let s = svc(&state)?;
+    apply_panel(&app, &state, Panel::Pill)?;
+    #[cfg(windows)]
+    return s.drafts.insert(&token, edited.as_deref(), now_ms());
+    #[cfg(not(windows))]
+    {
+        let _ = (s, token, edited);
+        Err(E_UNAVAILABLE)
+    }
+}
+
+#[tauri::command]
+fn draft_copy(state: State<'_, AppState>, token: String, edited: Option<String>) -> Result<(), ApiError> {
+    let s = svc(&state)?;
+    #[cfg(windows)]
+    return s.drafts.copy(&token, edited.as_deref(), now_ms());
+    #[cfg(not(windows))]
+    {
+        let _ = (s, token, edited);
+        Err(E_UNAVAILABLE)
+    }
+}
+
+#[tauri::command]
+fn draft_discard(state: State<'_, AppState>) -> Result<(), ApiError> {
+    svc(&state)?.drafts.discard(now_ms());
+    Ok(())
+}
+
+/// Make the morning brief if it is due, and tell the UI (plan §11.2: on unlock or start).
+fn brief_check(app: &AppHandle) {
+    let st = app.state::<AppState>();
+    if let Some(s) = &st.services
+        && let Some((b, ms)) = s.brief_if_due()
+    {
+        frame_log("brief_ms", &[ms as f64]);
+        let _ = app.emit("brief_ready", b.day);
+    }
 }
 
 #[tauri::command]
@@ -353,6 +459,16 @@ fn os_events(app: AppHandle) {
                         request_panel(&app, "search");
                     }
                     OsEvent::Hotkey { id: HK_DRAFT } => {
+                        // Read the target before the notch takes focus.
+                        let start = state.services.as_ref().map(|s| s.drafts.begin());
+                        let payload = match start {
+                            Some(Ok(d)) => {
+                                serde_json::json!({"ok": true, "app": d.app, "thread_chars": d.thread_chars})
+                            }
+                            Some(Err(e)) => serde_json::json!({"ok": false, "code": e.code}),
+                            None => serde_json::json!({"ok": false, "code": "unavailable"}),
+                        };
+                        let _ = app.emit("draft_target", payload);
                         request_panel(&app, "draft");
                     }
                     OsEvent::Hotkey { id: HK_PAUSE } => {
@@ -380,6 +496,7 @@ fn os_events(app: AppHandle) {
                             s.set_on_battery(!on_ac);
                         }
                     }
+                    OsEvent::SessionUnlocked => brief_check(&app),
                     OsEvent::Foreground { .. } => {
                         // Hidden state while a fullscreen game or presentation is in front.
                         use tsr_win::query::{UserState, user_state};
@@ -438,6 +555,17 @@ pub fn run(cleared_env_vars: Vec<String>) {
             list_open_loops,
             search,
             get_item,
+            ask,
+            draft_generate,
+            draft_insert,
+            draft_copy,
+            draft_discard,
+            get_brief,
+            get_loop_groups,
+            get_rollups,
+            get_items,
+            propose_bulk_status,
+            set_bulk_status,
             propose_fact_status,
             set_fact_status,
             set_panel,
@@ -470,6 +598,23 @@ pub fn run(cleared_env_vars: Vec<String>) {
                 CAPTURE_EXCLUDED.store(notch && seen == done, std::sync::atomic::Ordering::Relaxed);
             }
             let _ = window::place(&window, Panel::Pill);
+            {
+                let h = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(2500));
+                    brief_check(&h);
+                });
+            }
+            if let Some(s) = &app.state::<AppState>().services {
+                let h = app.handle().clone();
+                s.drafts.set_emitter(std::sync::Arc::new(move |ev, payload| {
+                    let _ = h.emit(ev, payload);
+                }));
+                let h2 = app.handle().clone();
+                s.asks.set_emitter(std::sync::Arc::new(move |ev, payload| {
+                    let _ = h2.emit(ev, payload);
+                }));
+            }
             // Test hook (tools/verify-capture-exclusion.ps1): open a panel once the UI is up.
             if let Ok(p) = std::env::var("TSR_START_PANEL")
                 && p == "expanded"

@@ -30,6 +30,11 @@ pub const MIGRATIONS: &[Migration] = &[
         name: "people_facts_jobs_chunks",
         sql: include_str!("../migrations/0003_people_facts_jobs_chunks.sql"),
     },
+    Migration {
+        version: 4,
+        name: "summaries_briefs",
+        sql: include_str!("../migrations/0004_summaries_briefs.sql"),
+    },
 ];
 
 pub fn current_version(conn: &Connection) -> Result<u32, StoreError> {

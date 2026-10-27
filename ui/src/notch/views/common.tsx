@@ -89,7 +89,9 @@ export function FactRow({ f, onChanged }: { f: FactDto; onChanged: () => void })
   const d = due(f);
   return (
     <li className="notch-row flex items-start gap-2 rounded-lg px-2 py-1.5">
-      <span className="notch-chip mt-0.5 shrink-0">{f.status === "needs_review" ? "review" : f.kind}</span>
+      <span className="notch-chip mt-0.5 shrink-0">
+        {f.status === "needs_review" ? "review" : f.status === "proposed_done" ? "done?" : f.kind}
+      </span>
       <div className="min-w-0 flex-1">
         <p className="break-words">{f.text}</p>
         <p className="notch-muted text-[11px]">
@@ -106,7 +108,7 @@ export function FactRow({ f, onChanged }: { f: FactDto; onChanged: () => void })
       {pending ? (
         <span className="flex shrink-0 gap-1">
           <button type="button" className="notch-button" onClick={confirm}>
-            Confirm {pending.status === "done" ? "done" : pending.status}
+            Confirm {pending.status === "open" ? "still open" : pending.status}
           </button>
           <button type="button" className="notch-button" onClick={() => setPending(null)}>
             Cancel
@@ -114,6 +116,12 @@ export function FactRow({ f, onChanged }: { f: FactDto; onChanged: () => void })
         </span>
       ) : (
         <span className="flex shrink-0 gap-1">
+          {f.status === "proposed_done" && (
+            // Later evidence suggests this is finished; nothing changes until the user says so.
+            <button type="button" className="notch-button" onClick={() => ask("open")} aria-label={`Not done yet: ${f.text}`}>
+              Not yet
+            </button>
+          )}
           <button type="button" className="notch-button" onClick={() => ask("done")} aria-label={`Mark done: ${f.text}`}>
             Done
           </button>

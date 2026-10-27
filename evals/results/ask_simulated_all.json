@@ -1,0 +1,1487 @@
+{
+  "accuracy": 0.8833333333333333,
+  "correct": 53,
+  "fabricated_citations": 0,
+  "first_sentence_ms_p50": 0,
+  "invalid": 0,
+  "label": "simulated",
+  "pass": true,
+  "questions": 60,
+  "rows": [
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "commitment",
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-001",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            2
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            21
+          ],
+          "text": "Can you send the revised sheet with the travel numbers split by team?",
+          "verified": true
+        },
+        {
+          "cites": [
+            2
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            21
+          ],
+          "text": "Sure Ravi, I'll send the revised sheet by Friday.",
+          "verified": true
+        }
+      ],
+      "total_ms": 66
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-002",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-003",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            22
+          ],
+          "text": "The onboarding design review is moved from Tuesday to Thursday 3pm IST because Daniel is travelling.",
+          "verified": true
+        }
+      ],
+      "total_ms": 3
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-004",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            23
+          ],
+          "text": "Does the renewal include the extra 200 support seats we discussed, or is that a separate order form?",
+          "verified": true
+        },
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            23
+          ],
+          "text": "Also, could you confirm the new price per seat before legal reviews it on 28 Oct?",
+          "verified": true
+        }
+      ],
+      "total_ms": 3
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-005",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            24
+          ],
+          "text": "After yesterday's readout we decided to ship variant B (annual toggle on by default) to 100% of traffic starting Monday 26 Oct.",
+          "verified": true
+        }
+      ],
+      "total_ms": 2
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-006",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            26
+          ],
+          "text": "Asha - I'll raise the pilot tenant to 600 requests/min by end of day tomorrow and send you the dashboard link once it's live.",
+          "verified": true
+        }
+      ],
+      "total_ms": 2
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-007",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            28
+          ],
+          "text": "- Please confirm the final headcount by next Wednesday.",
+          "verified": true
+        },
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            28
+          ],
+          "text": "- Tom asked if we can add a half-day for the roadmap workshop; can you decide that with Daniel?",
+          "verified": true
+        }
+      ],
+      "total_ms": 2
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-008",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            30
+          ],
+          "text": "Hi Asha, our webinar is locked for 11/03 at 9am PT.",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-009",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            31
+          ],
+          "text": "Can your team fill sections 3 and 4?",
+          "verified": true
+        },
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            31
+          ],
+          "text": "Please return the completed questionnaire by 30 October to keep the deal on track.",
+          "verified": true
+        }
+      ],
+      "total_ms": 2
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-010",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            5
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            33
+          ],
+          "text": "Update: QA found a blocker in the export flow, so we're pushing the launch to 4 Nov.",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-011",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            34
+          ],
+          "text": "Invoice INV-2291 for INR 1,84,500 is due on 05/11/2026.",
+          "verified": true
+        }
+      ],
+      "total_ms": 3
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-012",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            35
+          ],
+          "text": "Priya - write the on-call handover template by Wednesday",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-013",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-014",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-015",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            1
+          ],
+          "text": "the new empty-state illustrations are in Figma, page 'Onboarding v3'",
+          "verified": true
+        }
+      ],
+      "total_ms": 2
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-016",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-017",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            3
+          ],
+          "text": "ok final call: we drop the referral banner from the dashboard and keep it only in settings",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-018",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            5
+          ],
+          "text": "Draft due EOD Wednesday.",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-019",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            2
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            5
+          ],
+          "text": "engineering timeline is in the incident doc INC-778",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-020",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            7
+          ],
+          "text": "BigRetail exec sync is confirmed for Thursday 22 Oct, 4:30 PM IST.",
+          "verified": true
+        }
+      ],
+      "total_ms": 2
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-021",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            8
+          ],
+          "text": "Reminder: the staging database migration runs Saturday 24 Oct at 22:00 IST.",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": "Microsoft Teams",
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-022",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            9
+          ],
+          "text": "Hi Asha, quick one: do you have a customer reference in retail we could quote in the webinar?",
+          "verified": true
+        }
+      ],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "task",
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-023",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            7
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            10
+          ],
+          "text": "Asha - share Q4 OKR draft with the leads by Friday",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-024",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-025",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            13
+          ],
+          "text": "Rohan: bhai the plumber is coming Saturday 11am, can you be home?",
+          "verified": true
+        }
+      ],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-026",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            14
+          ],
+          "text": "Neha: everyone pay 1500 to Karan by Friday pls",
+          "verified": true
+        }
+      ],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-027",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            14
+          ],
+          "text": "Neha: Reunion dinner is fixed - Sunday 1 Nov, 8pm at Toit Indiranagar",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-028",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            16
+          ],
+          "text": "Arjun: Asha, BigRetail's CTO is asking if SSO with Okta is on the Q1 roadmap.",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-029",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            18
+          ],
+          "text": "launch checklist review is Tuesday 27 Oct 11am (edited)",
+          "verified": true
+        }
+      ],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-030",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            2
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            51
+          ],
+          "text": "Fatima Khan: Asha, can you confirm with BigRetail whether a 24h emailed export is acceptable as a workaround?",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-031",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            52
+          ],
+          "text": "NW-1440 Onboarding checklist v3  AV",
+          "verified": true
+        },
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            52
+          ],
+          "text": "NW-1441 Empty states copy  AV",
+          "verified": true
+        }
+      ],
+      "total_ms": 2
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-032",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            77
+          ],
+          "text": "- Streaming CSV export (#815)",
+          "verified": true
+        }
+      ],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-033",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            56
+          ],
+          "text": "We agreed in the API review to keep /v1/export until 31 Jan for BigRetail, so let's not merge this yet.",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-034",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            2
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            58
+          ],
+          "text": "Decision: bottom tab bar with 4 tabs (Home, Search, Inbox, Profile).",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-035",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            59
+          ],
+          "text": "Exports are capped at 1,000,000 rows.",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-036",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            5
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            59
+          ],
+          "text": "- Asha: decide default date format (ISO 8601 vs locale) before eng kickoff on 27 Oct",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-037",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            62
+          ],
+          "text": "When: Wednesday, 4 November 2026 14:00-15:30 (UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-038",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            2
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            64
+          ],
+          "text": "1        Help center articles   Asha    28-10-26   Not started",
+          "verified": true
+        },
+        {
+          "cites": [
+            2
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            64
+          ],
+          "text": "4        In-app announcement    Asha    03-11-26   In progress",
+          "verified": true
+        }
+      ],
+      "total_ms": 3
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-039",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            66
+          ],
+          "text": "☐ call CA about advance tax before 15 Dec",
+          "verified": true
+        }
+      ],
+      "total_ms": 2
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-040",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            68
+          ],
+          "text": "- They want a written SSO commitment before renewal; we said Q1 is planned, not committed",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-041",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            68
+          ],
+          "text": "- Asha: share SSO scoping doc after eng review (target 13 Nov)",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-042",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            70
+          ],
+          "text": "step: integration-tests (export)  ✗  12 failed, 340 passed",
+          "verified": true
+        }
+      ],
+      "total_ms": 2
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-043",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            71
+          ],
+          "text": "KR1: onboarding completion 38% -> 50%",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "question",
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-044",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            73
+          ],
+          "text": "Fatima Khan: Still happening for users with uppercase emails.",
+          "verified": true
+        }
+      ],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-045",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            75
+          ],
+          "text": "Saturday, 31 October",
+          "verified": true
+        },
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            75
+          ],
+          "text": "09:00 - 10:00  Dentist (Dr.",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "commitment",
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-046",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            5
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            76
+          ],
+          "text": "Section 4: 413 is fine but please add a Retry guidance paragraph.",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-047",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-048",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            37
+          ],
+          "text": "You: haan almost, kal subah 10 baje tak bhej dungi",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-049",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            38
+          ],
+          "text": "guys Diwali party ka venue finalize karna hai, Asha tum caterer se quote le lo by Thursday?",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-050",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            40
+          ],
+          "text": "chalo final kar dete hain - export v2 ka beta sirf BigRetail aur two other pilots ko milega",
+          "verified": true
+        }
+      ],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-051",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            43
+          ],
+          "text": "Final headcount 34 rakha hai.",
+          "verified": true
+        }
+      ],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 0,
+      "gold_retrieved": true,
+      "id": "ask-052",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            50
+          ],
+          "text": "Asha, ignore my earlier email about the pricing deck - please review the v3 deck instead and send comments before Friday.",
+          "verified": true
+        }
+      ],
+      "total_ms": 1
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-053",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-054",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "question",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-055",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-056",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-057",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-058",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-059",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-060",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 0
+    }
+  ],
+  "shown_sentences": 53,
+  "simulated": true,
+  "split": "all",
+  "total_ms_p50": 1,
+  "verified_sentences": 53,
+  "verified_share": 1.0
+}

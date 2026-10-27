@@ -5,6 +5,7 @@
 //! Stage 1 adds schema migrations ([`migrate`]) and the blocklist repository ([`blocklist`]).
 //! Key management (DPAPI wrapping) follows.
 
+pub mod audit;
 pub mod blocklist;
 pub mod chunks;
 pub mod facts;
@@ -14,6 +15,7 @@ pub mod jobs;
 pub mod keystore;
 pub mod migrate;
 pub mod people;
+pub mod summaries;
 
 use std::path::Path;
 

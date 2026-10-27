@@ -87,11 +87,14 @@ impl Prf {
     }
 }
 
-pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str) -> (bool, Value, String) {
+/// `only`: run just these item ids (diagnosis); the report then says it is a subset.
+pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str, only: Option<&[String]>) -> (bool, Value, String) {
     let items: Vec<EvalItem> = load_items()
         .into_iter()
         .filter(|i| split == "all" || i.split == split)
+        .filter(|i| only.is_none_or(|o| o.contains(&i.id)))
         .collect();
+    let mut diagnostics: Vec<Value> = Vec::new();
     let bl = Blocklist::compile(&builtin_rules()).0;
     let mut micro = Prf::default();
     let mut per_kind: BTreeMap<String, Prf> = BTreeMap::new();
@@ -131,10 +134,12 @@ pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str) -> (bool, Va
             model_id: label,
             now_ms: at,
         };
-        match extract(&mut c, id, m, &ctx, &CancelToken::new()) {
+        let rec = Recorder::new(m);
+        match extract(&mut c, id, &rec, &ctx, &CancelToken::new()) {
             Ok(r) => {
                 if matches!(r.outcome, Some(Outcome::Failed(_))) {
                     failed_items += 1;
+                    diagnostics.push(json!({"item": it.id, "calls": rec.take()}));
                 }
                 for (k, v) in r.rejected {
                     *rejected.entry(k.to_string()).or_default() += v;
@@ -260,7 +265,8 @@ pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str) -> (bool, Va
         "stored": stored_total, "needs_review": needs_review, "hallucinated": hallucinated, "hallucination_rate": hall_rate,
         "invalid_rows": invalid_rows, "failed_items": failed_items, "injection_failures": injection_failures,
         "per_kind": per_kind.iter().map(|(k, p)| (k.clone(), json!({"p": p.p(), "r": p.r(), "f1": p.f1(), "tp": p.tp, "fp": p.fp, "fn": p.r#fn}))).collect::<serde_json::Map<_, _>>(),
-        "rejected": rejected, "pass_thresholds": pass,
+        "rejected": rejected, "pass_thresholds": pass, "subset": only.is_some(),
+        "failed_item_diagnostics": diagnostics,
     });
     (pass, j, md)
 }

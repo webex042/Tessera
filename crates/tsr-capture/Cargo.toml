@@ -21,6 +21,7 @@ serde_json.workspace = true
 [target.'cfg(windows)'.dependencies]
 tsr-win = { path = "../tsr-win" }
 windows = { workspace = true, features = [
+    "ApplicationModel_DataTransfer",
     "Foundation",
     "Foundation_Collections",
     "Globalization",

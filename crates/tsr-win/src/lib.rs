@@ -10,6 +10,8 @@
 //! No low-level keyboard or mouse hooks are used anywhere (plan D11).
 
 #[cfg(windows)]
+pub mod clipboard;
+#[cfg(windows)]
 pub mod display;
 #[cfg(windows)]
 pub mod dpapi;

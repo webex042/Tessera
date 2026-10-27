@@ -3,7 +3,7 @@
 // animate content out, then shrink the window.
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { api, on } from "./ipc/api";
-import type { ApiError, Panel, PanelRequest, Status } from "./ipc/types";
+import type { ApiError, DraftTarget, Panel, PanelRequest, Status } from "./ipc/types";
 import { Pill } from "./notch/Pill";
 import { Expanded, type Tab } from "./notch/Expanded";
 import { Draft } from "./notch/Draft";
@@ -36,6 +36,8 @@ export function App() {
   const [error, setError] = useState<ApiError | null>(null);
   const [peekText, setPeekText] = useState<string>("");
   const [epoch, setEpoch] = useState(0);
+  // The draft target arrives just before the draft panel opens.
+  const [draftTarget, setDraftTarget] = useState<DraftTarget | null>(null);
   const peekTimer = useRef<number | undefined>(undefined);
 
   const refresh = useCallback(() => {
@@ -123,7 +125,7 @@ export function App() {
         // Latency breakdown (numbers only; written only when TSR_FRAME_LOG is set).
         if (p !== "pill") api.reportFrames("event_after_input_ms", [Date.now() - at]).catch(() => {});
         if (p === "expanded") open(undefined, at, placed);
-        else if (p === "search") open("search", at, placed);
+        else if (p === "search") open("ask", at, placed); // Ctrl+Alt+K: Ask
         else if (p === "pill") close();
         else if (p === "draft") {
           if (placed) setVisual("draft");
@@ -131,6 +133,8 @@ export function App() {
         }
       }),
       on<null>("hotkeys_changed", checkHotkeys),
+      on<string>("brief_ready", () => peek("Your morning brief is ready")),
+      on<DraftTarget>("draft_target", setDraftTarget),
     ];
     const timer = window.setInterval(refresh, 30_000);
     return () => {
@@ -170,7 +174,7 @@ export function App() {
       )}
       {visual === "draft" && (
         <Layer size={SIZES.draft}>
-          <Draft onClose={close} />
+          <Draft target={draftTarget} onClose={close} />
         </Layer>
       )}
     </div>

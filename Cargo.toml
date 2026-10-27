@@ -10,6 +10,7 @@ members = [
     "crates/tsr-capture",
     "crates/tsr-net",
     "crates/tsr-pipeline",
+    "crates/tsr-draft",
     "src-tauri",
     "bench/uia-probe",
     "evals/runner",

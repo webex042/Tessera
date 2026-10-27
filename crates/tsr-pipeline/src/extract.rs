@@ -37,7 +37,7 @@ use tsr_store::people::AliasKind;
 
 use crate::dates::{DateContext, DateOrder, resolve};
 use crate::evidence::{EvidenceError, locate, word_set_similarity};
-use crate::guard::{Class, classify, looks_injected, obligation};
+use crate::guard::{Class, classify, looks_injected, obligation, quoted_request};
 use crate::normalize::{char_slice, is_word_char, normalize, words};
 use crate::people::{PersonRef, Resolver, Suppression, normalize_alias};
 use crate::schema::{self, RawFact, SCHEMA_VER};
@@ -77,6 +77,8 @@ pub struct Report {
     pub model_calls: u32,
     pub stored: u32,
     pub merged: u32,
+    /// Open loops this item reports as finished, now `proposed_done` (plan §11.3).
+    pub proposed_done: u32,
     pub needs_review: u32,
     pub summary_stored: bool,
     pub people_created: u32,
@@ -350,8 +352,14 @@ pub fn run(
     let summary = summary.and_then(|s| {
         let r = redact(&s, ctx.redact);
         rep.redactions += r.total();
+        // A summary of an item whose facts were injections or quoted instructions would restate
+        // them in the user's memory; so would one that repeats a quoted request.
+        let tainted = rep.rejected.contains_key("injection") || rep.rejected.contains_key("quoted_instruction");
         if looks_injected(&r.text) || item_injected {
             rep.reject("summary_injection");
+            None
+        } else if tainted || quoted_request(&r.text) {
+            rep.reject("summary_tainted");
             None
         } else if obligation(&r.text) {
             // Summaries describe; an instruction in one would read as a task for the user.
@@ -422,6 +430,22 @@ pub fn run(
             end_ch: a.evidence.2 as i64,
             matched: a.evidence.3,
         };
+        // Completion evidence for an open loop ("sent the deck to Lena"): propose the loop done
+        // (never close it) and attach the evidence there. Checked before de-duplication, which
+        // would otherwise merge "sent X" into "send X" as plain evidence.
+        if a.status == "open" && crate::loops::completion_signal(&a.text) {
+            let c = crate::loops::Completion {
+                text: &a.text,
+                counterparty_id: cp_id,
+                item_text: text,
+                evidence: ev.clone(),
+            };
+            let proposed = crate::loops::propose_completions(&tx, &c, item.started_at)?;
+            if !proposed.is_empty() {
+                rep.proposed_done += proposed.len() as u32;
+                continue;
+            }
+        }
         // De-duplicate against open facts of the same kind and owner.
         let cands = facts::dedupe_candidates(&tx, &a.kind, owner_id, item.started_at - DEDUPE_WINDOW_MS)?;
         let best = cands

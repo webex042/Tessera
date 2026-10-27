@@ -196,7 +196,8 @@ const CARD_SQL: &str = "SELECT items.id, COALESCE(sources.app_name, sources.app_
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Pending {
-    fact_id: i64,
+    /// Sorted. One id for a single change; several for "dismiss all" on stale loops.
+    fact_ids: Vec<i64>,
     status: String,
     issued: Instant,
 }
@@ -396,7 +397,7 @@ impl Core {
         t.insert(
             token.clone(),
             Pending {
-                fact_id,
+                fact_ids: vec![fact_id],
                 status: status.to_owned(),
                 issued: now,
             },
@@ -412,7 +413,7 @@ impl Core {
             .unwrap_or_else(|p| p.into_inner())
             .remove(token)
             .ok_or(E_TOKEN)?;
-        if p.fact_id != fact_id || p.status != status || now.duration_since(p.issued) >= TOKEN_TTL {
+        if p.fact_ids != [fact_id] || p.status != status || now.duration_since(p.issued) >= TOKEN_TTL {
             return Err(E_TOKEN);
         }
         let c = self.c();
@@ -421,6 +422,199 @@ impl Core {
         }
         fact_dto(&c, tsr_store::facts::get(&c, fact_id)?.ok_or(E_NOT_FOUND)?)
     }
+
+    /// Issue a single-use token for setting *exactly* these facts to `status` ("dismiss all").
+    pub fn propose_bulk_status(&self, fact_ids: &[i64], status: &str, now: Instant) -> Result<String, ApiError> {
+        if !USER_STATUSES.contains(&status) || fact_ids.is_empty() || fact_ids.len() > MAX_BULK {
+            return Err(E_INVALID);
+        }
+        let mut ids = fact_ids.to_vec();
+        ids.sort_unstable();
+        ids.dedup();
+        {
+            let c = self.c();
+            for id in &ids {
+                if tsr_store::facts::get(&c, *id)?.is_none() {
+                    return Err(E_NOT_FOUND);
+                }
+            }
+        }
+        let token = new_token();
+        let mut t = self.tokens.lock().unwrap_or_else(|p| p.into_inner());
+        t.retain(|_, p| now.duration_since(p.issued) < TOKEN_TTL);
+        t.insert(
+            token.clone(),
+            Pending {
+                fact_ids: ids,
+                status: status.to_owned(),
+                issued: now,
+            },
+        );
+        Ok(token)
+    }
+
+    /// Apply a bulk proposal: same rules as [`Core::set_fact_status`], all or nothing.
+    pub fn set_bulk_status(&self, fact_ids: &[i64], status: &str, token: &str, now: Instant) -> Result<u32, ApiError> {
+        let p = self
+            .tokens
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .remove(token)
+            .ok_or(E_TOKEN)?;
+        let mut ids = fact_ids.to_vec();
+        ids.sort_unstable();
+        ids.dedup();
+        if p.fact_ids != ids || p.status != status || now.duration_since(p.issued) >= TOKEN_TTL {
+            return Err(E_TOKEN);
+        }
+        let c = self.c();
+        let tx = c.unchecked_transaction()?;
+        for id in &ids {
+            if !tsr_store::facts::set_status(&tx, *id, status)? {
+                return Err(E_NOT_FOUND); // dropping `tx` rolls back
+            }
+        }
+        tx.commit()?;
+        Ok(ids.len() as u32)
+    }
+
+    /// Open loops in groups: proposed done (confirm), open, and "Still open?" (stale).
+    pub fn loop_groups(&self, now_ms: i64) -> Result<LoopGroups, ApiError> {
+        let c = self.c();
+        let g = tsr_pipeline::loops::groups(&c, now_ms)?;
+        let dto =
+            |v: Vec<tsr_store::facts::FactRow>| v.into_iter().map(|f| fact_dto(&c, f)).collect::<Result<Vec<_>, _>>();
+        Ok(LoopGroups {
+            proposed_done: dto(g.proposed_done)?,
+            open: dto(g.open)?,
+            still_open: dto(g.still_open)?,
+        })
+    }
+
+    /// Today's stored brief, or one assembled now (not stored) if the trigger has not run yet.
+    pub fn brief(&self, now_ms: i64, tz: &jiff::tz::TimeZone) -> Result<tsr_pipeline::brief::Brief, ApiError> {
+        let c = self.c();
+        let day = tsr_pipeline::brief::day_key(now_ms, tz);
+        match tsr_pipeline::brief::load(&c, &day)? {
+            Some(b) => Ok(b),
+            None => Ok(tsr_pipeline::brief::assemble(&c, now_ms, tz)?),
+        }
+    }
+
+    /// A day (its hours), week (its days) or month (its weeks), with summaries where they exist.
+    pub fn rollups(&self, level: &str, at_ms: i64, tz: &jiff::tz::TimeZone) -> Result<RollupView, ApiError> {
+        use tsr_pipeline::rollup::{Level, label, period_of};
+        let lvl = match Level::parse(level) {
+            Some(l @ (Level::Day | Level::Week | Level::Month)) => l,
+            _ => return Err(E_INVALID),
+        };
+        let p = period_of(lvl, at_ms, tz);
+        let c = self.c();
+        let child = lvl.child().ok_or(E_INVALID)?;
+        let mut children = Vec::new();
+        let mut t = period_of(child, p.start, tz);
+        while t.start < p.end && children.len() < 40 {
+            children.push(PeriodDto {
+                level: child.as_str(),
+                start: t.start,
+                end: t.end,
+                label: label(&t, tz),
+                summary: summary_dto(&c, child.as_str(), t.start)?,
+            });
+            t = period_of(child, t.end, tz);
+        }
+        Ok(RollupView {
+            period: PeriodDto {
+                level: lvl.as_str(),
+                start: p.start,
+                end: p.end,
+                label: label(&p, tz),
+                summary: summary_dto(&c, lvl.as_str(), p.start)?,
+            },
+            children,
+        })
+    }
+
+    /// Item cards for a highlight's ids (drill-down). Ids that no longer exist are skipped.
+    pub fn items_by_ids(&self, ids: &[i64]) -> Result<Vec<ItemCard>, ApiError> {
+        if ids.is_empty() || ids.len() > MAX_BULK {
+            return Err(E_INVALID);
+        }
+        let c = self.c();
+        let mut st = c.prepare(&format!("{CARD_SQL} WHERE items.id = ?1"))?;
+        let mut out = Vec::new();
+        for id in ids {
+            if let Some(it) = st.query_row([id], card).optional()? {
+                out.push(it);
+            }
+        }
+        out.sort_by_key(|c| (c.started_at, c.item_id));
+        Ok(out)
+    }
+}
+
+pub const MAX_BULK: usize = 200;
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct LoopGroups {
+    pub proposed_done: Vec<FactDto>,
+    pub open: Vec<FactDto>,
+    pub still_open: Vec<FactDto>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct HighlightDto {
+    pub text: String,
+    /// Only items that still exist.
+    pub item_ids: Vec<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct SummaryDto {
+    pub id: i64,
+    pub text: String,
+    pub highlights: Vec<HighlightDto>,
+    pub stale: bool,
+    /// Model id, or "extractive" (written by code).
+    pub model: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct PeriodDto {
+    pub level: &'static str,
+    pub start: i64,
+    pub end: i64,
+    pub label: String,
+    pub summary: Option<SummaryDto>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct RollupView {
+    pub period: PeriodDto,
+    pub children: Vec<PeriodDto>,
+}
+
+fn summary_dto(c: &Connection, level: &str, start: i64) -> Result<Option<SummaryDto>, ApiError> {
+    let Some(s) = tsr_store::summaries::get(c, level, start)? else {
+        return Ok(None);
+    };
+    let mut highlights = Vec::new();
+    for h in s.highlights.expose() {
+        let item_ids = tsr_store::items::existing(c, &h.item_ids)?;
+        if !item_ids.is_empty() {
+            highlights.push(HighlightDto {
+                text: h.text.clone(),
+                item_ids,
+            });
+        }
+    }
+    Ok(Some(SummaryDto {
+        id: s.id,
+        text: s.text.expose().clone(),
+        highlights,
+        stale: s.stale,
+        model: s.model,
+    }))
 }
 
 fn new_token() -> String {

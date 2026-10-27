@@ -101,11 +101,40 @@ pub struct BrowserFacts {
 enum Request {
     Text(isize),
     Browser(isize),
+    Focus,
 }
 
 enum Response {
     Text(Result<UiaText, UiaError>),
     Browser(Result<BrowserFacts, UiaError>),
+    Focus(Result<FocusTarget, UiaError>),
+}
+
+/// The element that has keyboard focus, as the draft assistant needs it (plan §12.1). Contains
+/// no text from the field.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FocusTarget {
+    /// Foreground top-level window.
+    pub hwnd: isize,
+    pub pid: u32,
+    /// UIA RuntimeId: identifies this element while it exists.
+    pub runtime_id: Vec<i32>,
+    /// A password field, or one whose password state could not be read (fail closed).
+    pub is_password: bool,
+    /// Enabled, focusable, and an edit/document or a writable value.
+    pub editable: bool,
+}
+
+impl FocusTarget {
+    /// The draft may be inserted here.
+    pub fn insertable(&self) -> bool {
+        self.editable && !self.is_password && !self.runtime_id.is_empty()
+    }
+
+    /// Same window and same element as `other`.
+    pub fn same_as(&self, other: &FocusTarget) -> bool {
+        self.hwnd == other.hwnd && self.runtime_id == other.runtime_id
+    }
 }
 
 /// Reads windows through UIA on a dedicated thread with a wall-clock deadline.
@@ -140,6 +169,7 @@ impl UiaReader {
                 match req {
                     Request::Text(h) => Response::Text(uia.and_then(|u| read_window(u, HWND(h as *mut _)))),
                     Request::Browser(h) => Response::Browser(uia.and_then(|u| browser_facts(u, HWND(h as *mut _)))),
+                    Request::Focus => Response::Focus(uia.and_then(read_focus)),
                 }
             },
         )?;
@@ -153,7 +183,7 @@ impl UiaReader {
     pub fn read(&self, hwnd: HWND) -> Result<UiaText, UiaError> {
         match self.worker.call(Request::Text(hwnd.0 as isize), self.deadline)? {
             Response::Text(r) => r,
-            Response::Browser(_) => Err(UiaError::Unavailable),
+            _ => Err(UiaError::Unavailable),
         }
     }
 
@@ -162,13 +192,64 @@ impl UiaReader {
     pub fn browser(&self, hwnd: HWND) -> Result<BrowserFacts, UiaError> {
         match self.worker.call(Request::Browser(hwnd.0 as isize), self.deadline)? {
             Response::Browser(r) => r,
-            Response::Text(_) => Err(UiaError::Unavailable),
+            _ => Err(UiaError::Unavailable),
+        }
+    }
+
+    /// The focused element (draft target). Within the deadline, like every UIA call here.
+    pub fn focus(&self) -> Result<FocusTarget, UiaError> {
+        match self.worker.call(Request::Focus, self.deadline)? {
+            Response::Focus(r) => r,
+            _ => Err(UiaError::Unavailable),
         }
     }
 
     /// For diagnostics: wait until an abandoned read has finished; returns how long it took.
     pub fn wait_idle(&self, max: Duration) -> Option<Duration> {
         self.worker.wait_idle(max)
+    }
+}
+
+fn read_focus(uia: &IUIAutomation) -> Result<FocusTarget, UiaError> {
+    use windows::Win32::System::Ole::{SafeArrayDestroy, SafeArrayGetElement, SafeArrayGetLBound, SafeArrayGetUBound};
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+    // SAFETY: COM calls on this worker's MTA thread; the SAFEARRAY from GetRuntimeId is read
+    // within its bounds and destroyed here.
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        let el = uia.GetFocusedElement()?;
+        let sa = el.GetRuntimeId()?;
+        let mut runtime_id = Vec::new();
+        if !sa.is_null() {
+            let lb = SafeArrayGetLBound(sa, 1).unwrap_or(0);
+            let ub = SafeArrayGetUBound(sa, 1).unwrap_or(-1);
+            for i in lb..=ub {
+                let mut v = 0i32;
+                if SafeArrayGetElement(sa, &i, &mut v as *mut i32 as *mut _).is_ok() {
+                    runtime_id.push(v);
+                }
+            }
+            let _ = SafeArrayDestroy(sa);
+        }
+        let flag = |r: windows::core::Result<windows::core::BOOL>| r.map(|b| b.as_bool());
+        // Unknown password state counts as a password field.
+        let is_password = flag(el.CurrentIsPassword()).unwrap_or(true);
+        let enabled = flag(el.CurrentIsEnabled()).unwrap_or(false);
+        let focusable = flag(el.CurrentIsKeyboardFocusable()).unwrap_or(false);
+        let ct = el.CurrentControlType().map(|c| c.0).unwrap_or(0);
+        let value_writable = el
+            .GetCurrentPatternAs::<IUIAutomationValuePattern>(UIA_ValuePatternId)
+            .and_then(|v| v.CurrentIsReadOnly())
+            .map(|ro| !ro.as_bool())
+            .unwrap_or(false);
+        let text_kind = ct == UIA_EditControlTypeId.0 || ct == UIA_DocumentControlTypeId.0;
+        Ok(FocusTarget {
+            hwnd: hwnd.0 as isize,
+            pid: el.CurrentProcessId().unwrap_or(0) as u32,
+            runtime_id,
+            is_password,
+            editable: enabled && focusable && (value_writable || text_kind),
+        })
     }
 }
 

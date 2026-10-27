@@ -4,5 +4,6 @@
 //! Stage 1 scope so far: window blocklists with per-rule scope (§6.1).
 
 pub mod blocklist;
+pub mod claims;
 mod glob;
 pub mod redact;

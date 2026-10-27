@@ -2,7 +2,22 @@
 // else is normalised to an "ipc_error" code so the UI never shows raw text from Rust.
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { ApiError, FactDto, HotkeyInfo, HourBucket, ItemDetail, Panel, SearchHit, Status, Today } from "./types";
+import type {
+  ApiError,
+  AskStart,
+  Brief,
+  FactDto,
+  HotkeyInfo,
+  HourBucket,
+  ItemCard,
+  ItemDetail,
+  LoopGroups,
+  Panel,
+  RollupView,
+  SearchHit,
+  Status,
+  Today,
+} from "./types";
 
 function asApiError(e: unknown): ApiError {
   if (e && typeof e === "object" && "code" in e && typeof (e as ApiError).code === "string") {
@@ -32,6 +47,18 @@ export const api = {
   setFactStatus: (factId: number, status: string, token: string) =>
     call<FactDto>("set_fact_status", { factId, status, token }),
   setPanel: (panel: Panel) => call<void>("set_panel", { panel }),
+  brief: () => call<Brief>("get_brief"),
+  loopGroups: () => call<LoopGroups>("get_loop_groups"),
+  rollups: (level: "day" | "week" | "month", atMs: number) => call<RollupView>("get_rollups", { level, atMs }),
+  items: (itemIds: number[]) => call<ItemCard[]>("get_items", { itemIds }),
+  proposeBulkStatus: (factIds: number[], status: string) => call<string>("propose_bulk_status", { factIds, status }),
+  setBulkStatus: (factIds: number[], status: string, token: string) =>
+    call<number>("set_bulk_status", { factIds, status, token }),
+  ask: (question: string) => call<AskStart>("ask", { question }),
+  draftGenerate: (instruction: string) => call<void>("draft_generate", { instruction }),
+  draftInsert: (token: string, edited: string | null) => call<void>("draft_insert", { token, edited }),
+  draftCopy: (token: string, edited: string | null) => call<void>("draft_copy", { token, edited }),
+  draftDiscard: () => call<void>("draft_discard"),
   startError: () => call<string | null>("start_error"),
   captureExcluded: () => call<boolean>("capture_excluded"),
   hotkeys: () => call<HotkeyInfo[]>("hotkeys"),

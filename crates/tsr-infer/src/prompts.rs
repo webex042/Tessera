@@ -27,6 +27,27 @@ pub static EXTRACTION_V1: LazyLock<Prompt> = LazyLock::new(|| Prompt {
     ),
 });
 
+pub static ROLLUP_V1: LazyLock<Prompt> = LazyLock::new(|| Prompt {
+    ver: "rollup/v1",
+    system: include_str!("../prompts/rollup/v1/system.txt"),
+    user: include_str!("../prompts/rollup/v1/user.txt"),
+    schema: Some(serde_json::from_str(include_str!("../prompts/rollup/v1/schema.json")).expect("rollup schema")),
+});
+
+pub static DRAFT_V1: LazyLock<Prompt> = LazyLock::new(|| Prompt {
+    ver: "draft/v1",
+    system: include_str!("../prompts/draft/v1/system.txt"),
+    user: include_str!("../prompts/draft/v1/user.txt"),
+    schema: Some(serde_json::from_str(include_str!("../prompts/draft/v1/schema.json")).expect("draft schema")),
+});
+
+pub static ASK_V1: LazyLock<Prompt> = LazyLock::new(|| Prompt {
+    ver: "ask/v1",
+    system: include_str!("../prompts/ask/v1/system.txt"),
+    user: include_str!("../prompts/ask/v1/user.txt"),
+    schema: Some(serde_json::from_str(include_str!("../prompts/ask/v1/schema.json")).expect("ask schema")),
+});
+
 pub static VLM_V1: LazyLock<Prompt> = LazyLock::new(|| Prompt {
     ver: "vlm/v1",
     system: include_str!("../prompts/vlm/v1/system.txt"),

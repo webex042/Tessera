@@ -84,6 +84,20 @@ pub struct ChatResponse {
 /// What a caller of the model needs; implemented by [`LoopbackClient`] and by test doubles.
 pub trait ChatModel: Send + Sync {
     fn chat(&self, req: &ChatRequest, cancel: &CancelToken) -> Result<ChatResponse, ClientError>;
+
+    /// Like [`ChatModel::chat`], calling `on_delta` with each piece of content as it arrives (the
+    /// draft panel shows text before the reply is complete). Default: one call with the whole
+    /// reply, for models that do not stream.
+    fn chat_streaming(
+        &self,
+        req: &ChatRequest,
+        cancel: &CancelToken,
+        on_delta: &mut dyn FnMut(&str),
+    ) -> Result<ChatResponse, ClientError> {
+        let r = self.chat(req, cancel)?;
+        on_delta(r.content.expose());
+        Ok(r)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -211,6 +225,26 @@ fn usage(v: &Value) -> (Option<u32>, Option<u32>) {
 
 impl ChatModel for LoopbackClient {
     fn chat(&self, req: &ChatRequest, cancel: &CancelToken) -> Result<ChatResponse, ClientError> {
+        self.complete(req, cancel, None)
+    }
+
+    fn chat_streaming(
+        &self,
+        req: &ChatRequest,
+        cancel: &CancelToken,
+        on_delta: &mut dyn FnMut(&str),
+    ) -> Result<ChatResponse, ClientError> {
+        self.complete(req, cancel, Some(on_delta))
+    }
+}
+
+impl LoopbackClient {
+    fn complete(
+        &self,
+        req: &ChatRequest,
+        cancel: &CancelToken,
+        mut on_delta: Option<&mut dyn FnMut(&str)>,
+    ) -> Result<ChatResponse, ClientError> {
         let started = Instant::now();
         let body = Self::body(req);
         let auth = self.auth.as_str();
@@ -240,6 +274,9 @@ impl ChatModel for LoopbackClient {
                 .ok_or(ClientError::BadResponse("message.content"))?;
             let finish_reason = choice.get("finish_reason").and_then(Value::as_str).map(str::to_owned);
             let (prompt_tokens, completion_tokens) = usage(&v);
+            if let Some(cb) = on_delta.as_mut() {
+                cb(content);
+            }
             return Ok(ChatResponse {
                 content: Sensitive::new(content.to_owned()),
                 finish_reason,
@@ -287,6 +324,9 @@ impl ChatModel for LoopbackClient {
                         .and_then(Value::as_str)
                     {
                         content.push_str(d);
+                        if let Some(cb) = on_delta.as_mut() {
+                            cb(d);
+                        }
                     }
                     if let Some(f) = choice.get("finish_reason").and_then(Value::as_str) {
                         finish_reason = Some(f.to_owned());

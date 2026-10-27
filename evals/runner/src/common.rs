@@ -149,6 +149,66 @@ impl ChatModel for Scripted {
     }
 }
 
+/// Wraps a model and keeps what it returned (synthetic eval data only), so failing cases can be
+/// diagnosed: finish reason, completion tokens, time, and the raw output.
+pub struct Recorder<'a> {
+    pub inner: &'a dyn ChatModel,
+    pub log: Mutex<Vec<serde_json::Value>>,
+}
+
+impl<'a> Recorder<'a> {
+    pub fn new(inner: &'a dyn ChatModel) -> Self {
+        Recorder {
+            inner,
+            log: Mutex::new(Vec::new()),
+        }
+    }
+
+    pub fn take(&self) -> Vec<serde_json::Value> {
+        std::mem::take(&mut *self.log.lock().unwrap())
+    }
+}
+
+impl Recorder<'_> {
+    fn note(&self, r: &Result<ChatResponse, ClientError>, first_ms: Option<u64>) {
+        let entry = match r {
+            Ok(x) => serde_json::json!({
+                "finish": x.finish_reason, "completion_tokens": x.completion_tokens,
+                "ms": x.elapsed_ms, "first_delta_ms": first_ms,
+                "output": x.content.expose().chars().take(3000).collect::<String>(),
+            }),
+            Err(e) => serde_json::json!({ "error": e.to_string() }),
+        };
+        self.log.lock().unwrap().push(entry);
+    }
+}
+
+impl ChatModel for Recorder<'_> {
+    fn chat_streaming(
+        &self,
+        req: &ChatRequest,
+        c: &CancelToken,
+        on_delta: &mut dyn FnMut(&str),
+    ) -> Result<ChatResponse, ClientError> {
+        let t = std::time::Instant::now();
+        let mut first = None;
+        let r = self.inner.chat_streaming(req, c, &mut |d| {
+            if first.is_none() && !d.is_empty() {
+                first = Some(t.elapsed().as_millis() as u64);
+            }
+            on_delta(d)
+        });
+        self.note(&r, first);
+        r
+    }
+
+    fn chat(&self, req: &ChatRequest, c: &CancelToken) -> Result<ChatResponse, ClientError> {
+        let r = self.inner.chat(req, c);
+        self.note(&r, None);
+        r
+    }
+}
+
 /// A real model behind a started sidecar (kept alive as long as this value).
 pub struct RealModel {
     pub process: tsr_infer::sidecar::SidecarProcess,
@@ -158,6 +218,15 @@ pub struct RealModel {
 impl ChatModel for RealModel {
     fn chat(&self, req: &ChatRequest, c: &CancelToken) -> Result<ChatResponse, ClientError> {
         self.process.client().chat(req, c)
+    }
+
+    fn chat_streaming(
+        &self,
+        req: &ChatRequest,
+        c: &CancelToken,
+        on_delta: &mut dyn FnMut(&str),
+    ) -> Result<ChatResponse, ClientError> {
+        self.process.client().chat_streaming(req, c, on_delta)
     }
 }
 

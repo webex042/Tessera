@@ -456,3 +456,48 @@ pub fn delete_items(conn: &mut Connection, ids: &[i64]) -> Result<u64, StoreErro
     tx.commit()?;
     Ok(n)
 }
+
+/// An item as rollups and views list it: no full text.
+#[derive(Debug, Clone)]
+pub struct ItemBrief {
+    pub id: i64,
+    pub started_at: i64,
+    pub ended_at: i64,
+    pub app: String,
+    pub title: Option<Sensitive<String>>,
+    pub summary: Option<Sensitive<String>>,
+}
+
+/// Items that started in `[start, end)`, oldest first.
+pub fn items_between(conn: &Connection, start: i64, end: i64) -> Result<Vec<ItemBrief>, StoreError> {
+    let mut st = conn.prepare(
+        "SELECT items.id, items.started_at, items.ended_at, COALESCE(sources.app_name, sources.app_exe),
+                sources.window_title, items.summary
+           FROM items JOIN sources ON sources.id = items.source_id
+          WHERE items.started_at >= ?1 AND items.started_at < ?2
+          ORDER BY items.started_at, items.id",
+    )?;
+    let rows = st.query_map(params![start, end], |r| {
+        Ok(ItemBrief {
+            id: r.get(0)?,
+            started_at: r.get(1)?,
+            ended_at: r.get(2)?,
+            app: r.get(3)?,
+            title: r.get::<_, Option<String>>(4)?.map(Sensitive::new),
+            summary: r.get::<_, Option<String>>(5)?.map(Sensitive::new),
+        })
+    })?;
+    Ok(rows.collect::<Result<_, _>>()?)
+}
+
+/// Which of `ids` still exist.
+pub fn existing(conn: &Connection, ids: &[i64]) -> Result<Vec<i64>, StoreError> {
+    let mut st = conn.prepare("SELECT 1 FROM items WHERE id = ?1")?;
+    let mut out = Vec::new();
+    for id in ids {
+        if st.exists([id])? {
+            out.push(*id);
+        }
+    }
+    Ok(out)
+}

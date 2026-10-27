@@ -188,3 +188,93 @@ fn status_changes_need_a_matching_single_use_unexpired_token() {
         "expired"
     );
 }
+
+#[test]
+fn bulk_dismiss_needs_a_token_for_exactly_that_set() {
+    let (_d, core, _, _) = setup();
+    // A month later every open loop is stale ("Still open?").
+    let later = NOW + 30 * 24 * H;
+    let g = core.loop_groups(later).unwrap();
+    assert!(g.open.is_empty() && g.proposed_done.is_empty());
+    let ids: Vec<i64> = g.still_open.iter().map(|f| f.id).collect();
+    assert_eq!(
+        ids.len(),
+        2,
+        "task and commitment; review items and notes are not loops"
+    );
+    let t0 = Instant::now();
+    let tok = core.propose_bulk_status(&ids, "dropped", t0).unwrap();
+    assert_eq!(
+        core.set_bulk_status(&ids[..1], "dropped", &tok, t0).unwrap_err(),
+        E_TOKEN,
+        "a subset is not the approved set"
+    );
+    let tok = core.propose_bulk_status(&ids, "dropped", t0).unwrap();
+    let rev: Vec<i64> = ids.iter().rev().copied().collect();
+    assert_eq!(
+        core.set_bulk_status(&rev, "dropped", &tok, t0).unwrap(),
+        2,
+        "order does not matter"
+    );
+    assert_eq!(
+        core.set_bulk_status(&ids, "dropped", &tok, t0).unwrap_err(),
+        E_TOKEN,
+        "single use"
+    );
+    assert!(core.loop_groups(later).unwrap().still_open.is_empty());
+    assert_eq!(
+        core.propose_bulk_status(&[ids[0], 99_999], "dropped", t0).unwrap_err(),
+        E_NOT_FOUND
+    );
+    assert_eq!(
+        core.propose_bulk_status(&ids, "proposed_done", t0).unwrap_err(),
+        E_INVALID
+    );
+    assert_eq!(core.propose_bulk_status(&[], "dropped", t0).unwrap_err(), E_INVALID);
+}
+
+#[test]
+fn week_and_month_views_drill_down_to_items() {
+    let (d, core, _, item) = setup();
+    // Roll up (code-only) as the app would a week later.
+    let mut w = open_encrypted(&d.path().join("t.db"), &[5u8; KEY_LEN]).unwrap();
+    let tz = tz();
+    let ctx = tsr_pipeline::rollup::RollupCtx {
+        tz: &tz,
+        redact: tsr_guard::redact::Options::default(),
+        model_id: "extractive",
+        now_ms: NOW + 8 * 24 * H,
+    };
+    tsr_pipeline::rollup::run_all_due(&mut w, None, &ctx, 0, &tsr_infer::cancel::CancelToken::new()).unwrap();
+    drop(w);
+
+    let week = core.rollups("week", NOW, &tz).unwrap();
+    assert_eq!(week.children.len(), 7);
+    assert!(week.period.summary.is_some());
+    let days: Vec<_> = week.children.iter().filter(|c| c.summary.is_some()).collect();
+    assert_eq!(days.len(), 2, "the two days with items");
+    let ids: Vec<i64> = days
+        .iter()
+        .flat_map(|c| {
+            c.summary
+                .as_ref()
+                .unwrap()
+                .highlights
+                .iter()
+                .flat_map(|h| h.item_ids.clone())
+        })
+        .collect();
+    assert!(ids.contains(&item));
+    let cards = core.items_by_ids(&[item, 99_999]).unwrap();
+    assert_eq!(cards.len(), 1, "missing ids are skipped");
+    assert_eq!(cards[0].item_id, item);
+
+    let month = core.rollups("month", NOW, &tz).unwrap();
+    assert!((4..=6).contains(&month.children.len()), "weeks overlapping October");
+    assert_eq!(core.rollups("hour", NOW, &tz).unwrap_err(), E_INVALID);
+    assert_eq!(core.items_by_ids(&[]).unwrap_err(), E_INVALID);
+
+    let b = core.brief(NOW, &tz).unwrap();
+    assert!(!b.opener.is_empty());
+    assert_eq!(b.due_today.len(), 1);
+}

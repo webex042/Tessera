@@ -1,5 +1,6 @@
 {
   "f1": 1.0,
+  "failed_item_diagnostics": [],
   "failed_items": 0,
   "fn": 0,
   "fp": 0,
@@ -59,5 +60,6 @@
   "simulated": true,
   "split": "dev",
   "stored": 43,
+  "subset": false,
   "tp": 43
 }

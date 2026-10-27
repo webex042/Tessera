@@ -128,3 +128,66 @@ impl<E: Embedder> Runner for EmbedRunner<E> {
         }
     }
 }
+
+/// Route model jobs to the runner for their kind (extraction P1, rollups P2).
+pub struct ByKind(pub Vec<(&'static str, Box<dyn Runner>)>);
+
+impl Runner for ByKind {
+    fn run(&mut self, job: &Dispatch, model: Option<&dyn ChatModel>, cancel: &CancelToken) -> Outcome {
+        match self.0.iter_mut().find(|(k, _)| *k == job.spec.kind) {
+            Some((_, r)) => r.run(job, model, cancel),
+            None => Outcome::Failed { retryable: false },
+        }
+    }
+}
+
+/// A rollup job (P2, model). Its key carries the minute it was submitted, because the
+/// scheduler never re-runs a completed key; each run handles the next due period.
+pub fn rollup_spec(now_ms: i64) -> JobSpec {
+    JobSpec {
+        key: format!("rollup:{}", now_ms / 60_000),
+        kind: "rollup",
+        priority: Priority::P2,
+        resource: Resource::Model,
+        payload: 0,
+    }
+}
+
+/// Rollup jobs: plan from the store, then generate the first due period (plan §11.1).
+pub struct RollupRunner {
+    pub conn: Connection,
+    pub tz: jiff::tz::TimeZone,
+    pub model_id: String,
+    pub redact: tsr_guard::redact::Options,
+    pub clock: fn() -> i64,
+    /// Milliseconds since the user's last input (for the evening day rollup).
+    pub idle_ms: fn() -> u64,
+}
+
+impl Runner for RollupRunner {
+    fn run(&mut self, _: &Dispatch, model: Option<&dyn ChatModel>, cancel: &CancelToken) -> Outcome {
+        use crate::rollup::{Generated, RollupCtx, due, run_period};
+        // The model is set up but not loaded right now: wait rather than write a code-only
+        // summary that would only be replaced if it went stale.
+        let Some(model) = model else {
+            return Outcome::Deferred { retry_in_ms: 60_000 };
+        };
+        let now = (self.clock)();
+        let Ok(periods) = due(&self.conn, now, &self.tz, (self.idle_ms)()) else {
+            return Outcome::Failed { retryable: true };
+        };
+        let Some(p) = periods.first() else { return Outcome::Done };
+        let ctx = RollupCtx {
+            tz: &self.tz,
+            redact: self.redact,
+            model_id: &self.model_id,
+            now_ms: now,
+        };
+        match run_period(&mut self.conn, p, Some(model), &ctx, cancel) {
+            Ok(Generated::Preempted) => Outcome::Preempted,
+            Ok(Generated::Cancelled) => Outcome::Cancelled,
+            Ok(Generated::ModelUnavailable) | Err(_) => Outcome::Failed { retryable: true },
+            Ok(_) => Outcome::Done,
+        }
+    }
+}

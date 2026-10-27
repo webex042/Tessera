@@ -71,12 +71,28 @@ impl Runner for Deferring {
 
 pub struct Services {
     pub views: Arc<Core>,
+    pub drafts: Arc<crate::drafts::Drafts>,
+    pub asks: Arc<crate::ask::Asks>,
     paused: AtomicBool,
     capture: Mutex<Option<CaptureHandle<StoreSink>>>,
     runtime: Option<Runtime<CandidatesLauncher>>,
     model_files: bool,
     stop: Arc<AtomicBool>,
+    /// Writes today's brief (plan §11.2); separate from the read connection behind `views`.
+    brief_conn: Mutex<rusqlite::Connection>,
 }
+
+/// Milliseconds since the user's last keyboard or mouse input.
+fn idle_ms() -> u64 {
+    #[cfg(windows)]
+    return tsr_win::query::idle_ms();
+    #[cfg(not(windows))]
+    0
+}
+
+/// Rollups once a minute (plan §11.1). Without a model, code-only (extractive) summaries are
+/// written directly; with a model, a P2 job is submitted and runs through the scheduler.
+const ROLLUP_EVERY: Duration = Duration::from_secs(60);
 
 fn blocklist(conn: &mut rusqlite::Connection) -> Blocklist {
     let _ = tsr_store::blocklist::sync_builtin_rules(conn, &builtin_rules());
@@ -140,6 +156,13 @@ impl Services {
         let bl = blocklist(&mut writer);
         let reader = tsr_store::keystore::open_store(dir).map_err(|e| e.to_string())?;
         let views = Arc::new(Core::new(reader));
+        let mut draft_conn = tsr_store::keystore::open_store(dir).map_err(|e| e.to_string())?;
+        let draft_bl = blocklist(&mut draft_conn);
+        let mut ask_conn = tsr_store::keystore::open_store(dir).map_err(|e| e.to_string())?;
+        let ask_bl = blocklist(&mut ask_conn);
+        let asks = Arc::new(crate::ask::Asks::new(ask_conn, ask_bl));
+        let drafts =
+            Arc::new(crate::drafts::Drafts::new(draft_conn, draft_bl).map_err(|e| format!("drafts: {:?}", e.kind()))?);
 
         let capture = spawn_capture(move || {
             Ok(CaptureCore::new(
@@ -179,6 +202,14 @@ impl Services {
                         }
                     },
                 };
+                let rollup = tsr_pipeline::worker::RollupRunner {
+                    conn: open()?,
+                    tz: local_tz(),
+                    model_id: "qwen3-vl-4b-instruct-q4_k_m".into(),
+                    redact: tsr_guard::redact::Options::default(),
+                    clock: now_ms,
+                    idle_ms,
+                };
                 let rt = Runtime::start(
                     SchedConfig::default(),
                     Supervisor::new(
@@ -187,20 +218,38 @@ impl Services {
                         now_ms() as u64,
                     ),
                     IdlePolicy::default(),
-                    Box::new(ex),
+                    Box::new(tsr_pipeline::worker::ByKind(vec![
+                        ("extract", Box::new(ex)),
+                        ("rollup", Box::new(rollup)),
+                        ("draft", Box::new(drafts.runner())),
+                        ("ask", Box::new(asks.runner())),
+                    ])),
                     Box::new(Deferring),
                 );
                 // Feed durable jobs to the scheduler (extraction only: no embedder installed yet).
                 let feed = open()?;
                 let stop2 = stop.clone();
                 let submitter = rt.submitter();
+                let draft_submitter = rt.submitter();
+                drafts.set_submit(Box::new(move |spec| draft_submitter.submit(spec).is_ok()));
+                let ask_submitter = rt.submitter();
+                asks.set_submit(Box::new(move |spec| ask_submitter.submit(spec).is_ok()));
                 std::thread::Builder::new()
                     .name("tsr-job-feed".into())
                     .spawn(move || {
+                        let tz = local_tz();
+                        let mut last_rollup = std::time::Instant::now() - ROLLUP_EVERY;
                         while !stop2.load(Ordering::Acquire) {
                             let _ = tsr_pipeline::worker::submit_pending(&feed, &["extract"], 500, &mut |s| {
                                 submitter.submit(s)
                             });
+                            if last_rollup.elapsed() >= ROLLUP_EVERY {
+                                last_rollup = std::time::Instant::now();
+                                let now = now_ms();
+                                if tsr_pipeline::rollup::due(&feed, now, &tz, idle_ms()).is_ok_and(|d| !d.is_empty()) {
+                                    let _ = submitter.submit(tsr_pipeline::worker::rollup_spec(now));
+                                }
+                            }
                             std::thread::sleep(Duration::from_secs(5));
                         }
                     })
@@ -208,13 +257,46 @@ impl Services {
                 Some(rt)
             }
         };
+        if runtime.is_none() {
+            // No model: code-only rollups so Timeline week/month still has summaries.
+            let mut conn = tsr_store::keystore::open_store(dir).map_err(|e| e.to_string())?;
+            let _ = conn.busy_timeout(Duration::from_secs(10));
+            let stop3 = stop.clone();
+            std::thread::Builder::new()
+                .name("tsr-rollup".into())
+                .spawn(move || {
+                    let tz = local_tz();
+                    while !stop3.load(Ordering::Acquire) {
+                        let ctx = tsr_pipeline::rollup::RollupCtx {
+                            tz: &tz,
+                            redact: tsr_guard::redact::Options::default(),
+                            model_id: "extractive",
+                            now_ms: now_ms(),
+                        };
+                        let cancel = tsr_infer::cancel::CancelToken::new();
+                        let _ = tsr_pipeline::rollup::run_all_due(&mut conn, None, &ctx, idle_ms(), &cancel);
+                        for _ in 0..ROLLUP_EVERY.as_secs() {
+                            if stop3.load(Ordering::Acquire) {
+                                return;
+                            }
+                            std::thread::sleep(Duration::from_secs(1));
+                        }
+                    }
+                })
+                .map_err(|e| format!("rollup: {:?}", e.kind()))?;
+        }
+        let brief_conn = tsr_store::keystore::open_store(dir).map_err(|e| e.to_string())?;
+        let _ = brief_conn.busy_timeout(Duration::from_secs(10));
         Ok(Services {
             views,
+            drafts,
+            asks,
             paused: AtomicBool::new(true),
             capture: Mutex::new(Some(capture)),
             runtime,
             model_files,
             stop,
+            brief_conn: Mutex::new(brief_conn),
         })
     }
 
@@ -282,6 +364,18 @@ impl Services {
     }
 
     /// Flush sessions, stop capture, stop the sidecar (plan §4.3 step 4).
+    /// Make today's brief if it is due (first unlock or start after 05:00 on a new day).
+    /// Returns it with how long it took (ms).
+    pub fn brief_if_due(&self) -> Option<(tsr_pipeline::brief::Brief, u128)> {
+        let t = std::time::Instant::now();
+        let c = self.brief_conn.lock().unwrap_or_else(|p| p.into_inner());
+        let tz = local_tz();
+        let now = now_ms();
+        tsr_pipeline::brief::due_day(&c, now, &tz, tsr_pipeline::brief::DEFAULT_BRIEF_MINUTE).ok()??;
+        let b = tsr_pipeline::brief::generate(&c, now, &tz).ok()?;
+        Some((b, t.elapsed().as_millis()))
+    }
+
     pub fn shutdown(&self) {
         self.stop.store(true, Ordering::Release);
         if let Some(c) = self.capture.lock().unwrap_or_else(|p| p.into_inner()).take() {

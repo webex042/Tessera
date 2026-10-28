@@ -1,0 +1,262 @@
+/*
+ * Maps every VitePress default-theme colour variable onto the Palette A tokens in tokens.css,
+ * so no colour from VitePress's own palette (greys, indigo, green, yellow, red, purple, white)
+ * can reach the page. The site is dark-only (appearance: 'force-dark'), but both selectors are
+ * set so the mapping holds whichever class VitePress applies.
+ */
+:root,
+:root.dark {
+  color-scheme: dark;
+
+  /* Base colours VitePress builds the rest from */
+  --vp-c-white: var(--t-text-strong);
+  --vp-c-black: var(--p-black);
+  --vp-c-neutral: var(--t-text);
+  --vp-c-neutral-inverse: var(--p-black);
+
+  --vp-c-gray-1: var(--t-border);
+  --vp-c-gray-2: var(--t-border-subtle);
+  --vp-c-gray-3: var(--t-surface-2);
+  --vp-c-gray-soft: rgb(var(--p-blue-rgb) / 0.12);
+
+  --vp-c-indigo-1: var(--p-rose);
+  --vp-c-indigo-2: var(--p-rose);
+  --vp-c-indigo-3: var(--p-blue);
+  --vp-c-indigo-soft: rgb(var(--p-rose-rgb) / 0.12);
+
+  --vp-c-purple-1: var(--p-rose);
+  --vp-c-purple-2: var(--p-rose);
+  --vp-c-purple-3: var(--p-rose);
+  --vp-c-purple-soft: rgb(var(--p-rose-rgb) / 0.12);
+
+  --vp-c-green-1: var(--p-blue);
+  --vp-c-green-2: var(--p-blue);
+  --vp-c-green-3: var(--p-blue);
+  --vp-c-green-soft: rgb(var(--p-blue-rgb) / 0.14);
+
+  --vp-c-yellow-1: var(--p-rose);
+  --vp-c-yellow-2: var(--p-rose);
+  --vp-c-yellow-3: var(--p-rose);
+  --vp-c-yellow-soft: rgb(var(--p-rose-rgb) / 0.1);
+
+  --vp-c-red-1: var(--p-rose);
+  --vp-c-red-2: var(--p-rose);
+  --vp-c-red-3: var(--p-rose);
+  --vp-c-red-soft: rgb(var(--p-rose-rgb) / 0.14);
+
+  --vp-c-sponsor: var(--p-rose);
+
+  /* Backgrounds */
+  --vp-c-bg: var(--t-bg);
+  --vp-c-bg-alt: var(--t-bg);
+  --vp-c-bg-elv: var(--t-surface);
+  --vp-c-bg-soft: var(--t-surface);
+
+  /* Lines */
+  --vp-c-border: var(--t-border);
+  --vp-c-divider: var(--t-border-subtle);
+  --vp-c-gutter: var(--t-border-subtle);
+
+  /* Text */
+  --vp-c-text-1: var(--t-text);
+  --vp-c-text-2: var(--t-text-secondary);
+  --vp-c-text-3: var(--t-text-muted);
+
+  /* Semantic */
+  --vp-c-default-1: var(--t-border);
+  --vp-c-default-2: var(--t-border-subtle);
+  --vp-c-default-3: var(--t-surface-2);
+  --vp-c-default-soft: rgb(var(--p-blue-rgb) / 0.1);
+
+  --vp-c-brand-1: var(--p-rose);
+  --vp-c-brand-2: var(--p-rose);
+  --vp-c-brand-3: var(--p-blue);
+  --vp-c-brand-soft: rgb(var(--p-rose-rgb) / 0.12);
+  --vp-c-brand: var(--p-rose);
+
+  --vp-c-tip-1: var(--p-blue);
+  --vp-c-tip-2: var(--p-blue);
+  --vp-c-tip-3: var(--p-blue);
+  --vp-c-tip-soft: rgb(var(--p-blue-rgb) / 0.12);
+
+  --vp-c-note-1: var(--p-blue);
+  --vp-c-note-2: var(--p-blue);
+  --vp-c-note-3: var(--p-blue);
+  --vp-c-note-soft: rgb(var(--p-blue-rgb) / 0.1);
+
+  --vp-c-success-1: var(--p-blue);
+  --vp-c-success-2: var(--p-blue);
+  --vp-c-success-3: var(--p-blue);
+  --vp-c-success-soft: rgb(var(--p-blue-rgb) / 0.12);
+
+  --vp-c-important-1: var(--p-rose);
+  --vp-c-important-2: var(--p-rose);
+  --vp-c-important-3: var(--p-rose);
+  --vp-c-important-soft: rgb(var(--p-rose-rgb) / 0.1);
+
+  --vp-c-warning-1: var(--p-rose);
+  --vp-c-warning-2: var(--p-rose);
+  --vp-c-warning-3: var(--p-rose);
+  --vp-c-warning-soft: rgb(var(--p-rose-rgb) / 0.1);
+
+  --vp-c-danger-1: var(--p-rose);
+  --vp-c-danger-2: var(--p-rose);
+  --vp-c-danger-3: var(--p-rose);
+  --vp-c-danger-soft: rgb(var(--p-rose-rgb) / 0.16);
+
+  --vp-c-caution-1: var(--p-rose);
+  --vp-c-caution-2: var(--p-rose);
+  --vp-c-caution-3: var(--p-rose);
+  --vp-c-caution-soft: rgb(var(--p-rose-rgb) / 0.16);
+
+  /* Fonts and shadows */
+  --vp-font-family-base: var(--t-font-sans);
+  --vp-font-family-mono: var(--t-font-mono);
+  --vp-shadow-1: var(--t-shadow-1);
+  --vp-shadow-2: var(--t-shadow-1);
+  --vp-shadow-3: var(--t-shadow-2);
+  --vp-shadow-4: var(--t-shadow-2);
+  --vp-shadow-5: var(--t-shadow-2);
+
+  /* Layout */
+  --vp-nav-height: var(--t-nav-h);
+  --vp-nav-bg-color: var(--t-nav-bg);
+  --vp-nav-screen-bg-color: var(--t-bg);
+  --vp-local-nav-bg-color: var(--t-nav-bg);
+  --vp-sidebar-bg-color: var(--t-bg);
+  --vp-backdrop-bg-color: rgb(var(--p-black-rgb) / 0.72);
+  --vp-layout-max-width: 1440px;
+  --vp-header-anchor-symbol: '#';
+
+  /* Code */
+  --vp-code-font-size: 0.875em;
+  --vp-code-color: var(--p-rose);
+  --vp-code-bg: rgb(var(--p-blue-rgb) / 0.14);
+  --vp-code-link-color: var(--p-blue);
+  --vp-code-link-hover-color: var(--p-rose);
+  --vp-code-block-color: var(--t-text);
+  --vp-code-block-bg: var(--t-code-bg);
+  --vp-code-block-divider-color: var(--t-border-subtle);
+  --vp-code-lang-color: var(--p-blue);
+  --vp-code-line-highlight-color: rgb(var(--p-blue-rgb) / 0.18);
+  --vp-code-line-number-color: var(--p-blue);
+  --vp-code-line-diff-add-color: rgb(var(--p-blue-rgb) / 0.16);
+  --vp-code-line-diff-add-symbol-color: var(--p-blue);
+  --vp-code-line-diff-remove-color: rgb(var(--p-rose-rgb) / 0.12);
+  --vp-code-line-diff-remove-symbol-color: var(--p-rose);
+  --vp-code-line-warning-color: rgb(var(--p-rose-rgb) / 0.12);
+  --vp-code-line-error-color: rgb(var(--p-rose-rgb) / 0.18);
+  --vp-code-copy-code-border-color: var(--t-border);
+  --vp-code-copy-code-bg: var(--t-surface-2);
+  --vp-code-copy-code-hover-border-color: var(--p-rose);
+  --vp-code-copy-code-hover-bg: var(--t-surface-2);
+  --vp-code-copy-code-active-text: var(--p-rose);
+  --vp-code-tab-divider: var(--t-border-subtle);
+  --vp-code-tab-text-color: var(--p-blue);
+  --vp-code-tab-bg: var(--t-code-bg);
+  --vp-code-tab-hover-text-color: var(--p-rose);
+  --vp-code-tab-active-text-color: var(--p-rose);
+  --vp-code-tab-active-bar-color: var(--p-rose);
+
+  /* Buttons */
+  --vp-button-brand-border: var(--p-rose);
+  --vp-button-brand-text: var(--p-black);
+  --vp-button-brand-bg: var(--p-rose);
+  --vp-button-brand-hover-border: var(--p-rose);
+  --vp-button-brand-hover-text: var(--p-rose);
+  --vp-button-brand-hover-bg: var(--p-black);
+  --vp-button-brand-active-border: var(--p-rose);
+  --vp-button-brand-active-text: var(--p-rose);
+  --vp-button-brand-active-bg: var(--t-surface-rose);
+  --vp-button-alt-border: var(--t-border);
+  --vp-button-alt-text: var(--p-rose);
+  --vp-button-alt-bg: transparent;
+  --vp-button-alt-hover-border: var(--p-rose);
+  --vp-button-alt-hover-text: var(--p-rose);
+  --vp-button-alt-hover-bg: var(--t-hover-bg);
+  --vp-button-alt-active-border: var(--p-rose);
+  --vp-button-alt-active-text: var(--p-rose);
+  --vp-button-alt-active-bg: var(--t-surface-rose);
+  --vp-button-sponsor-border: var(--t-border);
+  --vp-button-sponsor-text: var(--p-rose);
+  --vp-button-sponsor-bg: transparent;
+  --vp-button-sponsor-hover-border: var(--p-rose);
+  --vp-button-sponsor-hover-text: var(--p-rose);
+  --vp-button-sponsor-hover-bg: var(--t-hover-bg);
+  --vp-button-sponsor-active-border: var(--p-rose);
+  --vp-button-sponsor-active-text: var(--p-rose);
+  --vp-button-sponsor-active-bg: var(--t-surface-rose);
+
+  /* Custom blocks (callouts): one structure, labelled by title text, not by colour alone */
+  --vp-custom-block-font-size: 0.95rem;
+  --vp-custom-block-code-font-size: 0.875em;
+  --vp-custom-block-info-border: var(--t-border);
+  --vp-custom-block-info-text: var(--p-rose);
+  --vp-custom-block-info-bg: var(--t-surface);
+  --vp-custom-block-info-code-bg: rgb(var(--p-blue-rgb) / 0.14);
+  --vp-custom-block-note-border: var(--t-border);
+  --vp-custom-block-note-text: var(--p-rose);
+  --vp-custom-block-note-bg: var(--t-surface);
+  --vp-custom-block-note-code-bg: rgb(var(--p-blue-rgb) / 0.14);
+  --vp-custom-block-tip-border: var(--p-blue);
+  --vp-custom-block-tip-text: var(--p-rose);
+  --vp-custom-block-tip-bg: var(--t-surface);
+  --vp-custom-block-tip-code-bg: rgb(var(--p-blue-rgb) / 0.14);
+  --vp-custom-block-important-border: var(--t-border-rose);
+  --vp-custom-block-important-text: var(--p-rose);
+  --vp-custom-block-important-bg: var(--t-surface-rose);
+  --vp-custom-block-important-code-bg: rgb(var(--p-rose-rgb) / 0.12);
+  --vp-custom-block-warning-border: var(--t-border-rose);
+  --vp-custom-block-warning-text: var(--p-rose);
+  --vp-custom-block-warning-bg: var(--t-surface-rose);
+  --vp-custom-block-warning-code-bg: rgb(var(--p-rose-rgb) / 0.12);
+  --vp-custom-block-danger-border: var(--p-rose);
+  --vp-custom-block-danger-text: var(--p-rose);
+  --vp-custom-block-danger-bg: var(--t-surface-rose);
+  --vp-custom-block-danger-code-bg: rgb(var(--p-rose-rgb) / 0.12);
+  --vp-custom-block-caution-border: var(--p-rose);
+  --vp-custom-block-caution-text: var(--p-rose);
+  --vp-custom-block-caution-bg: var(--t-surface-rose);
+  --vp-custom-block-caution-code-bg: rgb(var(--p-rose-rgb) / 0.12);
+  --vp-custom-block-details-border: var(--t-border);
+  --vp-custom-block-details-text: var(--p-rose);
+  --vp-custom-block-details-bg: var(--t-surface);
+  --vp-custom-block-details-code-bg: rgb(var(--p-blue-rgb) / 0.14);
+
+  /* Inputs, badges, search */
+  --vp-input-border-color: var(--t-border);
+  --vp-input-bg-color: var(--t-surface);
+  --vp-input-switch-bg-color: var(--t-surface-2);
+  --vp-badge-info-border: var(--t-border);
+  --vp-badge-info-text: var(--p-blue);
+  --vp-badge-info-bg: transparent;
+  --vp-badge-tip-border: var(--p-blue);
+  --vp-badge-tip-text: var(--p-blue);
+  --vp-badge-tip-bg: transparent;
+  --vp-badge-warning-border: var(--p-rose);
+  --vp-badge-warning-text: var(--p-rose);
+  --vp-badge-warning-bg: transparent;
+  --vp-badge-danger-border: var(--p-rose);
+  --vp-badge-danger-text: var(--p-rose);
+  --vp-badge-danger-bg: var(--t-surface-rose);
+  --vp-local-search-bg: var(--t-bg);
+  --vp-local-search-result-bg: var(--t-surface);
+  --vp-local-search-result-border: var(--t-border-subtle);
+  --vp-local-search-result-selected-bg: var(--t-surface-rose);
+  --vp-local-search-result-selected-border: var(--p-rose);
+  --vp-local-search-highlight-bg: var(--p-rose);
+  --vp-local-search-highlight-text: var(--p-black);
+
+  /* Home hero defaults (unused: the hero is a custom component) */
+  --vp-home-hero-name-color: var(--p-rose);
+  --vp-home-hero-name-background: none;
+  --vp-home-hero-image-background-image: none;
+  --vp-home-hero-image-filter: none;
+
+  /* Ads (not used) */
+  --vp-carbon-ads-text-color: var(--p-rose);
+  --vp-carbon-ads-poweredby-color: var(--p-blue);
+  --vp-carbon-ads-bg-color: var(--t-surface);
+  --vp-carbon-ads-hover-text-color: var(--p-rose);
+  --vp-carbon-ads-hover-poweredby-color: var(--p-rose);
+}

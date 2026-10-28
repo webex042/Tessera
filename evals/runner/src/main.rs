@@ -102,8 +102,12 @@ fn main() {
         "ask" => {
             let split = arg(&args, "--split").unwrap_or_else(|| "all".into());
             finish(
-                &format!("ask_{}_{split}", if real.is_some() { "real" } else { "simulated" }),
-                ask::run(real_dyn, &label, &split),
+                &format!(
+                    "ask_{}_{split}{}",
+                    if real.is_some() { "real" } else { "simulated" },
+                    if ids.is_some() { "_subset" } else { "" }
+                ),
+                ask::run(real_dyn, &label, &split, ids.as_deref()),
             )
         }
         "rollup" => finish(

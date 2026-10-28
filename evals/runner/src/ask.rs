@@ -72,11 +72,15 @@ fn p50(v: &mut [u64]) -> Option<u64> {
     Some(v[v.len() / 2])
 }
 
-pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str) -> (bool, Value, String) {
+pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str, only: Option<&[String]>) -> (bool, Value, String) {
     let items = load_items();
     let qs: Vec<Q> =
         serde_json::from_str(&std::fs::read_to_string(root().join("evals/ask/ask.json")).unwrap()).unwrap();
-    let qs: Vec<&Q> = qs.iter().filter(|q| split == "all" || q.split == split).collect();
+    let qs: Vec<&Q> = qs
+        .iter()
+        .filter(|q| split == "all" || q.split == split)
+        .filter(|q| only.is_none_or(|o| o.contains(&q.id)))
+        .collect();
     let (_d, mut c) = db();
     let bl = Blocklist::compile(&builtin_rules()).0;
     let mut ids: HashMap<String, i64> = HashMap::new();
@@ -193,6 +197,8 @@ pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str) -> (bool, Va
             "gold_retrieved": snips.iter().any(|s| gold.contains(&s.item_id)),
             "filters": {"range": aq.range.is_some(), "app": aq.app, "kind": aq.kind},
             "sentences": a.sentences, "first_sentence_ms": a.first_sentence_ms, "total_ms": a.total_ms,
+            // Diagnosis (synthetic data only): what the model returned.
+            "calls": rec.take(),
         }));
     }
     let n = qs.len() as u32;

@@ -302,6 +302,27 @@ prose = [
 clean.extend(prose)
 
 OUT.mkdir(parents=True, exist_ok=True)
+
+# The committed API-key cases were rewritten by hand into a TESTKEY_..._FAKE_ form so that
+# repository secret scanning does not flag them (owner, 2026-10-28). Keep those lines exactly as
+# committed, and refuse to write a raw provider-style key again.
+import re as _re
+
+_existing = {}
+if (OUT / "secrets.jsonl").exists():
+    for _line in (OUT / "secrets.jsonl").read_text(encoding="utf-8").splitlines():
+        if _line.strip():
+            _d = json.loads(_line)
+            if _d["kind"] == "api_key":
+                _existing[_d["id"]] = _d
+positives = [_existing.get(p["id"], p) if p["kind"] == "api_key" else p for p in positives]
+_RAW_KEY = _re.compile(
+    r"\b(AKIA[0-9A-Z]{8,}|gh[opsu]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[abprs]-[0-9A-Za-z-]{10,}"
+    r"|sk-(proj|ant|live)-[A-Za-z0-9_-]{10,}|AIza[0-9A-Za-z_-]{20,})"
+)
+for _p in positives:
+    assert not _RAW_KEY.search(_p["text"]), f"raw provider-style key in {_p['id']}: use the TESTKEY_..._FAKE_ form"
+
 with open(OUT / "secrets.jsonl", "w", encoding="utf-8", newline="\n") as f:
     for p in positives:
         f.write(json.dumps(p, ensure_ascii=False) + "\n")

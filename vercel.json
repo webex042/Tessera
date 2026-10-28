@@ -1,8 +1,29 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd docs-site && npm install && npm run build",
-  "outputDirectory": "docs-site/.vitepress/dist",
-  "framework": null,
+  "services": {
+    "docs-site": {
+      "root": "docs-site",
+      "framework": "vitepress"
+    },
+    "ui": {
+      "root": "ui",
+      "framework": "vite"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/app/(.*)",
+      "destination": { "service": "ui" }
+    },
+    {
+      "source": "/app",
+      "destination": { "service": "ui" }
+    },
+    {
+      "source": "/(.*)",
+      "destination": { "service": "docs-site" }
+    }
+  ],
   "cleanUrls": true,
   "trailingSlash": false
 }

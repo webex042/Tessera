@@ -5,6 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 // Everything the webview loads is bundled here; the CSP in src-tauri/tauri.conf.json
 // allows no remote origins (plan §13.5).
 export default defineConfig({
+  base: "./",
   plugins: [react(), tailwindcss()],
   clearScreen: false,
   server: { port: 5173, strictPort: true, host: "localhost" },

@@ -1,0 +1,891 @@
+{
+  "accuracy": 0.15,
+  "correct": 9,
+  "fabricated_citations": 0,
+  "first_sentence_ms_p50": 14521,
+  "invalid": 3,
+  "label": "qwen3-vl-4b-instruct-q4_k_m on vulkan on Vulkan0 (AMD Radeon (TM) Graphics)",
+  "pass": false,
+  "questions": 60,
+  "rows": [
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "commitment",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-001",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 16280
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-002",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 17683
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-003",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 20444
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-004",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 20172
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-005",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 19907
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-006",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 20422
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-007",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 15466
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-008",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 17375
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-009",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 18881
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-010",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 23014
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-011",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 18570
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-012",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 16764
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-013",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 6247
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-014",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 15462
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-015",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 18914
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-016",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 23063
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-017",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 16630
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-018",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 23179
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-019",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 16354
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-020",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 19670
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 12310,
+      "gold_retrieved": true,
+      "id": "ask-021",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            8
+          ],
+          "text": "The staging database migration runs Saturday 24 Oct at 22:00 IST.",
+          "verified": true
+        }
+      ],
+      "total_ms": 12970
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": "Microsoft Teams",
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 11422,
+      "gold_retrieved": true,
+      "id": "ask-022",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            9
+          ],
+          "text": "Lena asked for a customer reference in retail for the webinar, ideally someone using the export API.",
+          "verified": true
+        }
+      ],
+      "total_ms": 12088
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "task",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-023",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 21396
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-024",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 19612
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-025",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 5819
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-026",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 5175
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-027",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 4193
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-028",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 19232
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-029",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 23993
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-030",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 21763
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-031",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 12560
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-032",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 18909
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-033",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 20914
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-034",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 15650
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-035",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 18891
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-036",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 23405
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-037",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 20641
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-038",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 21679
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-039",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 18796
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-040",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 19347
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-041",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 18629
+    },
+    {
+      "calls": [
+        {
+          "error": "transport: timed out"
+        }
+      ],
+      "id": "ask-042",
+      "valid": false
+    },
+    {
+      "calls": [
+        {
+          "error": "transport: timed out"
+        }
+      ],
+      "id": "ask-043",
+      "valid": false
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "question",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-044",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 33499
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 19257,
+      "gold_retrieved": true,
+      "id": "ask-045",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            75
+          ],
+          "text": "Your dentist appointment is on Saturday, 31 October, from 09:00 to 10:00 with Dr. Kulkarni in Indiranagar.",
+          "verified": true
+        }
+      ],
+      "total_ms": 20028
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "commitment",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-046",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 23003
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-047",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 24996
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-048",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 20820
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-049",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 22798
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-050",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 36730
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-051",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 14979
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-052",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 24423
+    },
+    {
+      "calls": [
+        {
+          "error": "transport: timed out"
+        }
+      ],
+      "id": "ask-053",
+      "valid": false
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-054",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 21963
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "question",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-055",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 21172
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-056",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 19222
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-057",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 6476
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": "decision",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-058",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 8889
+    },
+    {
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": 14521,
+      "gold_retrieved": true,
+      "id": "ask-059",
+      "insufficient": false,
+      "sentences": [
+        {
+          "cites": [
+            1
+          ],
+          "fabricated": 0,
+          "item_ids": [
+            48
+          ],
+          "text": "The user has already approved the DataPipe Inc. proposal and will sign by Monday.",
+          "verified": true
+        }
+      ],
+      "total_ms": 15214
+    },
+    {
+      "correct": true,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": false,
+      "id": "ask-060",
+      "insufficient": true,
+      "sentences": [],
+      "total_ms": 5684
+    }
+  ],
+  "shown_sentences": 4,
+  "simulated": false,
+  "split": "all",
+  "total_ms_p50": 19222,
+  "verified_sentences": 4,
+  "verified_share": 1.0
+}

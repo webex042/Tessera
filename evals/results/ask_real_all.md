@@ -6,11 +6,11 @@ Retrieval: keyword + facts (no embedder), filters from the question; facts from 
 
 | metric | value | threshold |
 |---|---|---|
-| questions / invalid answers | 60 / 3 | |
-| answered correctly | 9 (15.0 %) | ≥ 80 % |
-| shown sentences verified | 4 / 4 (100.0 %) | ≥ 90 % |
+| questions / invalid answers | 60 / 0 | |
+| answered correctly | 40 (66.7 %) | ≥ 80 % |
+| shown sentences verified | 41 / 49 (83.7 %) | ≥ 90 % |
 | fabricated citations | 0 | 0 |
-| first sentence, p50 | 14521 ms | ≤ 2 500 ms |
-| full answer, p50 | 19222 ms | ≤ 10 000 ms |
+| first sentence, p50 | 25155 ms | ≤ 2 500 ms |
+| full answer, p50 | 25540 ms | ≤ 10 000 ms |
 
 **FAIL**

@@ -12,7 +12,7 @@ Last updated: 2026-10-28.
 |---|---|---|---|
 | 2.R1 | Download Qwen3-VL-4B Q4_K_M + mmproj (approved), verify digests | PASS | `tsr-models locate --verify`: both files `digest_checked: true` |
 | 2.R2 | Held-out extraction with the real model | FAIL | F1 0.507 (< 0.70); hallucinated 0 %; 0 invalid rows; 15/58 items failed on invalid JSON twice. `evals/results/extraction_real_heldout.md` |
-| 2.R3 | Injection corpus with the real model | PARTIAL | first run 66/74 (5 safety failures) → guard fixed → 70/74, all 69 adversarial pass; 4 genuine-task misses. 152-case real run: see Stage 7 |
+| 2.R3 | Injection corpus with the real model | PARTIAL | first run 66/74 (5 safety failures) → guard fixed → 70/74, all 69 adversarial pass; 4 genuine-task misses. 152-case real run: 123/152 (see 7.2) |
 
 ## Stage 3: Notch UI ([verification](stage3/verification.md))
 
@@ -60,15 +60,15 @@ Last updated: 2026-10-28.
 | id | task | status | evidence / blocker |
 |---|---|---|---|
 | 6.1 | Query filters, retrieval, prompt, streaming, verification, chips, insufficient path | PASS | `askq`/`ask` tests; SIMULATED eval PASS; preview |
-| 6.E1 | ≥ 80 % correct, ≥ 90 % verified, 0 fabricated (60 q) | FAIL | REAL ask/v1: 15 % correct (28 % by verified content), 78.9 % verified, 0 fabricated; the model set "insufficient" on 57/60. REAL ask/v2: 15 % correct, 0 fabricated, only 4 sentences shown (48/60 empty, 3 invalid) — raw-output diagnosis pending (`--ids` subset) |
-| 6.E2 | First token ≤ 2.5 s, full ≤ 10 s | FAIL | REAL (iGPU): v1 first sentence p50 23.7 s, full 18.2 s; v2 14.5 s / 19.2 s |
+| 6.E1 | ≥ 80 % correct, ≥ 90 % verified, 0 fabricated (60 q) | FAIL | REAL ask/v2 after the key-order fix (ADR-0010): **66.7 % correct, 83.7 % verified, 0 fabricated, 0 invalid**. Before the fix: v1 15 %, v2 15 % (empty answers caused by sorted schema keys) |
+| 6.E2 | First token ≤ 2.5 s, full ≤ 10 s | FAIL | REAL (iGPU), after fix: first sentence p50 25.2 s, full 25.5 s (earlier: v1 23.7 / 18.2 s, v2 sorted keys 14.5 / 19.2 s); RTX 4050 not available |
 
 ## Stage 7: Security audit ([verification](stage7/verification.md))
 
 | id | task | status | evidence / blocker |
 |---|---|---|---|
 | 7.1 | Threat-model review, gaps fixed | PASS | 6 gaps fixed (ADR-0009) |
-| 7.2 | Injection ≥ 150, secrets ≥ 300 incl. Indian IDs, in CI | PASS | 152 / 355 cases; secrets 355/355 redacted, FP 0.41 %; injection SIMULATED 140/152 (held-out half 27/39) |
+| 7.2 | Injection ≥ 150, secrets ≥ 300 incl. Indian IDs, in CI | PASS | 152 / 355 cases; secrets 355/355 redacted, FP 0.41 %; injection SIMULATED 140/152 (held-out half 27/39); REAL 123/152 (held-out half 24/39: 12 injected texts stored as to-dos, nothing executed); tuned-half miss s7-019 fixed, REAL re-check 6/6 |
 | 7.3 | Fuzzing | PARTIAL | randomised robustness tests (2 bugs found and fixed); cargo-fuzz BLOCKED (nightly + downloads need approval) |
 | 7.4 | 24 h network monitor | FAIL | 10-min run: Tessara 0 connections; WebView2 1 HTTPS to Microsoft (ADR-0002); 24 h run needs the owner |
 | 7.5 | Canary disk scan | PARTIAL | 0 plaintext hits, control found (60 s run); 24 h and pagefile need the owner |

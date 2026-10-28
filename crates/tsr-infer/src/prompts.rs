@@ -176,4 +176,19 @@ mod tests {
         assert!(e.contains("<b>ok</b>"), "other tags untouched");
         assert!(e.contains("&lt;/screen_content>"));
     }
+
+    /// llama-server turns the schema into a grammar that writes keys in the order it receives
+    /// them. Without serde_json's `preserve_order` the keys arrive sorted, so the model had to
+    /// write `"insufficient"` before any answer and a fact's `confidence` before its text.
+    #[test]
+    fn schemas_keep_their_declared_key_order() {
+        let keys = |p: &Prompt| -> Vec<String> {
+            p.schema.as_ref().unwrap()["properties"].as_object().unwrap().keys().cloned().collect()
+        };
+        assert_eq!(keys(&ASK_V2), ["sentences", "insufficient"]);
+        assert_eq!(keys(&EXTRACTION_V1), ["summary", "facts", "people"]);
+        assert_eq!(keys(&ROLLUP_V1), ["summary", "highlights"]);
+        let sent = serde_json::to_string(ASK_V2.schema.as_ref().unwrap()).unwrap();
+        assert!(sent.find("\"text\"").unwrap() < sent.find("\"cites\"").unwrap());
+    }
 }

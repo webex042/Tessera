@@ -13,7 +13,7 @@ available; every timing below is from the integrated GPU.
 | 3 Notch UI | PARTIAL | built; 60 fps, input-to-visual p95 64 ms, focus and capture exclusion verified; named apps and live monitor/DPI change need the owner |
 | 4 Rollups, brief, loops | PARTIAL | built; replay, drill-down, no-auto-close, brief timing, real-model rollups PASS; unlock trigger not exercised live |
 | 5 Drafts | PARTIAL | built; insertion safety PASS (real); 0 unflagged claims (real); timings FAIL on the iGPU; Win+V history untestable here (off) |
-| 6 Ask | FAIL | built; pipeline PASS (simulated); the real 4B model returns empty answers (15 % correct) |
+| 6 Ask | FAIL | built; pipeline PASS (simulated); real model 66.7 % correct, 83.7 % verified, 0 fabricated after the key-order fix (was 15 %); 25 s on the iGPU |
 | 7 Security audit | PARTIAL | corpora, robustness, canary, deny, Tauri, integrity, docs done; S1 FAIL (WebView2), S3/S4 FAIL; 24 h runs need the owner |
 | 8 Meetings | BLOCKED | MVP gate not met; model downloads not approved |
 | 9 Beta | PARTIAL | diagnostics bundle PASS; beta needs testers |
@@ -49,7 +49,7 @@ dev machine's clipboard content was lost in that test**; text-only clipboard sav
 clipboards; a completion for one person proposed another's loop; dedupe swallowed completion
 evidence; real model copied an injected request into a draft; five injection guard gaps on the
 real model; date-resolver panic; non-idempotent redaction; Aadhaar VID/passport/voter ID not
-detected; model files not digest-checked at start; two timing-fragile scheduler tests.
+detected; schema keys sent to the model in alphabetical order (ADR-0010); the exfiltration rule missed gerunds ("by sharing your OTP", real model); model files not digest-checked at start; two timing-fragile scheduler tests.
 
 ## D. Exit-criteria scorecard
 
@@ -68,12 +68,12 @@ detected; model files not digest-checked at start; two timing-fragile scheduler 
 | S5 Clipboard restored; not in history/cloud | restore REAL; history off; cloud not observable | PARTIAL |
 | S5 First text ≤ 3 s; complete ≤ 8 s | 5.9 s / 16.4 s (iGPU) | FAIL |
 | S5 0 unflagged unsupported claims | real 0 | PASS |
-| S6 ≥ 80 % correct, ≥ 90 % verified, 0 fabricated | real: 15 % (v1 and v2), 0 fabricated | FAIL |
-| S6 First token ≤ 2.5 s, full ≤ 10 s | 14.5–23.7 s / 18–19 s (iGPU) | FAIL |
+| S6 ≥ 80 % correct, ≥ 90 % verified, 0 fabricated | real: 66.7 % / 83.7 % / 0 (after ADR-0010; 15 % before) | FAIL |
+| S6 First token ≤ 2.5 s, full ≤ 10 s | 25.2 s / 25.5 s (iGPU) | FAIL |
 | MVP S1 network (24 h) | 10 min: Tessara 0, WebView2 1 HTTPS (ADR-0002) | FAIL |
 | MVP S2 canary (24 h) | 60 s: 0 hits, control found | PARTIAL |
 | MVP S3 extraction F1 ≥ 0.70, halluc. ≤ 3 % | 0.507 / 0 % | FAIL |
-| MVP S4 Ask verified ≥ 90 %, 0 fabricated | 0 fabricated; too few sentences to judge | FAIL |
+| MVP S4 Ask verified ≥ 90 %, 0 fabricated | 83.7 % verified, 0 fabricated | FAIL |
 | MVP S5 drafts accepted ≥ 50 % (2-week self-test) | not run (needs the owner) | BLOCKED |
 | MVP S6 resources on RTX 4050 | hardware not available | BLOCKED |
 | MVP S7 7-day stability | not run | BLOCKED |
@@ -81,14 +81,18 @@ detected; model files not digest-checked at start; two timing-fragile scheduler 
 ## E. Real-model results (Qwen3-VL-4B Q4_K_M, Vulkan iGPU)
 
 See `evals/results/*_real*`: extraction F1 0.507 (15/58 items lost to invalid JSON, likely
-truncation at 600 tokens — not yet confirmed); injection 66→70/74, then the 152-case run (§G);
-drafts 17/20 valid, 0 unflagged, slow; Ask mostly empty answers; rollups PASS.
+truncation at 600 tokens — not yet confirmed); injection 66→70/74 on the original set; 152-case run 123/152 (held-out half 24/39 — 12 injected
+texts stored as to-dos, none executed; 5 request timeouts in a run paused twice by standby);
+drafts 17/20 valid, 0 unflagged, slow; rollups PASS; Ask 15 % → 66.7 % once schemas kept their key
+order (ADR-0010: every schema had been sent to the model with its keys sorted alphabetically,
+so Ask had to write "insufficient" before any answer and extraction wrote `confidence` before
+the fact). All results before that fix were measured with sorted keys.
 
 ## F. Security and privacy
 
 `SECURITY.md`, `docs/privacy.md`, `docs/stage7/verification.md`. Open: ADR-0002 (WebView2
-connection), ADR-0003 (updater advisories), held-out injection generalisation ~69 % against a
-fully compromised model (facts are never executed, which is the backstop).
+connection), ADR-0003 (updater advisories), held-out injection generalisation 69 % against a
+fully compromised model (SIMULATED) and 62 % with the real 4B model (facts are never executed, which is the backstop).
 
 ## G. Blocked — what needs the owner
 
@@ -101,7 +105,7 @@ fully compromised model (facts are never executed, which is the backstop).
 
 ## H. Next steps (recommended order)
 
-1. Diagnose the extraction JSON failures and the empty Ask answers with recorded raw outputs (tooling is in place: `--ids` subsets record model output).
+1. Re-run the full held-out extraction (~6 h), drafts and rollups with declared key order (ADR-0010); keep the PC awake (two standbys paused the last long run).
 2. Re-run held-out extraction and Ask after any prompt change; on the RTX 4050 if possible.
 3. Author a third, untouched injection set before any further guard tuning.
 4. Owner checklist items in G.

@@ -1,78 +1,88 @@
 /*
- * Tessera docs design tokens.
+ * Tessera docs design tokens: "research archive" direction.
  *
- * Cyberpunk Engineering Direction:
- *   Jet Black      #0A0A0A   rgb(10 10 10)     -- Base surfaces and dark chassis
- *   Cerulean Blue  #007BA7   rgb(0 123 167)   -- Cyan technical accents, headings, links
- *   Neon Rose      #FF2D95   rgb(255 45 149)  -- Neon magenta brand identity, active nav, primary CTAs
+ * Every colour on the site comes from this restrained black / white / grey palette.
+ * scripts/check-palette.mjs fails the build check if any other hex value appears.
  *
- * Readable Neutral Text for Long-Form Content:
- *   rgb(226 232 240) provides > 15:1 contrast against #0A0A0A (WCAG AAA) for comfortable reading.
+ *   Ink Black        #000000   title bars, ticker, active navigation, strong rules
+ *   Pure White       #FFFFFF   document surfaces, header
+ *   Light Grid Grey  #F2F2F2   page background behind the grid
+ *   Soft Paper Grey  #F5F5F5   secondary surfaces (table heads, callouts)
+ *   Near Black       #111111   body text (18.9:1 on white)
+ *   Slate Grey       #777777   secondary text (4.48:1 on white: used at >= 14px bold or
+ *                              as metadata; long-form text always uses Near Black)
+ *   Charcoal         #1A1A1A   borders
+ *   Light Grey       #D8D8D8   subtle separators, grid lines
+ *   Neutral Grey     #E8E8E8   hover and secondary highlights
+ *
+ * Status (pass / fail / partial) is never shown by colour: it is always written as a word and,
+ * for failures, drawn inverted (white on black).
  */
 :root {
   /* Palette (raw) */
-  --p-black: #0A0A0A;
-  --p-blue: #007BA7;
-  --p-rose: #FF2D95;
-  --p-black-rgb: 10 10 10;
-  --p-blue-rgb: 0 123 167;
-  --p-rose-rgb: 255 45 149;
+  --p-ink: #000000;
+  --p-white: #FFFFFF;
+  --p-grid-bg: #F2F2F2;
+  --p-paper: #F5F5F5;
+  --p-text: #111111;
+  --p-slate: #777777;
+  --p-charcoal: #1A1A1A;
+  --p-line: #D8D8D8;
+  --p-hl: #E8E8E8;
 
   /* Surfaces */
-  --t-bg: var(--p-black);
-  --t-surface: color-mix(in srgb, var(--p-blue) 6%, var(--p-black));
-  --t-surface-2: color-mix(in srgb, var(--p-blue) 11%, var(--p-black));
-  --t-surface-rose: color-mix(in srgb, var(--p-rose) 8%, var(--p-black));
-  --t-code-bg: color-mix(in srgb, var(--p-blue) 8%, var(--p-black));
-  --t-nav-bg: rgb(var(--p-black-rgb) / 0.94);
+  --t-page: var(--p-grid-bg);
+  --t-surface: var(--p-white);
+  --t-surface-2: var(--p-paper);
+  --t-hover: var(--p-hl);
+  --t-code-bg: var(--p-ink);
+  --t-code-text: var(--p-paper);
 
-  /* Typography: Readable neutral long-form text, cyan headings, magenta accents */
-  --t-text: rgb(226 232 240);
-  --t-text-strong: rgb(248 250 252);
-  --t-text-secondary: rgb(190 200 212);
-  --t-text-muted: rgb(140 155 170);
-  --t-heading: var(--p-blue);
+  /* Text */
+  --t-text: var(--p-text);
+  --t-text-strong: var(--p-ink);
+  --t-text-muted: var(--p-slate);
+  --t-on-ink: var(--p-white);
 
-  /* Lines & Technical Borders */
-  --t-border: color-mix(in srgb, var(--p-blue) 30%, var(--p-black));
-  --t-border-subtle: color-mix(in srgb, var(--p-blue) 18%, var(--p-black));
-  --t-border-rose: color-mix(in srgb, var(--p-rose) 45%, var(--p-black));
+  /* Lines */
+  --t-border: var(--p-charcoal);
+  --t-border-strong: var(--p-ink);
+  --t-divider: var(--p-line);
 
-  /* Interaction & Accents */
-  --t-accent: var(--p-rose);
-  --t-accent-cyan: var(--p-blue);
-  --t-hover-bg: rgb(var(--p-rose-rgb) / 0.08);
-  --t-active: var(--p-rose);
-  --t-active-bar: var(--p-rose);
-  --t-focus: var(--p-rose);
-  --t-selection: rgb(var(--p-blue-rgb) / 0.4);
+  /* Interaction */
+  --t-active-bg: var(--p-ink);
+  --t-active-text: var(--p-white);
+  --t-focus: var(--p-ink);
+  --t-selection-bg: var(--p-ink);
+  --t-selection-text: var(--p-white);
 
-  /* Atmosphere (Restrained) */
-  --t-grid-line: rgb(var(--p-blue-rgb) / 0.06);
-  --t-grid-size: 48px;
+  /* Atmosphere: a low-contrast square grid behind the document windows */
+  --t-grid-line: var(--p-line);
+  --t-grid-size: 24px;
 
-  /* Depth */
-  --t-shadow-1: 0 0 0 1px var(--t-border-subtle);
-  --t-shadow-2: 0 12px 32px -16px rgb(var(--p-blue-rgb) / 0.25);
+  /* Depth: hard offset shadows, like a classic desktop window */
+  --t-shadow-window: 6px 6px 0 0 var(--p-ink);
+  --t-shadow-small: 3px 3px 0 0 var(--p-ink);
 
   /* Type */
   --t-font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'Cascadia Code',
     'Consolas', monospace;
   --t-font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --t-size-hero: clamp(1.85rem, 3.5vw, 2.75rem);
-  --t-size-h1: clamp(1.75rem, 3vw, 2.35rem);
-  --t-size-h2: clamp(1.35rem, 2.2vw, 1.75rem);
-  --t-size-h3: 1.15rem;
+  --t-size-h1: clamp(1.75rem, 3vw, 2.4rem);
+  --t-size-h2: clamp(1.2rem, 1.8vw, 1.45rem);
+  --t-size-h3: 1.08rem;
   --t-size-body: 1rem;
-  --t-size-meta: 0.8125rem;
+  --t-size-meta: 0.75rem;
+  --t-size-label: 0.6875rem;
 
   /* Shape and space */
-  --t-radius: 4px;
-  --t-radius-lg: 6px;
+  --t-radius: 0;
   --t-space-1: 0.5rem;
   --t-space-2: 1rem;
   --t-space-3: 1.5rem;
   --t-space-4: 2.5rem;
   --t-space-5: 4rem;
+  --t-ticker-h: 28px;
   --t-nav-h: 64px;
+  --t-titlebar-h: 34px;
 }

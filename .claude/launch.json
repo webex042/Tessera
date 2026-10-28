@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--dir", "ui", "dev"],
       "port": 5173
+    },
+    {
+      "name": "docs-site-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "docs-site", "run", "preview", "--", "--port", "4173"],
+      "port": 4173
     }
   ]
 }

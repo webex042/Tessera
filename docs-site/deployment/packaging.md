@@ -5,12 +5,12 @@ description: Technical specification of Tessera's Windows desktop packaging pipe
 
 # Desktop Application Packaging
 
-Tessera targets **Microsoft Windows 11 (x64)** as a standalone native desktop application. It uses **Tauri 2** to integrate a Rust system core with a Svelte 5 frontend, bundled as an NSIS single-executable installer.
+Tessera targets **Microsoft Windows 11 (x64)** as a standalone native desktop application. It uses **Tauri 2** to integrate a Rust system core with a React 19 frontend, bundled as an NSIS single-executable installer.
 
 ```mermaid
 flowchart TD
     subgraph Frontend["Frontend Build"]
-        UI["ui/ (Svelte 5 + Vite)"] -->|pnpm build:ui| DIST["ui/dist/ (Static Assets)"]
+        UI["ui/ (React 19 + Vite)"] -->|pnpm build:ui| DIST["ui/dist/ (Static Assets)"]
     end
 
     subgraph Sidecars["Sidecar Binaries"]
@@ -29,7 +29,7 @@ flowchart TD
 
 ## Packaging Configuration (`tauri.conf.json`)
 
-The packaging pipeline is defined in [`src-tauri/tauri.conf.json`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/src-tauri/tauri.conf.json):
+The packaging pipeline is defined in [`src-tauri/tauri.conf.json`](https://github.com/webex042/Tessera/blob/main/src-tauri/tauri.conf.json):
 
 ```json
 {
@@ -88,8 +88,8 @@ Tessera isolates high-risk C/C++ runtimes into child processes rather than linki
 
 | Sidecar Component | Pinned Version | Windows Target Binary | Checksum Source |
 | :--- | :--- | :--- | :--- |
-| **llama-server** | `b4404` | `src-tauri/binaries/llama-server-x86_64-pc-windows-msvc.exe` | [`tools/sidecar.lock`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/tools/sidecar.lock) |
-| **ONNX Runtime** | `1.20.1` | `src-tauri/binaries/onnxruntime.dll` | [`tools/sidecar.lock`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/tools/sidecar.lock) |
+| **llama-server** | `b4404` | `src-tauri/binaries/llama-server-x86_64-pc-windows-msvc.exe` | [`tools/sidecar.lock`](https://github.com/webex042/Tessera/blob/main/tools/sidecar.lock) |
+| **ONNX Runtime** | `1.20.1` | `src-tauri/binaries/onnxruntime.dll` | [`tools/sidecar.lock`](https://github.com/webex042/Tessera/blob/main/tools/sidecar.lock) |
 
 During packaging, sidecar binaries must be pre-fetched into `src-tauri/binaries/` using the verified fetch tool:
 
@@ -109,7 +109,7 @@ To build the release desktop installer locally:
 corepack enable
 pnpm install --frozen-lockfile
 
-# 2. Build the production Svelte 5 frontend
+# 2. Build the production React 19 frontend
 pnpm build:ui
 
 # 3. Ensure sidecars are populated

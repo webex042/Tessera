@@ -25,35 +25,33 @@ const label = computed(
 </template>
 
 <style scoped>
+/* Solid border = done, dashed = partial / planned / unverified, inverted = fail / blocked. */
 .t-badge {
   display: inline-block;
-  padding: 0.05rem 0.45rem;
-  border: 1px solid var(--p-blue);
-  border-radius: 3px;
+  padding: 0 0.4rem;
+  border: 1px solid var(--p-ink);
+  border-radius: 0;
+  background: var(--p-white);
   font-family: var(--t-font-mono);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  line-height: 1.6;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+  text-transform: uppercase;
   white-space: nowrap;
-  color: var(--p-rose);
-}
-
-.t-badge.is-implemented,
-.t-badge.is-pass {
-  border-style: solid;
+  color: var(--p-ink);
 }
 
 .t-badge.is-partial,
 .t-badge.is-planned,
 .t-badge.is-unverified {
   border-style: dashed;
+  background: var(--p-paper);
 }
 
 .t-badge.is-fail,
 .t-badge.is-blocked {
-  border-color: var(--p-rose);
-  background: var(--p-rose);
-  color: var(--p-black);
+  background: var(--p-ink);
+  color: var(--p-white);
 }
 </style>

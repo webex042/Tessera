@@ -1,18 +1,107 @@
-import { defineConfig } from 'vitepress'
+import { defineConfigWithTheme, type DefaultTheme } from 'vitepress'
+import { execSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-export default defineConfig({
+// Build metadata shown in the status ticker. Everything is read at build time from the
+// repository (or from Vercel's build environment), so nothing on the ticker is hard-coded.
+const here = dirname(fileURLToPath(import.meta.url))
+
+function appVersion(): string {
+  try {
+    const conf = JSON.parse(readFileSync(resolve(here, '../../src-tauri/tauri.conf.json'), 'utf8'))
+    return typeof conf.version === 'string' ? conf.version : 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
+function commit(): string {
+  const fromVercel = process.env.VERCEL_GIT_COMMIT_SHA
+  if (fromVercel) return fromVercel.slice(0, 7)
+  try {
+    return execSync('git rev-parse --short HEAD', { cwd: here, stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+  } catch {
+    return 'unknown'
+  }
+}
+
+type BuildInfo = { version: string; commit: string; date: string }
+
+const build: BuildInfo = {
+  version: appVersion(),
+  commit: commit(),
+  date: new Date().toISOString().slice(0, 10),
+}
+
+// The default theme's options plus the build metadata read by StatusTicker.vue.
+type ThemeConfig = DefaultTheme.Config & { build: BuildInfo }
+
+// Code highlighting in the same black / white / grey palette as the rest of the site:
+// structure is shown by weight and tone, not hue.
+const archiveCodeTheme = {
+  name: 'tessera-archive',
+  type: 'dark' as const,
+  colors: {
+    'editor.background': '#000000',
+    'editor.foreground': '#F5F5F5',
+  },
+  tokenColors: [
+    { settings: { foreground: '#F5F5F5' } },
+    { scope: ['comment', 'punctuation.definition.comment'], settings: { foreground: '#777777', fontStyle: 'italic' } },
+    { scope: ['string', 'string.quoted', 'markup.inline.raw'], settings: { foreground: '#D8D8D8' } },
+    {
+      scope: ['keyword', 'storage', 'storage.type', 'keyword.control', 'keyword.operator.new', 'support.type.property-name', 'entity.name.tag'],
+      settings: { foreground: '#FFFFFF', fontStyle: 'bold' },
+    },
+    { scope: ['entity.name.function', 'support.function', 'entity.name.type', 'support.type'], settings: { foreground: '#FFFFFF' } },
+    { scope: ['constant', 'constant.numeric', 'variable.other.constant'], settings: { foreground: '#E8E8E8' } },
+    { scope: ['markup.heading', 'markup.bold'], settings: { foreground: '#FFFFFF', fontStyle: 'bold' } },
+  ],
+}
+
+// The pages write formulas in TeX ($\le 3.0\%$, $$\frac{a}{b}$$) but the site has no math
+// renderer, so they are turned into plain readable text at build time (≤ 3.0%, (a)/(b)).
+const MATH_SYMBOLS: Record<string, string> = {
+  le: '≤', leq: '≤', ge: '≥', geq: '≥', approx: '≈', sim: '~', pm: '±', times: '×', cdot: '·',
+  rightarrow: '→', to: '→', infty: '∞', cap: '∩', cup: '∪', in: '∈', sum: 'Σ', left: '', right: '',
+  quad: ' ',
+}
+const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹'
+
+function plainMath(src: string): string {
+  let s = src.replace(/\\(?:text|mathrm|mathit|operatorname)\{([^{}]*)\}/g, '$1')
+  for (let i = 0; i < 4; i++) s = s.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)')
+  s = s
+    .replace(/\\([%{}_$#&])/g, '$1')
+    .replace(/\\[,;: ]/g, ' ')
+    .replace(/\\([a-zA-Z]+)/g, (_m, name: string) => MATH_SYMBOLS[name] ?? name)
+    .replace(/\^(\d+)/g, (_m, d: string) => [...d].map((c) => SUPERSCRIPT[Number(c)]).join(''))
+    .replace(/\^\{([^{}]*)\}/g, '^($1)')
+    .replace(/_\{([^{}]*)\}/g, '_$1')
+    .replace(/([A-Za-z])_(\d)/g, '$1$2')
+  return s.replace(/\s+/g, ' ').trim()
+}
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+export default defineConfigWithTheme<ThemeConfig>({
   title: 'Tessera',
   titleTemplate: ':title · Tessera',
-  description: 'Hardware-aware, local-first AI inference orchestration and screen-aware memory architecture for Windows.',
+  description: 'Technical documentation for Tessera: a local-first, screen-aware memory assistant for Windows 11 with on-device model inference.',
 
-  appearance: 'force-dark',
+  appearance: false,
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
-    ['meta', { name: 'theme-color', content: '#0A0A0A' }],
+    ['meta', { name: 'theme-color', content: '#000000' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'Tessera · Technical Documentation' }],
-    ['meta', { property: 'og:description', content: 'Official systems documentation for Tessera — a local-first AI inference and screen-aware memory platform for Windows.' }],
+    ['meta', { property: 'og:description', content: 'Technical documentation for Tessera, a local-first, screen-aware memory assistant for Windows 11 (research prototype).' }],
   ],
 
   cleanUrls: true,
@@ -20,8 +109,8 @@ export default defineConfig({
 
   markdown: {
     theme: {
-      light: 'github-dark',
-      dark: 'github-dark'
+      light: archiveCodeTheme,
+      dark: archiveCodeTheme,
     },
     lineNumbers: true,
     config: (md) => {
@@ -34,30 +123,78 @@ export default defineConfig({
         }
         return defaultFence(tokens, idx, options, env, self)
       }
+
+      // Plain-text maths (see plainMath above). Only prose text is touched; code spans and
+      // fences are separate tokens and stay exactly as written.
+      md.core.ruler.push('tsr-plain-math', (state) => {
+        for (const token of state.tokens) {
+          if (token.type !== 'inline' || !token.children) continue
+          const display = token.content.trim().match(/^\$\$([\s\S]+)\$\$$/)
+          if (display) {
+            const html = new state.Token('html_inline', '', 0)
+            html.content = `<span class="t-formula">${escapeHtml(plainMath(display[1]))}</span>`
+            token.children = [html]
+            continue
+          }
+          for (const child of token.children) {
+            if (child.type !== 'text' || !child.content.includes('$')) continue
+            child.content = child.content.replace(/\$(?=\S)([^$\n]+?)(?<=\S)\$(?!\d)/g, (_m, inner: string) =>
+              plainMath(inner),
+            )
+          }
+        }
+      })
     }
   },
 
   themeConfig: {
-    logo: '/favicon.svg',
-    siteTitle: 'tessera_',
+    logo: { src: '/favicon.svg', alt: '' },
+    siteTitle: 'TESSERA',
+
+    // Read by the status ticker (StatusTicker.vue).
+    build,
 
     search: {
       provider: 'local',
       options: {
-        detailedView: true
-      }
+        detailedView: true,
+        translations: {
+          button: { buttonText: 'Search docs', buttonAriaLabel: 'Search documentation' },
+        },
+      },
     },
 
     nav: [
-      { text: 'Overview', link: '/guide/' },
-      { text: 'Quickstart', link: '/getting-started/' },
-      { text: 'Architecture', link: '/architecture/' },
-      { text: 'Core Systems', link: '/modules/' },
-      { text: 'AI Runtime', link: '/runtime/' },
-      { text: 'Privacy', link: '/privacy/' },
-      { text: 'Developer', link: '/developer/' },
-      { text: 'Testing', link: '/testing/' },
+      { text: 'Overview', link: '/guide/', activeMatch: '^/guide/' },
+      { text: 'Getting Started', link: '/getting-started/', activeMatch: '^/getting-started/' },
+      { text: 'Architecture', link: '/architecture/', activeMatch: '^/architecture/' },
+      { text: 'Core Systems', link: '/modules/', activeMatch: '^/modules/' },
+      { text: 'AI Runtime', link: '/runtime/', activeMatch: '^/runtime/' },
+      { text: 'Privacy & Storage', link: '/privacy/', activeMatch: '^/privacy/' },
+      {
+        text: 'Reference',
+        activeMatch: '^/(developer|testing|deployment|contributing)/',
+        items: [
+          { text: 'Developer Reference', link: '/developer/' },
+          { text: 'Testing & Quality', link: '/testing/' },
+          { text: 'Deployment', link: '/deployment/' },
+          { text: 'Contributing', link: '/contributing/' },
+        ],
+      },
     ],
+
+    outline: { level: [2, 3], label: 'Contents' },
+    docFooter: { prev: 'Previous document', next: 'Next document' },
+    lastUpdated: { text: 'Last revised' },
+    sidebarMenuLabel: 'Documents',
+    returnToTopLabel: 'Return to top',
+    notFound: {
+      title: 'DOCUMENT NOT FOUND',
+      quote: 'No page exists at this address. It may have moved, or the link may be mistyped.',
+      linkLabel: 'Return to the documentation index',
+      linkText: 'Return to index',
+      code: '404',
+    },
 
     sidebar: {
       '/guide/': [
@@ -211,11 +348,9 @@ export default defineConfig({
       ],
     },
 
-    socialLinks: [],
-
     footer: {
-      message: 'Tessera — Where Local AI Meets Windows Memory Infrastructure · Research Prototype v0.0.1',
-      copyright: '© 2026 Tessera Contributors · Open Source Architecture · Zero Cloud Dependencies'
+      message: `Tessera · research prototype v${build.version} · <a href="https://github.com/webex042/Tessera">Source repository</a> · <a href="/guide/status">Implementation status</a> · <a href="/guide/limitations">Known limitations</a>`,
+      copyright: 'Project licence: to be determined (README §24) · Third-party notices: THIRD_PARTY_NOTICES.md',
     }
   }
 })

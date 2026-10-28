@@ -3,7 +3,7 @@
 ---
 
 ## Tessera Project License
-Tessera source code is licensed under terms to be determined (TBD). See [`SECURITY.md`](https://github.com/your-org/tessera/blob/main/SECURITY.md) and [`THIRD_PARTY_NOTICES.md`](https://github.com/your-org/tessera/blob/main/THIRD_PARTY_NOTICES.md) in the repository root.
+Tessera source code is licensed under terms to be determined (TBD). See [`SECURITY.md`](https://github.com/webex042/Tessera/blob/main/SECURITY.md) and [`THIRD_PARTY_NOTICES.md`](https://github.com/webex042/Tessera/blob/main/THIRD_PARTY_NOTICES.md) in the repository root.
 
 ---
 

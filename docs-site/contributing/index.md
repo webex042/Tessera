@@ -35,7 +35,7 @@ Every pull request must respect the following core invariants:
 
 ### 1. Network Boundary Isolation
 * **Rule**: No crate other than `crates/tsr-net` may declare or import network-capable dependencies (`reqwest`, `tokio/net`, `hyper`, `ureq`, `tungstenite`, etc.).
-* **Enforcement**: Verified in CI by [`tools/check_network_deps.py`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/tools/check_network_deps.py). Any attempt to add networking to `tsr-core`, `tsr-capture`, `tsr-store`, or `tsr-infer` will fail CI immediately.
+* **Enforcement**: Verified in CI by [`tools/check_network_deps.py`](https://github.com/webex042/Tessera/blob/main/tools/check_network_deps.py). Any attempt to add networking to `tsr-core`, `tsr-capture`, `tsr-store`, or `tsr-infer` will fail CI immediately.
 
 ### 2. Content-Free Logging Invariant
 * **Rule**: Never log raw OCR text, window titles, user prompts, assistant answers, encryption keys, or file contents.
@@ -52,7 +52,7 @@ Every pull request must respect the following core invariants:
 
 ## Areas Where Contributions Are Welcomed
 
-* **Backend Adapters**: Adding or optimizing runtime execution backends (e.g., ONNX Runtime DirectML, TensorRT-LLM, OpenVINO) within the [`tsr-infer`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/crates/tsr-infer) crate.
+* **Backend Adapters**: Adding or optimizing runtime execution backends (e.g., ONNX Runtime DirectML, TensorRT-LLM, OpenVINO) within the [`tsr-infer`](https://github.com/webex042/Tessera/tree/main/crates/tsr-infer) crate.
 * **Model Configurations**: Expanding verified GGUF model formats and quantization profiles in `tools/models.lock`.
 * **Window Detection & Win32 Hooks**: Improving capture ladder fallback heuristics in `tsr-capture` and `tsr-win`.
 * **Evaluation Corpora**: Adding realistic edge cases to the synthetic redaction and prompt injection test corpora in `tests/fixtures/`.

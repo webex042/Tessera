@@ -38,7 +38,7 @@ This document provides a structured threat analysis for Tessera, defining trust 
 
 ## Known Residual Risks & Open Findings
 
-### 1. Upstream WebView2 Telemetry ([ADR-0002](https://github.com/your-org/tessera/blob/main/docs/adr/0002-webview2-outbound-connection.md))
+### 1. Upstream WebView2 Telemetry ([ADR-0002](https://github.com/webex042/Tessera/blob/main/docs/adr/0002-webview2-outbound-connection.md))
 - **Finding:** In network monitoring tests, the Microsoft WebView2 runtime initiates one outbound HTTPS connection to Microsoft IP space upon startup despite all telemetry flags (`--disable-background-networking`, `--disable-features=msSmartScreenPua`) being passed.
 - **Status:** Open upstream deficiency in Microsoft Edge WebView2. Tessera's own Rust code makes zero network requests, but true air-gapping currently requires an external firewall or hosts-file blocking.
 

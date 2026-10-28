@@ -8,7 +8,7 @@ This guide walks through cloning the repository, installing dependencies, fetchi
 
 Clone the project to a local directory:
 ```powershell
-git clone https://github.com/your-org/tessera.git
+git clone https://github.com/webex042/Tessera.git
 cd Tessera
 ```
 

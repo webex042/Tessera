@@ -22,11 +22,11 @@ Source artifact: `evals/results/extraction_real_heldout.md`
 ### Extraction Breakdown (Held-Out Set)
 - **Total Test Items:** 58 screen sessions.
 - **Gold Target Facts:** 83 facts.
-- **Extracted Stored Facts:** 63 facts.
-- **Precision:** $58.7\%$
-- **Recall:** $44.6\%$
-- **$F_1$ Score:** **0.507** (Target: $\ge 0.70$ <StatusBadge status="fail" />)
-- **Hallucinated Facts:** **0 / 63 (0.0%)** (Target: $\le 3.0\%$ <StatusBadge status="pass" />)
+- **Extracted Stored Facts:** 97 facts.
+- **Precision:** $49.5\%$
+- **Recall:** $57.8\%$
+- **F1 Score:** **0.533** (Target: $\ge 0.70$ <StatusBadge status="fail" />). Earlier run with sorted schema keys: 0.507 (P 58.7 %, R 44.6 %, 15 items lost to invalid JSON); see ADR-0010.
+- **Hallucinated Facts:** **0 / 97 (0.0%)** (Target: $\le 3.0\%$ <StatusBadge status="pass" />)
 - **Schema-Invalid Stored Rows:** **0 rows** (Target: 0 <StatusBadge status="pass" />)
 
 ### Per-Kind Group Performance

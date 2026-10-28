@@ -33,7 +33,7 @@ flowchart TD
 
 ## Software Bill of Materials (SBOM)
 
-Tessera ships a complete **CycloneDX 1.5** specification SBOM generated entirely offline using [`tools/gen_sbom.py`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/tools/gen_sbom.py).
+Tessera ships a complete **CycloneDX 1.5** specification SBOM generated entirely offline using [`tools/gen_sbom.py`](https://github.com/webex042/Tessera/blob/main/tools/gen_sbom.py).
 
 ### Generating the Release SBOM
 
@@ -51,7 +51,7 @@ python tools/gen_sbom.py deny-list.json pnpm-lic.json > docs/release/sbom.cdx.js
 ### Components Tracked in the SBOM
 
 1. **Rust Crates**: Every non-internal crate compiled into the binary graph (`pkg:cargo` Package URLs).
-2. **NPM Packages**: Every production dependency bundled into the Svelte UI (`pkg:npm` Package URLs).
+2. **NPM Packages**: Every production dependency bundled into the React UI (`pkg:npm` Package URLs).
 3. **Native Sidecars**: Pinned binary releases (`llama-server`, `onnxruntime.dll`) accompanied by their SHA-256 digests.
 4. **Machine Learning Models**: GGUF weights tracked in `tools/models.lock` (`type: "machine-learning-model"`).
 
@@ -62,7 +62,7 @@ python tools/gen_sbom.py deny-list.json pnpm-lic.json > docs/release/sbom.cdx.js
 To prevent supply chain poisoning or silent upstream mutations, external assets are pinned by SHA-256 digests:
 
 ### 1. Sidecar Pinning (`tools/sidecar.lock`)
-Defines the official download URLs, versions, and expected cryptographic hashes for pre-compiled backend runtimes. The fetching script [`tools/fetch_sidecar.py`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/tools/fetch_sidecar.py) verifies the hash before extracting any binary into the build tree:
+Defines the official download URLs, versions, and expected cryptographic hashes for pre-compiled backend runtimes. The fetching script [`tools/fetch_sidecar.py`](https://github.com/webex042/Tessera/blob/main/tools/fetch_sidecar.py) verifies the hash before extracting any binary into the build tree:
 
 ```json
 {
@@ -80,7 +80,7 @@ Defines the official download URLs, versions, and expected cryptographic hashes 
 ```
 
 ### 2. Model Weight Pinning (`tools/models.lock`)
-Specifies the exact Hugging Face revisions and SHA-256 checksums for verified model files. The model loader [`tsr-net`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/crates/tsr-net) rejects files whose hashes deviate from this lockfile.
+Specifies the exact Hugging Face revisions and SHA-256 checksums for verified model files. The model loader [`tsr-net`](https://github.com/webex042/Tessera/tree/main/crates/tsr-net) rejects files whose hashes deviate from this lockfile.
 
 ---
 

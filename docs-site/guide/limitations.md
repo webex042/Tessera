@@ -13,11 +13,11 @@ As recorded in `docs/ledger.md` and `docs/final-report.md`, Stages 0 through 7 a
 | Metric / Evaluation Area | Target | Measured Result | Status | Root Cause |
 | :--- | :--- | :--- | :--- | :--- |
 | **Ask Correctness (60 queries, real 4B model)** | $\ge 80\%$ | **66.7%** | <StatusBadge status="fail" /> | Extraction errors in preceding pipeline stage; prompt context truncation |
-| **Information Extraction F1 (held-out corpus)** | $\ge 0.70$ | **0.507** | <StatusBadge status="fail" /> | Compact 4B model struggling with complex multi-field schemas |
+| **Information Extraction F1 (held-out corpus)** | $\ge 0.70$ | **0.533** | <StatusBadge status="fail" /> | Compact 4B model stores too many low-value `note` facts (precision 49.5 %) and misses some decisions |
 | **Network Isolation (10-minute audit)** | 0 connections | **1 outbound** | <StatusBadge status="fail" /> | Microsoft WebView2 runtime telemetry beacon (Tessera code: 0) |
 
 ### Analysis of Extraction and Ask Failures
-* **Extraction F1 (0.507):** The 4B quantized parameter model (`Q4_K_M`) exhibits false negatives on complex structured schemas containing nested or ambiguous screen text (e.g., parsing tabular data or code diffs from editor windows).
+* **Extraction F1 (0.533):** Measured on 58 held-out items after the schema key-order fix (ADR-0010). The fix removed all 15 invalid-JSON failures and raised recall to 57.8 %, but precision fell to 49.5 % because the 4B quantized model (`Q4_K_M`) stores many low-value `note` facts. The earlier figure, 0.507, was measured with schema keys sent in alphabetical order.
 * **Ask Groundedness vs Accuracy:** While the Ask pipeline scored **0 fabricated citations** (100% citation precision against verified screen text), it answered only 40 of 60 evaluation questions correctly (66.7%). When the retrieval or extraction stage missed context, the system safely declined to answer rather than hallucinating.
 
 ---

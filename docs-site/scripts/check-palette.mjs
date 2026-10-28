@@ -1,14 +1,19 @@
 import fs from 'fs';
 import path from 'path';
 
-const ALLOWED_HEX = new Set([
-  '#0A0A0A',
-  '#0a0a0a',
-  '#007BA7',
-  '#007ba7',
-  '#FF2D95',
-  '#ff2d95',
-]);
+// The "research archive" palette (see .vitepress/theme/tokens.css). Compared case-insensitively.
+const PALETTE = [
+  '#000000', // Ink Black
+  '#FFFFFF', // Pure White
+  '#F2F2F2', // Light Grid Grey
+  '#F5F5F5', // Soft Paper Grey
+  '#111111', // Near Black
+  '#777777', // Slate Grey
+  '#1A1A1A', // Charcoal
+  '#D8D8D8', // Light Grey
+  '#E8E8E8', // Neutral Grey
+];
+const ALLOWED_HEX = new Set(PALETTE.map((h) => h.toUpperCase()));
 
 const EXTENSIONS = new Set(['.css', '.vue', '.ts', '.js', '.mjs', '.md', '.svg', '.json']);
 const IGNORE_DIRS = new Set(['node_modules', '.vitepress/cache', '.vitepress/dist', '.git', 'dist']);
@@ -39,7 +44,7 @@ function scanDir(dir) {
       // We look for 6-digit hex color patterns #RRGGBB
       const hexMatches = content.match(/#[0-9a-fA-F]{6}\b/g) || [];
       for (const hex of hexMatches) {
-        if (!ALLOWED_HEX.has(hex)) {
+        if (!ALLOWED_HEX.has(hex.toUpperCase())) {
           // Check if this hex is a markdown anchor, git commit hash, or actual color
           // We flag actual color values
           console.error(`[check:palette] Disallowed hex color found in ${relPath}: ${hex}`);
@@ -50,12 +55,12 @@ function scanDir(dir) {
   }
 }
 
-console.log('--- Checking Palette A Compliance ---');
+console.log('--- Checking research-archive palette compliance ---');
 scanDir(ROOT_DIR);
 
 if (errors > 0) {
-  console.error(`FAILED: Found ${errors} disallowed color literals. Palette A allows only #0A0A0A, #007BA7, and #FF2D95.`);
+  console.error(`FAILED: Found ${errors} disallowed color literals. Allowed: ${PALETTE.join(', ')}.`);
   process.exit(1);
 } else {
-  console.log('PASSED: All scanned files strictly adhere to Palette A (#0A0A0A, #007BA7, #FF2D95).');
+  console.log(`PASSED: every hex colour in the scanned files is one of ${PALETTE.join(', ')}.`);
 }

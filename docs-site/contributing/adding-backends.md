@@ -5,7 +5,7 @@ description: Technical guide for extending Tessera's hardware abstraction layer 
 
 # Adding Hardware Backend Adapters
 
-Tessera abstracts local AI acceleration through the [`tsr-infer`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/crates/tsr-infer) crate. The architecture uses a pluggable adapter selection matrix that probes available physical devices (via DXGI, Vulkan, or vendor SDKs) and ranks them according to capability, VRAM headroom, and stability.
+Tessera abstracts local AI acceleration through the [`tsr-infer`](https://github.com/webex042/Tessera/tree/main/crates/tsr-infer) crate. The architecture uses a pluggable adapter selection matrix that probes available physical devices (via DXGI, Vulkan, or vendor SDKs) and ranks them according to capability, VRAM headroom, and stability.
 
 This guide explains how to add support for a new hardware backend (e.g., DirectML, OpenVINO, or an NPU runtime).
 
@@ -151,6 +151,6 @@ fn test_directml_selected_when_sufficient_vram() {
 
 If the backend requires specialized pre-compiled sidecar binaries or shared libraries:
 
-1. Add the asset URL and SHA-256 checksum to [`tools/sidecar.lock`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/tools/sidecar.lock).
-2. Update [`tools/fetch_sidecar.py`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/tools/fetch_sidecar.py) to extract the new variant.
+1. Add the asset URL and SHA-256 checksum to [`tools/sidecar.lock`](https://github.com/webex042/Tessera/blob/main/tools/sidecar.lock).
+2. Update [`tools/fetch_sidecar.py`](https://github.com/webex042/Tessera/blob/main/tools/fetch_sidecar.py) to extract the new variant.
 3. Validate offline extraction and hash verification.

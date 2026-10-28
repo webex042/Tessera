@@ -5,7 +5,7 @@ description: How to validate, hash-lock, and register new GGUF models in tools/m
 
 # Adding Model Formats & Registrations
 
-Tessera requires all machine learning models to be explicitly registered in [`tools/models.lock`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/tools/models.lock). The system verifies models via GGUF header inspection and cryptographic SHA-256 validation to prevent arbitrary model execution or unexpected memory exhaustion.
+Tessera requires all machine learning models to be explicitly registered in [`tools/models.lock`](https://github.com/webex042/Tessera/blob/main/tools/models.lock). The system verifies models via GGUF header inspection and cryptographic SHA-256 validation to prevent arbitrary model execution or unexpected memory exhaustion.
 
 ```mermaid
 flowchart TD
@@ -47,7 +47,7 @@ certutil -hashfile .\phi-4-mini-instruct-Q4_K_M.gguf SHA256
 
 ## Step 3: Register in `tools/models.lock`
 
-Add a new model entry to [`tools/models.lock`](file:///c:/Users/prans/OneDrive/Desktop/Tessera/tools/models.lock):
+Add a new model entry to [`tools/models.lock`](https://github.com/webex042/Tessera/blob/main/tools/models.lock):
 
 ```json
 {

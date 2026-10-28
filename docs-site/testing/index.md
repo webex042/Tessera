@@ -34,7 +34,7 @@ flowchart TD
     subgraph TIER4 ["Tier 4: Real-Hardware & Model Evals"]
         E1["Hardware Sidecar Discovery\n(Vulkan vs. AVX2 CPU)"]
         E2["Ask Accuracy Benchmark (60 q)\n(66.7% Correct, 0 Hallucinations)"]
-        E3["Extraction F1 Benchmark\n(0.507 F1 Score)"]
+        E3["Extraction F1 Benchmark\n(0.533 F1 Score)"]
     end
 
     TIER1 --> TIER2 --> TIER3 --> TIER4

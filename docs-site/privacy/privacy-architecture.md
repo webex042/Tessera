@@ -28,8 +28,8 @@ Tessera defines strict data boundaries governing what is persisted, what leaves 
 | **Tessera Rust Core** | Zero outbound network connections. Models execute over loopback (`127.0.0.1`). | <StatusBadge status="pass" text="Verified" /> Tested via Sysmon network monitoring. |
 | **Rust Dependencies** | Zero network-capable crates reachable outside `tsr-net`. | <StatusBadge status="pass" text="Verified" /> Verified by `check_network_deps.py` and `cargo-deny`. |
 | **WebView2 UI Runtime** | Telemetry and SmartScreen disabled; **makes 1 outbound HTTPS connection per run to Microsoft IP space**. | <StatusBadge status="fail" text="Open Finding (ADR-0002)" /> Upstream Chromium/WebView2 runtime connection. |
-| **Auto-Updater** | Feature compiled out of default builds due to upstream zip advisories. | <StatusBadge status="pass" text="Verified" /> Gated behind inactive Cargo feature ([ADR-0003](https://github.com/your-org/tessera/blob/main/docs/adr/0003-updater-blocked-by-zip-advisories.md)). |
+| **Auto-Updater** | Feature compiled out of default builds due to upstream zip advisories. | <StatusBadge status="pass" text="Verified" /> Gated behind inactive Cargo feature ([ADR-0003](https://github.com/webex042/Tessera/blob/main/docs/adr/0003-updater-blocked-by-zip-advisories.md)). |
 
 ::: warning The "Nothing Leaves Your PC" Boundary
-Until the upstream WebView2 outbound telemetry request is eliminated or sandboxed ([ADR-0002](https://github.com/your-org/tessera/blob/main/docs/adr/0002-webview2-outbound-connection.md)), Tessera does **not** claim complete zero-network silence for the UI process.
+Until the upstream WebView2 outbound telemetry request is eliminated or sandboxed ([ADR-0002](https://github.com/webex042/Tessera/blob/main/docs/adr/0002-webview2-outbound-connection.md)), Tessera does **not** claim complete zero-network silence for the UI process.
 :::

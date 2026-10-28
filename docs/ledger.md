@@ -60,8 +60,8 @@ Last updated: 2026-10-28.
 | id | task | status | evidence / blocker |
 |---|---|---|---|
 | 6.1 | Query filters, retrieval, prompt, streaming, verification, chips, insufficient path | PASS | `askq`/`ask` tests; SIMULATED eval PASS; preview |
-| 6.E1 | ≥ 80 % correct, ≥ 90 % verified, 0 fabricated (60 q) | FAIL | REAL ask/v1: 15 % correct (28 % by verified content), 78.9 % verified, 0 fabricated; the model set "insufficient" on 57/60. ask/v2 prompt run: see Stage 7 notes |
-| 6.E2 | First token ≤ 2.5 s, full ≤ 10 s | FAIL | REAL (iGPU): first sentence p50 23.7 s, full 18.2 s |
+| 6.E1 | ≥ 80 % correct, ≥ 90 % verified, 0 fabricated (60 q) | FAIL | REAL ask/v1: 15 % correct (28 % by verified content), 78.9 % verified, 0 fabricated; the model set "insufficient" on 57/60. REAL ask/v2: 15 % correct, 0 fabricated, only 4 sentences shown (48/60 empty, 3 invalid) — raw-output diagnosis pending (`--ids` subset) |
+| 6.E2 | First token ≤ 2.5 s, full ≤ 10 s | FAIL | REAL (iGPU): v1 first sentence p50 23.7 s, full 18.2 s; v2 14.5 s / 19.2 s |
 
 ## Stage 7: Security audit ([verification](stage7/verification.md))
 

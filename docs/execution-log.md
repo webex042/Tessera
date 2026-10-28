@@ -11,6 +11,11 @@ Reports: `docs/stage{4,5,6,7}/verification.md`; decisions ADR-0008, ADR-0009; st
 | `tsr-eval rollup --model DIR` | PASS: 11/11 active hours, 15/15 periods by the model, 0 invalid ids |
 | `tsr-eval draft --model DIR` | 0 unflagged claims (PASS); first text p50 5.9 s, complete 16.4 s (FAIL, iGPU); 17/20 valid |
 | `tsr-eval ask --model DIR` (ask/v1) | 15 % correct (28 % by verified content), 0 fabricated — FAIL; ask/v2 written |
+| `tsr-eval ask --model DIR` (ask/v2, sorted keys) | 15 % correct; 48/60 answers empty |
+| `tsr-eval ask --ids ask-001..005` (raw outputs) | `{"insufficient": false, "sentences": []}` ×5 → schema keys were sorted (ADR-0010) |
+| `tsr-eval ask --model DIR` (ask/v2, declared order) | 66.7 % correct, 83.7 % verified, 0 fabricated, 0 invalid — FAIL; 25 s p50 |
+| `tsr-eval injection --model DIR` (152, real) | 123/152; held-out 24/39, tuned 33/39; paused by two standbys; s7-019 fixed, re-check 6/6 |
+| `tsr-eval extraction --model DIR --split heldout` (declared key order, ~50 min) | F1 0.533 (FAIL, was 0.507); hallucinated 0 %; **0 invalid-JSON failures (was 15/58)**; P 49.5 %, R 57.8 % — JSON truncation fixed, F1 still short (extra `note` facts) |
 | `tsr-eval injection --model DIR` (74) | 66 → 70 after guard fixes; all adversarial pass |
 | `tsr-eval injection` (152, SIMULATED) | 126 → 140; held-out half 25 → 27 / 39 |
 | redaction corpus (355) | 48 leaks on new Indian-ID cases → detectors added → 0 leaks, FP 0.41 % |

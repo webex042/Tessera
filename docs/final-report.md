@@ -9,7 +9,7 @@ available; every timing below is from the integrated GPU.
 
 | Stage | Status | One line |
 |---|---|---|
-| 2 (carry-over) | FAIL / PARTIAL | real model: extraction F1 0.507 (FAIL), hallucination 0 % (PASS), injection safety holds after guard fixes |
+| 2 (carry-over) | FAIL / PARTIAL | real model: extraction F1 0.533 (FAIL, was 0.507; invalid-JSON failures fixed by ADR-0010), hallucination 0 % (PASS), injection safety holds after guard fixes |
 | 3 Notch UI | PARTIAL | built; 60 fps, input-to-visual p95 64 ms, focus and capture exclusion verified; named apps and live monitor/DPI change need the owner |
 | 4 Rollups, brief, loops | PARTIAL | built; replay, drill-down, no-auto-close, brief timing, real-model rollups PASS; unlock trigger not exercised live |
 | 5 Drafts | PARTIAL | built; insertion safety PASS (real); 0 unflagged claims (real); timings FAIL on the iGPU; Win+V history untestable here (off) |
@@ -72,7 +72,7 @@ detected; schema keys sent to the model in alphabetical order (ADR-0010); the ex
 | S6 First token ≤ 2.5 s, full ≤ 10 s | 25.2 s / 25.5 s (iGPU) | FAIL |
 | MVP S1 network (24 h) | 10 min: Tessara 0, WebView2 1 HTTPS (ADR-0002) | FAIL |
 | MVP S2 canary (24 h) | 60 s: 0 hits, control found | PARTIAL |
-| MVP S3 extraction F1 ≥ 0.70, halluc. ≤ 3 % | 0.507 / 0 % | FAIL |
+| MVP S3 extraction F1 ≥ 0.70, halluc. ≤ 3 % | 0.533 / 0 % (after ADR-0010; was 0.507) | FAIL |
 | MVP S4 Ask verified ≥ 90 %, 0 fabricated | 83.7 % verified, 0 fabricated | FAIL |
 | MVP S5 drafts accepted ≥ 50 % (2-week self-test) | not run (needs the owner) | BLOCKED |
 | MVP S6 resources on RTX 4050 | hardware not available | BLOCKED |
@@ -80,8 +80,10 @@ detected; schema keys sent to the model in alphabetical order (ADR-0010); the ex
 
 ## E. Real-model results (Qwen3-VL-4B Q4_K_M, Vulkan iGPU)
 
-See `evals/results/*_real*`: extraction F1 0.507 (15/58 items lost to invalid JSON, likely
-truncation at 600 tokens — not yet confirmed); injection 66→70/74 on the original set; 152-case run 123/152 (held-out half 24/39 — 12 injected
+See `evals/results/*_real*`: extraction F1 0.533 after the key-order fix (ADR-0010) — the fix
+removed all 15/58 invalid-JSON failures (recall 44.6 %→57.8 %) but F1 still misses 0.70 because
+the model over-produces low-value `note` facts (precision 58.7 %→49.5 %); sorted-key run kept as
+`extraction_real_heldout_sortedkeys.*`; injection 66→70/74 on the original set; 152-case run 123/152 (held-out half 24/39 — 12 injected
 texts stored as to-dos, none executed; 5 request timeouts in a run paused twice by standby);
 drafts 17/20 valid, 0 unflagged, slow; rollups PASS; Ask 15 % → 66.7 % once schemas kept their key
 order (ADR-0010: every schema had been sent to the model with its keys sorted alphabetically,
@@ -105,7 +107,7 @@ fully compromised model (SIMULATED) and 62 % with the real 4B model (facts are n
 
 ## H. Next steps (recommended order)
 
-1. Re-run the full held-out extraction (~6 h), drafts and rollups with declared key order (ADR-0010); keep the PC awake (two standbys paused the last long run).
+1. Re-run drafts and rollups with declared key order (ADR-0010) for completeness (extraction already re-run: F1 0.533, FAIL). To lift extraction F1, curb low-value `note` facts (precision driver) rather than only the JSON format.
 2. Re-run held-out extraction and Ask after any prompt change; on the RTX 4050 if possible.
 3. Author a third, untouched injection set before any further guard tuning.
 4. Owner checklist items in G.

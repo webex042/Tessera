@@ -11,7 +11,7 @@ Last updated: 2026-10-28.
 | id | task | status | evidence / blocker |
 |---|---|---|---|
 | 2.R1 | Download Qwen3-VL-4B Q4_K_M + mmproj (approved), verify digests | PASS | `tsr-models locate --verify`: both files `digest_checked: true` |
-| 2.R2 | Held-out extraction with the real model | FAIL | F1 0.507 (< 0.70); hallucinated 0 %; 0 invalid rows; 15/58 items failed on invalid JSON twice. `evals/results/extraction_real_heldout.md` |
+| 2.R2 | Held-out extraction with the real model | FAIL | After the key-order fix (ADR-0010): F1 0.533 (< 0.70); hallucinated 0 %; **0 items failed on invalid JSON** (was 15/58 with sorted keys); P 49.5 %, R 57.8 %. Before: F1 0.507. `evals/results/extraction_real_heldout.md` |
 | 2.R3 | Injection corpus with the real model | PARTIAL | first run 66/74 (5 safety failures) → guard fixed → 70/74, all 69 adversarial pass; 4 genuine-task misses. 152-case real run: 123/152 (see 7.2) |
 
 ## Stage 3: Notch UI ([verification](stage3/verification.md))

@@ -6,34 +6,33 @@ Real model run.
 |---|---|---|
 | items | 58 | |
 | gold facts | 83 | |
-| stored facts | 63 | |
-| of which needs_review (not shown as tasks) | 1 | |
-| precision | 58.7 % | |
-| recall | 44.6 % | |
-| **F1** | **0.507** | ≥ 0.70 |
-| hallucinated (stored facts with evidence not in source) | 0 / 63 = 0.0 % | ≤ 3 % |
+| stored facts | 97 | |
+| of which needs_review (not shown as tasks) | 5 | |
+| precision | 49.5 % | |
+| recall | 57.8 % | |
+| **F1** | **0.533** | ≥ 0.70 |
+| hallucinated (stored facts with evidence not in source) | 0 / 97 = 0.0 % | ≤ 3 % |
 | schema-invalid stored rows | 0 | 0 |
-| items failed (invalid JSON twice) | 15 | |
+| items failed (invalid JSON twice) | 0 | |
 | injection items with forbidden text stored | 0 | 0 |
 
 ## Per kind group
 
 | kind | P | R | F1 | tp | fp | fn |
 |---|---|---|---|---|---|---|
-| action | 0.94 | 0.47 | 0.63 | 17 | 1 | 19 |
-| decision | 1.00 | 0.38 | 0.55 | 3 | 0 | 5 |
-| event | 0.67 | 0.67 | 0.67 | 8 | 4 | 4 |
-| note | 0.25 | 0.33 | 0.29 | 6 | 18 | 12 |
-| question | 0.50 | 0.33 | 0.40 | 3 | 3 | 6 |
+| action | 0.68 | 0.69 | 0.68 | 25 | 12 | 11 |
+| decision | 1.00 | 0.25 | 0.40 | 2 | 0 | 6 |
+| event | 0.50 | 0.92 | 0.65 | 11 | 11 | 1 |
+| note | 0.21 | 0.33 | 0.26 | 6 | 23 | 12 |
+| question | 0.57 | 0.44 | 0.50 | 4 | 3 | 5 |
 
 ## Rejections by reason
 
-- due_unsupported: 1
-- evidence_too_short: 2
-- injection: 1
-- no_evidence: 2
-- person_not_in_source: 2
-- schema_invalid_output: 22
-- summary_injection: 3
-- summary_obligation: 4
-- unsupported_number: 1
+- evidence_too_short: 3
+- injection: 4
+- no_evidence: 5
+- person_not_in_source: 4
+- quoted_instruction: 1
+- summary_injection: 5
+- summary_tainted: 1
+- unsupported_number: 2

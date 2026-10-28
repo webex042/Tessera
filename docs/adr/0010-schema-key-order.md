@@ -32,8 +32,11 @@ measured before this change are kept and labelled "sorted keys".
 ## Consequences
 
 - Every real-model result recorded before 2026-10-28 11:20 IST (extraction, injection, rollups,
-  drafts, Ask) was measured with sorted keys. Ask was re-run in full; the others are re-checked on
-  subsets only until there is time for full runs (the held-out extraction run takes ~6 h on the
-  integrated GPU).
+  drafts, Ask) was measured with sorted keys. Ask and held-out extraction were both re-run in
+  full; drafts and rollups are still only re-checked on subsets.
+- Held-out extraction re-run (2026-10-28, ~50 min, not ~6 h — the invalid-JSON retries are gone):
+  F1 0.507 → 0.533, still FAIL; the fix removed all 15/58 invalid-JSON failures (recall
+  44.6 % → 57.8 %) but precision fell (58.7 % → 49.5 %) because the model stores more low-value
+  `note` facts. So key order was one cause of the low score, not the whole story.
 - No new dependency is downloaded: `indexmap` 2.14.2 and `foldhash` were already in the lock
   file (the lock gains two edges from `serde_json` to them).

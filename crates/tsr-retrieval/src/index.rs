@@ -77,6 +77,29 @@ impl VectorIndex {
         Ok(ix)
     }
 
+    /// Load the vector index directly from the local encrypted VectorDb.
+    pub fn load_from_vectordb(
+        vdb: &tsr_store::vectordb::VectorDb,
+        model: &str,
+        dims: usize,
+    ) -> Result<Self, IndexError> {
+        let mut ix = Self::empty(model, dims);
+        for (idx, r) in vdb.all_records().iter().enumerate() {
+            if r.model == model {
+                let chunk_id = (idx + 1) as i64;
+                ix.push(
+                    chunk_id,
+                    r.metadata.item_id,
+                    r.metadata.start_ch,
+                    r.metadata.end_ch,
+                    &r.vec_int8,
+                    r.scale,
+                )?;
+            }
+        }
+        Ok(ix)
+    }
+
     fn push(&mut self, chunk_id: i64, item_id: i64, s: i64, e: i64, v: &[i8], scale: f32) -> Result<(), IndexError> {
         if v.len() != self.dims {
             return Err(IndexError::Dims(chunk_id, v.len(), self.dims));
@@ -115,6 +138,29 @@ impl VectorIndex {
         for (id, s, e, scale, b) in rows {
             let v: Vec<i8> = b.into_iter().map(|x| x as i8).collect();
             self.push(id, item_id, s, e, &v, scale as f32)?;
+        }
+        Ok(())
+    }
+
+    /// Refresh an item's vectors from the encrypted VectorDb.
+    pub fn refresh_item_from_vectordb(
+        &mut self,
+        vdb: &tsr_store::vectordb::VectorDb,
+        item_id: i64,
+    ) -> Result<(), IndexError> {
+        self.remove_item(item_id);
+        for (idx, r) in vdb.all_records().iter().enumerate() {
+            if r.metadata.item_id == item_id && r.model == self.model {
+                let chunk_id = (idx + 1) as i64;
+                self.push(
+                    chunk_id,
+                    r.metadata.item_id,
+                    r.metadata.start_ch,
+                    r.metadata.end_ch,
+                    &r.vec_int8,
+                    r.scale,
+                )?;
+            }
         }
         Ok(())
     }

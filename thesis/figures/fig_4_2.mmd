@@ -1,0 +1,27 @@
+sequenceDiagram
+  autonumber
+  participant U as User Interface
+  participant H as Host Process
+  participant S as Scheduler (tsr-infer)
+  participant V as Supervisor
+  participant W as llama-server (Job Object)
+
+  U->>H: Request (Ask / Draft)
+  H->>S: Enqueue job at priority P0
+  alt Worker not running
+    S->>V: Ensure worker ready
+    V->>W: CreateProcess (CREATE_SUSPENDED, cleared environment)
+    V->>W: Assign to Job Object, then resume
+    V->>W: GET /health until ready
+    W-->>V: HTTP 200
+    V->>V: Verify listening port owner PID
+  end
+  opt A P1 job is already streaming
+    S->>W: Close the P1 HTTP stream
+    S->>S: Re-queue the P1 job in its old place
+  end
+  S->>W: POST /v1/chat/completions (grammar constrained)
+  W-->>S: Streamed tokens
+  S->>H: Parsed output
+  H->>H: Schema check, evidence check, redaction
+  H-->>U: Validated result with citations

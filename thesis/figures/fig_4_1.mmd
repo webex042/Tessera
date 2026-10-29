@@ -1,0 +1,48 @@
+flowchart LR
+  subgraph UIP["Interface process (WebView2)"]
+    direction TB
+    UI["Notch UI<br/>pill / peek / expanded"]
+    VW["Views: Today, Open Loops,<br/>Search, Timeline, Ask,<br/>Diagnostics"]
+    UI --- VW
+  end
+
+  subgraph HOST["Host process (tessara.exe)"]
+    direction TB
+    IPC["Tauri IPC bridge<br/>typed commands"]
+    GATE["Gatekeeper<br/>pause / lock / fullscreen / power"]
+    CAP["tsr-capture<br/>acquisition ladder, sessions"]
+    GRD["tsr-guard<br/>blocklist, redaction"]
+    STORE[("tsr-store<br/>SQLCipher database")]
+    RET["tsr-retrieval<br/>embeddings, hybrid search"]
+    PIPE["tsr-pipeline<br/>extraction, facts, rollups"]
+    DRAFT["tsr-draft<br/>draft, fact check"]
+    INF["tsr-infer<br/>scheduler, supervisor"]
+    NET["tsr-net<br/>approved downloads only"]
+
+    IPC --> GATE --> CAP --> GRD --> STORE
+    IPC --> DRAFT
+    STORE --> PIPE --> STORE
+    STORE <--> RET
+    PIPE --> INF
+    DRAFT --> INF
+    RET --> INF
+  end
+
+  subgraph SIDE["Worker process<br/>(llama-server.exe in a Job Object)"]
+    direction TB
+    LS["llama.cpp server<br/>GGUF model weights"]
+  end
+
+  subgraph HW["Hardware backends"]
+    direction TB
+    B1["CUDA / ROCm / Vulkan"]
+    B2["SYCL / Metal / OpenCL"]
+    B3["CPU fallback"]
+  end
+
+  UIP <--> IPC
+  INF <-->|"HTTP over 127.0.0.1"| LS
+  NET -.->|"user approval"| LS
+  LS --> B1
+  LS --> B2
+  LS --> B3

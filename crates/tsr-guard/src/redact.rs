@@ -34,6 +34,9 @@ pub enum SecretKind {
     GenericSecret,
     Phone,
     Email,
+    Person,
+    Address,
+    DateOfBirth,
 }
 
 impl SecretKind {
@@ -54,20 +57,51 @@ impl SecretKind {
             SecretKind::GenericSecret => "secret",
             SecretKind::Phone => "phone",
             SecretKind::Email => "email",
+            SecretKind::Person => "person",
+            SecretKind::Address => "address",
+            SecretKind::DateOfBirth => "dob",
         }
     }
 }
 
 /// Policy version stored with every redacted output (facts store `redact_ver`). Bump when the
 /// detectors change so stored rows can be re-checked.
-/// v2 (Stage 7): Aadhaar VID, passport and voter ID detectors.
-pub const REDACT_VER: &str = "v2";
+/// v3: Robust PII masking (names with pseudonyms, addresses, DOB, typed token formats).
+pub const REDACT_VER: &str = "v3";
+
+/// Token formatting style.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum TokenFormat {
+    /// Classic prefix tokens, e.g. `[REDACTED:card]` (default for backwards compatibility).
+    #[default]
+    RedactedPrefix,
+    /// Typed standard placeholders, e.g. `[PERSON_01]`, `[EMAIL]`, `[PHONE]`, `[CARD]`.
+    TypedPlaceholder,
+}
 
 /// Which optional PII categories to redact. Secrets are always redacted.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Options {
     pub redact_phone: bool,
     pub redact_email: bool,
+    pub redact_names: bool,
+    pub redact_addresses: bool,
+    pub redact_dob: bool,
+    pub token_format: TokenFormat,
+}
+
+impl Options {
+    /// Full PII masking covering all supported privacy categories with typed placeholders.
+    pub fn full_pii() -> Self {
+        Options {
+            redact_phone: true,
+            redact_email: true,
+            redact_names: true,
+            redact_addresses: true,
+            redact_dob: true,
+            token_format: TokenFormat::TypedPlaceholder,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -172,10 +206,31 @@ static UPI: LazyLock<Regex> = LazyLock::new(|| {
     )
 });
 static PHONE: LazyLock<Regex> = LazyLock::new(|| {
-    re(r"(?:\+91[\s-]?|\b0)?\b[6-9]\d{4}[\s-]?\d{5}\b|\+\d{1,3}[\s-]?\d{2,4}[\s-]?\d{3,4}[\s-]?\d{3,4}\b")
+    re(r"(?:\+91[\s-]?|\b0)?\b[6-9]\d{4}[\s-]?\d{5}\b|\+\d{1,3}[\s-]?(?:\(\d{1,4}\)[\s-]?)?\d{2,4}[\s-]?\d{3,4}(?:[\s-]?\d{3,4})?\b")
 });
 static EMAIL: LazyLock<Regex> =
     LazyLock::new(|| re(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b"));
+static NAME_HONORIFIC: LazyLock<Regex> = LazyLock::new(|| {
+    re(r"\b(?:Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|Prof\.?|Shri|Smt\.?|Sir|Madam)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b")
+});
+static NAME_CONTEXT: LazyLock<Regex> = LazyLock::new(|| {
+    re(r"(?i:\b(?:my\s+name\s+is|contact|meet\s+with|attended\s+by|assigned\s+to|reported\s+by|name\s*[:=]))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b")
+});
+static NAME_GREETING: LazyLock<Regex> = LazyLock::new(|| {
+    re(r"(?i:\b(?:Dear|Hi|Hello))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b")
+});
+static ADDRESS: LazyLock<Regex> = LazyLock::new(|| {
+    re(r"(?i)\b(?:address\s*[:=]|lives?\s+at|residing\s+at)\s*([0-9A-Za-z\s,.-]{5,60}?(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Lane|Ln\.?|Boulevard|Blvd\.?|Drive|Dr\.?|Marg|Nagar|Sector|Block|Apartment|Apt\.?|Suite|Ste\.?|Floor|Building|Bldg\.?)(?:\s*,?\s*[A-Za-z\s]+,?\s*(?:\b\d{6}\b|\b\d{5}(?:-\d{4})?\b))?)\b")
+});
+static POSTAL_CODE: LazyLock<Regex> = LazyLock::new(|| {
+    re(r"(?i)\b(?:pin\s*code|pincode|postal\s*code|zip\s*code)\s*[:#-]?\s*(\d{6}|\d{5}(?:-\d{4})?)\b")
+});
+static DOB: LazyLock<Regex> = LazyLock::new(|| {
+    re(r"(?i)\b(?:dob|date\s+of\s+birth|born\s+(?:on)?|d\.o\.b\.?|birth\s*date)\b[^\S\n]*(?:[:=]|is)?\s*(\d{1,2}[-/. ]\d{1,2}[-/. ]\d{2,4}|\d{4}[-/. ]\d{1,2}[-/. ]\d{1,2}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})\b")
+});
+static IBAN: LazyLock<Regex> = LazyLock::new(|| {
+    re(r"(?i)\b(?:iban\s*[:#-]?)?\s*([A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}(?:[A-Z0-9]{1,16})?)\b")
+});
 
 fn digits(s: &str) -> Vec<u8> {
     s.bytes().filter(u8::is_ascii_digit).map(|b| b - b'0').collect()
@@ -377,6 +432,59 @@ pub fn find(text: &str, opts: Options) -> Vec<Span> {
             push(m.start(), m.end(), SecretKind::Phone);
         }
     }
+    if opts.redact_names {
+        let mut discovered_names = std::collections::BTreeSet::new();
+        for c in NAME_HONORIFIC.captures_iter(text) {
+            if let Some(m) = c.get(1) {
+                push(m.start(), m.end(), SecretKind::Person);
+                discovered_names.insert(m.as_str());
+            }
+        }
+        for c in NAME_CONTEXT.captures_iter(text) {
+            if let Some(m) = c.get(1) {
+                push(m.start(), m.end(), SecretKind::Person);
+                discovered_names.insert(m.as_str());
+            }
+        }
+        for c in NAME_GREETING.captures_iter(text) {
+            if let Some(m) = c.get(1) {
+                push(m.start(), m.end(), SecretKind::Person);
+                discovered_names.insert(m.as_str());
+            }
+        }
+        for name in discovered_names {
+            if let Ok(r) = Regex::new(&format!(r"\b{}\b", regex::escape(name))) {
+                for m in r.find_iter(text) {
+                    push(m.start(), m.end(), SecretKind::Person);
+                }
+            }
+        }
+    }
+    if opts.redact_addresses {
+        for c in ADDRESS.captures_iter(text) {
+            if let Some(m) = c.get(1) {
+                push(m.start(), m.end(), SecretKind::Address);
+            }
+        }
+        for m in POSTAL_CODE.find_iter(text) {
+            push(m.start(), m.end(), SecretKind::Address);
+        }
+    }
+    if opts.redact_dob {
+        for c in DOB.captures_iter(text) {
+            if let Some(m) = c.get(1) {
+                push(m.start(), m.end(), SecretKind::DateOfBirth);
+            }
+        }
+    }
+    for c in IBAN.captures_iter(text) {
+        if let Some(m) = c.get(1) {
+            let digits_only: Vec<u8> = digits(m.as_str());
+            if digits_only.len() >= 10 {
+                push(m.start(), m.end(), SecretKind::BankAccount);
+            }
+        }
+    }
 
     // Merge overlaps; the earlier-listed (more specific) kind wins.
     spans.sort_by_key(|s| (s.start, std::cmp::Reverse(s.end), s.kind));
@@ -391,6 +499,11 @@ pub fn find(text: &str, opts: Options) -> Vec<Span> {
         }
     }
     merged
+}
+
+/// Convenience function applying full PII detection and masking with typed standard tokens.
+pub fn mask_pii(text: &str) -> Redacted {
+    redact(text, Options::full_pii())
 }
 
 pub fn redact(text: &str, opts: Options) -> Redacted {
@@ -416,11 +529,56 @@ fn redact_once(text: &str, opts: Options) -> Redacted {
     let mut out = String::with_capacity(text.len());
     let mut counts = BTreeMap::new();
     let mut pos = 0;
+    let mut person_map: BTreeMap<String, usize> = BTreeMap::new();
+    let mut next_person_id = 1usize;
+
     for s in &spans {
         out.push_str(&text[pos..s.start]);
-        out.push_str("[REDACTED:");
-        out.push_str(s.kind.as_str());
-        out.push(']');
+        let raw_val = &text[s.start..s.end];
+        let placeholder = match opts.token_format {
+            TokenFormat::TypedPlaceholder => match s.kind {
+                SecretKind::Person => {
+                    let norm = raw_val.trim().to_lowercase();
+                    let id = *person_map.entry(norm).or_insert_with(|| {
+                        let id = next_person_id;
+                        next_person_id += 1;
+                        id
+                    });
+                    format!("[PERSON_{:02}]", id)
+                }
+                SecretKind::Email => "[EMAIL]".to_string(),
+                SecretKind::Phone => "[PHONE]".to_string(),
+                SecretKind::Aadhaar => "[AADHAAR]".to_string(),
+                SecretKind::Pan => "[PAN]".to_string(),
+                SecretKind::Card => "[CARD]".to_string(),
+                SecretKind::GovId => "[GOV_ID]".to_string(),
+                SecretKind::BankAccount => "[BANK_ACCOUNT]".to_string(),
+                SecretKind::Ifsc => "[IFSC]".to_string(),
+                SecretKind::Upi => "[UPI]".to_string(),
+                SecretKind::Otp => "[OTP]".to_string(),
+                SecretKind::Password => "[PASSWORD]".to_string(),
+                SecretKind::ApiKey => "[API_KEY]".to_string(),
+                SecretKind::PrivateKey => "[PRIVATE_KEY]".to_string(),
+                SecretKind::Jwt => "[JWT]".to_string(),
+                SecretKind::GenericSecret => "[SECRET]".to_string(),
+                SecretKind::Address => "[ADDRESS]".to_string(),
+                SecretKind::DateOfBirth => "[DATE_OF_BIRTH]".to_string(),
+            },
+            TokenFormat::RedactedPrefix => {
+                if s.kind == SecretKind::Person {
+                    let norm = raw_val.trim().to_lowercase();
+                    let id = *person_map.entry(norm).or_insert_with(|| {
+                        let id = next_person_id;
+                        next_person_id += 1;
+                        id
+                    });
+                    format!("[REDACTED:person_{:02}]", id)
+                } else {
+                    format!("[REDACTED:{}]", s.kind.as_str())
+                }
+            }
+        };
+        out.push_str(&placeholder);
         *counts.entry(s.kind).or_insert(0) += 1;
         pos = s.end;
     }
@@ -566,5 +724,38 @@ mod tests {
         assert_eq!(r(&once), once);
         let d = format!("{:?}", redact("password: Hunter2!x", Options::default()));
         assert!(!d.contains("Hunter2"), "{d}");
+    }
+
+    #[test]
+    fn full_pii_masking_and_pseudonyms() {
+        let text = "Please contact Rahul at rahul@example.com before the meeting. If Rahul is busy, meet with Priya at priya@corp.net.";
+        let res = mask_pii(text);
+        assert_eq!(
+            res.text,
+            "Please contact [PERSON_01] at [EMAIL] before the meeting. If [PERSON_01] is busy, meet with [PERSON_02] at [EMAIL]."
+        );
+    }
+
+    #[test]
+    fn pii_dob_address_and_phone() {
+        let text = "Patient Dr. Ramesh Gupta, DOB: 14/07/1985, phone +91-9876543210, address: Flat 402 Sector 15 Nagar, pincode: 560001";
+        let res = mask_pii(text);
+        assert!(res.text.contains("[PERSON_01]"));
+        assert!(res.text.contains("[DATE_OF_BIRTH]"));
+        assert!(res.text.contains("[PHONE]"));
+        assert!(res.text.contains("[ADDRESS]"));
+        assert!(!res.text.contains("Ramesh"));
+        assert!(!res.text.contains("14/07/1985"));
+        assert!(!res.text.contains("9876543210"));
+    }
+
+    #[test]
+    fn typed_token_formats() {
+        let text = "Call +1-555-123-4567, email user@domain.com, card 4111 1111 1111 1111, password: Secret123Password";
+        let res = mask_pii(text);
+        assert!(res.text.contains("[PHONE]"));
+        assert!(res.text.contains("[EMAIL]"));
+        assert!(res.text.contains("[CARD]"));
+        assert!(res.text.contains("[PASSWORD]"));
     }
 }

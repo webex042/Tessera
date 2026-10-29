@@ -121,3 +121,37 @@ CREATE TABLE evidence (
     UNIQUE(fact_id, item_id, start_ch, end_ch)
 );
 ```
+
+---
+
+## 4. Local Encrypted Vector Database Schema (`VectorDb`)
+
+In addition to relational tables, semantic retrieval persistence is managed by `tsr_store::vectordb::VectorDb` inside `%LOCALAPPDATA%\Tessara\tessera_vectors.enc`.
+
+### `VectorRecord` Schema
+```rust
+pub struct VectorRecord {
+    pub id: String,                // e.g. "chunk-{item_id}-{ord}"
+    pub model: String,             // e.g. "multilingual-e5-small"
+    pub dims: usize,               // e.g. 384
+    pub scale: f32,                // Quantization scale factor
+    pub vec_int8: Vec<i8>,         // Quantized embedding vector
+    pub vec_f32: Vec<f32>,         // L2-normalized float embedding vector
+    pub text: String,              // Masked text span (guaranteed PII-sanitized)
+    pub metadata: VectorMetadata,
+}
+
+pub struct VectorMetadata {
+    pub item_id: i64,
+    pub source_id: Option<i64>,
+    pub app_name: Option<String>,
+    pub window_title: Option<String>,
+    pub url: Option<String>,
+    pub memory_type: String,       // "passage", "fact", "summary"
+    pub timestamp_ms: i64,
+    pub ord: u32,
+    pub start_ch: i64,
+    pub end_ch: i64,
+    pub provenance: Option<String>,
+}
+```

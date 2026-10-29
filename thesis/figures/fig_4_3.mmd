@@ -1,0 +1,31 @@
+flowchart LR
+  subgraph S1["1. Gates"]
+    direction TB
+    A["Focus or title change<br/>(SetWinEventHook)"] --> B{"Gatekeeper:<br/>paused, locked, idle,<br/>fullscreen?"}
+    B -- "blocked" --> X1["Drop.<br/>No capture."]
+    B -- "allowed" --> C{"Blocklist:<br/>blocked app, URL<br/>or private window?"}
+    C -- "blocked or<br/>unknown" --> X2["Skip window.<br/>Content-free<br/>audit event."]
+  end
+  subgraph S2["2. Acquisition ladder"]
+    direction TB
+    D["Rung 1: UI Automation<br/>285 ms deadline,<br/>password controls skipped"]
+    E["Rung 2: Graphics Capture<br/>+ OCR, frame in RAM only,<br/>password boxes blanked"]
+    F["Rung 3: VLM crop<br/>downscaled PNG in RAM"]
+    D -- "timeout or<br/>low quality" --> E
+    E -- "quality<br/>below 0.55" --> F
+  end
+  subgraph S3["3. Filtering and storage"]
+    direction TB
+    G{"SimHash:<br/>text changed?"}
+    X3["Extend session<br/>time only"]
+    H["Redaction engine<br/>regex + Luhn / Verhoeff"]
+    I["Session buffer<br/>new lines only"]
+    J["Flush on idle, 5 min,<br/>6000 chars, lock<br/>or shutdown"]
+    K[("SQLCipher database<br/>AES-256<br/>DPAPI-wrapped key")]
+    G -- "no" --> X3
+    G -- "yes" --> H --> I --> J --> K
+  end
+  C -- "allowed" --> D
+  D --> G
+  E --> G
+  F --> G

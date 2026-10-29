@@ -1,0 +1,30 @@
+flowchart LR
+  U(("Desktop<br/>user"))
+  subgraph SYS["Tessera"]
+    direction LR
+    subgraph G1["Capture and control"]
+      direction LR
+      UC1(["Capture visible screen text<br/>from allowed windows"])
+      UC2(["Pause or resume capture"])
+      UC8(["Approve a model download"])
+      UC1 --- UC2 --- UC8
+    end
+    subgraph G2["Recall"]
+      direction LR
+      UC3(["Search past activity"])
+      UC4(["Ask a question and<br/>get a cited answer"])
+      UC6(["Read the daily brief<br/>and timeline rollups"])
+      UC3 --- UC4 --- UC6
+    end
+    subgraph G3["Act and inspect"]
+      direction LR
+      UC5(["Review open loops and<br/>confirm completion"])
+      UC7(["Generate and insert<br/>a context-aware draft"])
+      UC9(["Inspect diagnostics"])
+      UC5 --- UC7 --- UC9
+    end
+  end
+  U --- UC1
+  U --- UC3
+  U --- UC5
+  linkStyle 0,1,2,3,4,5 stroke:#ffffff,stroke-width:0px

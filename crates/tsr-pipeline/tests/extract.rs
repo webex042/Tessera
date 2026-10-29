@@ -60,7 +60,7 @@ fn valid_output_is_stored_with_provenance_and_spans() {
     assert_eq!(commit.prompt_ver, "extraction/v1");
     assert_eq!(
         (commit.model.as_str(), commit.schema_ver, commit.redact_ver.as_str()),
-        ("test-scripted", 1, "v2")
+        ("test-scripted", 1, "v3")
     );
     assert_eq!(commit.owner_id, people::self_person(&c).unwrap());
     assert!(commit.counterparty_id.is_some(), "Ravi resolved to a person");

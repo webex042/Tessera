@@ -1,0 +1,27 @@
+flowchart LR
+  subgraph S1["1. Discover and verify"]
+    direction TB
+    A["Enumerate GPU adapters<br/>DXGI / sysfs, no vendor<br/>runtime loaded"] --> B["Verify installed builds<br/>SHA-256 of every file<br/>vs tools/sidecar.lock"]
+    B --> C["Probe each verified build<br/>--list-devices, cleared<br/>environment, 20 s timeout"]
+  end
+  subgraph S2["2. Check the model against each candidate"]
+    direction TB
+    D["Read GGUF header:<br/>architecture, tensor types, size"] --> E{"Tensor types<br/>supported by<br/>this backend?"}
+    E -- "no" --> S1X["Skip, unless<br/>the user forces it"]
+    E -- "yes" --> F{"Free memory<br/>vs model size"}
+    F -- "whole model fits" --> G1["Full offload"]
+    F -- "fits without<br/>vision encoder" --> G2["Vision encoder<br/>on the CPU"]
+    F -- "a quarter of<br/>layers or more" --> G3["Partial layer offload"]
+    F -- "less than that" --> S2X["Skip this device"]
+  end
+  subgraph S3["3. Rank and launch"]
+    direction TB
+    H["Ranked candidate list<br/>CPU always last"] --> I["Launch candidate 1"]
+    I -- "start failed" --> J["Next candidate;<br/>record the reason"]
+    J --> I
+    I -- "started" --> K["Backend in use"]
+  end
+  C --> D
+  G1 --> H
+  G2 --> H
+  G3 --> H

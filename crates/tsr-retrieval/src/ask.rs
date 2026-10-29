@@ -93,7 +93,8 @@ pub fn snippets(
             continue;
         }
         let src = tsr_store::items::get_source(conn, it.source_id)?;
-        let w = window(it.text.expose(), &terms, SNIPPET_CHARS);
+        let raw_w = window(it.text.expose(), &terms, SNIPPET_CHARS);
+        let w = tsr_guard::redact::mask_pii(&raw_w).text;
         if used + w.len() > SNIPPET_BUDGET_CHARS && !out.is_empty() {
             break;
         }
@@ -209,8 +210,9 @@ pub fn verify(text: &str, cites: &[usize], snippets: &[Snippet]) -> AnswerSenten
             verified = hits as f64 / w.len() as f64 >= MIN_OVERLAP;
         }
     }
+    let safe_text = tsr_guard::redact::mask_pii(text).text;
     AnswerSentence {
-        text: text.to_string(),
+        text: safe_text,
         item_ids: valid.iter().map(|c| snippets[c - 1].item_id).collect(),
         cites: valid,
         verified,

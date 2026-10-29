@@ -1,0 +1,37 @@
+flowchart LR
+  subgraph S1["1. Prompt and parse"]
+    direction TB
+    A["Flushed session text<br/>already redacted"] --> B["Escape and wrap in<br/>content delimiters"]
+    B --> C["llama-server call:<br/>JSON grammar constraint,<br/>declared key order"]
+    C --> D{"Strict schema parse:<br/>known fields, enums,<br/>length limits only"}
+    D -- "invalid" --> R1["Reject the whole output.<br/>One retry, then the<br/>item is marked failed."]
+  end
+  subgraph S2["2. Verify and classify"]
+    direction TB
+    E{"Evidence quote in source?<br/>exact, then normalised,<br/>then fuzzy (Dice >= 0.9)"}
+    R2["Reject fact"]
+    F{"Injection classifier on<br/>surrounding source text"}
+    R3["Reject fact"]
+    G1["Store, never<br/>as a task"]
+    G2["Store as<br/>needs review"]
+    G3["Store normally"]
+    E -- "not found" --> R2
+    E -- "found" --> F
+    F -- "Injection" --> R3
+    F -- "Quoted" --> G1
+    F -- "Ambiguous" --> G2
+    F -- "Genuine" --> G3
+  end
+  subgraph S3["3. Resolve and write"]
+    direction TB
+    H["Second redaction pass<br/>on the model output"] --> I["Date resolver and<br/>people resolver"]
+    I --> J{"Duplicate of an<br/>existing fact?<br/>Dice >= 0.85"}
+    J -- "yes" --> K["Merge, update<br/>last seen"]
+    J -- "no" --> L["New fact row"]
+    K --> M[("One atomic<br/>transaction")]
+    L --> M
+  end
+  D -- "valid" --> E
+  G1 --> H
+  G2 --> H
+  G3 --> H

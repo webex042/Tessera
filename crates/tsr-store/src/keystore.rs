@@ -18,16 +18,19 @@ const MAGIC: &[u8; 4] = b"TSRK";
 const VERSION: u8 = 1;
 pub const DB_FILE: &str = "tessara.db";
 pub const KEY_FILE: &str = "key.bin";
+pub const VECTOR_DB_FILE: &str = "tessera_vectors.enc";
 
 pub struct StorePaths {
     pub db: PathBuf,
     pub key: PathBuf,
+    pub vector_db: PathBuf,
 }
 
 pub fn paths(data_dir: &Path) -> StorePaths {
     StorePaths {
         db: data_dir.join(DB_FILE),
         key: data_dir.join(KEY_FILE),
+        vector_db: data_dir.join(VECTOR_DB_FILE),
     }
 }
 
@@ -86,4 +89,18 @@ pub fn open_store(data_dir: &Path) -> Result<Connection, StoreError> {
     let v = migrate::migrate(&mut conn)?;
     tracing::info!(schema_version = v, "store opened");
     Ok(conn)
+}
+
+/// Open (creating on first run) the encrypted VectorDb in `data_dir`.
+pub fn open_vector_db(data_dir: &Path) -> Result<crate::vectordb::VectorDb, StoreError> {
+    fs::create_dir_all(data_dir).map_err(|e| StoreError::KeyFile(format!("data dir: {:?}", e.kind())))?;
+    let p = paths(data_dir);
+    let key = match (p.key.exists(), p.vector_db.exists() || p.db.exists()) {
+        (true, _) => read_key(&p.key)?,
+        (false, true) => return Err(StoreError::KeyMissing),
+        (false, false) => create_key(&p.key)?,
+    };
+    let db = crate::vectordb::VectorDb::open_or_create(&p.vector_db, &key)?;
+    tracing::info!(records = db.len(), "vector store opened");
+    Ok(db)
 }

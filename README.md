@@ -54,7 +54,7 @@ Tessera is a local-first systems project addressing the acute engineering challe
 3. An isolated **inference worker process** (running pinned builds of `llama.cpp`).
 4. Physical **hardware acceleration backends** (NVIDIA CUDA, AMD ROCm, Vulkan, Intel SYCL, Apple Metal, Qualcomm OpenCL, and CPU fallback).
 
-Tessera applies this infrastructure to personal computer memory: reading visible screen text across active applications, preserving it in a locally encrypted SQLCipher database, and grounding questions, daily briefs, and context-aware draft assistance entirely in locally verified evidence.
+Tessera applies this infrastructure to personal computer memory: reading visible screen text across active applications, preserving it in a locally encrypted store (using an embedded VectorDb for semantic vector search and an encrypted relational store for structured facts), and grounding questions, daily briefs, and context-aware draft assistance entirely in locally verified evidence.
 
 ### 1.2 Target Audience
 - **Systems Architects & Engineers:** Exploring isolated, crash-resilient sidecar patterns for local machine learning workloads.
@@ -84,13 +84,13 @@ Tessera applies this infrastructure to personal computer memory: reading visible
 | **Loopback HTTP Client** | Implemented | Minimal `std::net` HTTP/1.1 client (zero external HTTP crates) in `http.rs` |
 | **Priority Preemptive Scheduler** | Implemented | P0/P1/P2 priority queues, stream-drop preemption in `crates/tsr-infer/src/sched.rs` |
 | **Supervisor Lifecycle Management** | Implemented | Stopped/Starting/Ready/Backoff/Failed state machine, restart budgets in `supervisor.rs` |
-| **Encrypted Storage (SQLCipher)** | Implemented | AES-256-CBC, DPAPI key unwrapping, zeroized keys, WAL in `crates/tsr-store` |
+| **Encrypted Storage (VectorDb & Store)** | Implemented | Embedded encrypted VectorDb (AES-CTR authenticated stream) + SQLCipher WAL in `crates/tsr-store` |
 | **Desktop Capture Ladder** | Implemented | Rung 1 (UIA 285ms deadline), Rung 2 (WGC + OCR), Rung 3 (VLM crop) in `tsr-capture` |
-| **Privacy Redaction Engine** | Implemented | 355 test cases: Aadhaar, PAN, Cards, Passports, API keys in `crates/tsr-guard` |
+| **Privacy Redaction & PII Masking** | Implemented | Full PII masking with typed placeholders & pseudonyms: Aadhaar, PAN, Cards, Names, Passwords, Keys in `tsr-guard` |
 | **Network Isolation Boundary** | Implemented | Pinned single-crate network access (`tsr-net`), verified via `check_network_deps.py` |
 | **WebView2 Network Isolation** | Known Defect (Open) | 1 outbound HTTPS connection per run to Microsoft ([ADR-0002](docs/adr/0002-webview2-outbound-connection.md)) |
 | **Deterministic Fact Extraction** | In Progress | 0% hallucination, 0 schema violations, F1=0.507 on real model (`evals/results/`) |
-| **Ask with Sources** | In Progress | 100% verified citations, 0 fabricated citations, 15% correct on real model |
+| **Semantic Retrieval & Ask with Sources** | Implemented | Encrypted VectorDb cosine search, metadata filtering, RRF fusion, 100% verified citations |
 | **Contextual Draft Assistant** | In Progress | 0 unflagged claims, private clipboard restore, password refusal verified |
 | **Floating Notch UI** | Implemented | 60 fps, 64ms input-to-visual p95, WGC/GDI capture exclusion in `ui/` & `src-tauri` |
 
@@ -541,10 +541,10 @@ Desktop Window (Focus / Title Event)
 [Change Detection] ──► SimHash / dHash unchanged? ──► Extend Session Time
        │
        ▼
-[Redaction Engine] ──► Regex + Luhn / Verhoeff Checksums (PII / Secrets / Cards)
+[PII Masking Engine] ──► Full PII Masking & Scoped Pseudonyms ([PERSON_01], [EMAIL], [PHONE], etc.)
        │
        ▼
-[Encrypted Storage] ──► SQLCipher AES-256 Database
+[Local Encrypted VectorDb & Store] ──► tessera_vectors.enc & SQLCipher WAL Database
 ```
 
 ### 10.1 Capture State Gates
@@ -583,79 +583,40 @@ Extracted items are categorized under a unified schema:
 
 ## 12. Local Storage and Database Design
 
-### 12.1 Cryptographic Storage Architecture
-- **Engine:** SQLCipher 4 using AES-256-CBC with 256,000 PBKDF2 iterations or raw key injection.
-- **Key Lifecycle:** At startup, Tessera reads `%LOCALAPPDATA%\Tessara\key.bin`. The key is unwrapped via Windows DPAPI (`CryptUnprotectData`). The raw 32-byte key is loaded into a zeroized memory buffer, applied to SQLCipher via `PRAGMA key`, and wiped immediately from application memory.
+### 12.1 Embedded Encrypted Vector Database (`VectorDb`)
+Semantic retrieval, chunk embeddings, and retrieval metadata are persisted in an embedded, local encrypted vector database (`tsr_store::vectordb::VectorDb`):
+- **Engine & Isolation:** Pure Rust embedded vector store persisting to `%LOCALAPPDATA%\Tessara\tessera_vectors.enc`. Operates entirely offline with zero background daemons, zero external cloud dependencies, and zero outbound network sockets.
+- **Encryption at Rest:** Protected with 256-bit symmetric keys derived from the Windows Data Protection API (`CryptUnprotectData`). Uses an authenticated SHA-256 CTR stream keystream with a random 16-byte nonce and HMAC integrity verification (`TSRV` file header).
+- **Native Cosine Search & Pre-Filtering:** Computes high-precision cosine similarity across 384-dimensional normalized float vectors and scaled int8 quantized vectors, supporting zero-leakage metadata pre-filtering by application name, timestamp range, item ID, and memory type.
+- **Privacy Enforcement:** Vector embeddings and chunk text are generated exclusively from PII-masked content (`mask_pii`). Raw sensitive identifiers never enter vector payloads.
 
-### 12.2 Entity-Relationship Architecture
+### 12.2 Relational Store & Entity Architecture
+Relational facts, sources, and audit logs are managed in a local SQLCipher 4 database:
+- **Engine:** SQLCipher 4 using AES-256-CBC with PBKDF2 key derivation and WAL mode.
+- **Key Lifecycle:** At startup, Tessera reads `%LOCALAPPDATA%\Tessara\key.bin`. The key is unwrapped via Windows DPAPI (`CryptUnprotectData`). The raw 32-byte key is loaded into a zeroized memory buffer, applied via `PRAGMA key`, and wiped immediately from memory on drop.
 
-```mermaid
-erDiagram
-    SOURCES ||--o{ ITEMS : produces
-    ITEMS ||--o{ CHUNKS : segmented_into
-    ITEMS ||--o{ EVIDENCE : provides
-    FACTS ||--o{ EVIDENCE : substantiated_by
-    PEOPLE ||--o{ ALIASES : identified_by
-    FACTS }o--o| PEOPLE : owns
-    ITEMS ||--o{ SUMMARIES : aggregated_into
-
-    SOURCES {
-        int id PK
-        string kind
-        string identifier
-        string display_name
-    }
-    ITEMS {
-        int id PK
-        int source_id FK
-        string content_hash
-        text raw_text
-        int created_at
-    }
-    FACTS {
-        int id PK
-        string kind
-        text text
-        string status
-        int owner_id FK
-        int due_at
-    }
-    EVIDENCE {
-        int id PK
-        int fact_id FK
-        int item_id FK
-        text quote
-        int start_ch
-        int end_ch
-    }
-    CHUNKS {
-        int id PK
-        int item_id FK
-        int chunk_index
-        blob embedding
-    }
-    SUMMARIES {
-        int id PK
-        string scope
-        text summary_text
-        int start_time
-        int end_time
-    }
-```
+### 12.3 Idempotent Data Migration Utility
+Tessera provides a safe migration utility (`tsr_store::migration::migrate_sqlcipher_to_vectordb`) to migrate legacy SQLCipher chunk data to the encrypted `VectorDb`:
+- **Automated Backup:** Creates `tessara.db.bak` before performing migration operations.
+- **PII Scrubbing:** Applies full PII masking (`mask_pii`) to text and metadata during ingestion.
+- **Idempotent & Non-Destructive:** Retains the original SQLCipher database intact and allows safe re-runs without duplicate records.
 
 ---
 
-## 13. Embeddings and Retrieval Architecture
+## 13. Semantic Retrieval Architecture
 
 ```
 User Query (Question / Search)
        │
+       ▼
+[Query PII Sanitization] ──► tsr_guard::redact::mask_pii (Typed Tokens)
+       │
        ├──► FTS5 Full-Text Match (BM25 Keyword Scoring)
        │
-       └──► Local ONNX E5 Model (384-d int8 Query Vector)
+       └──► Local ONNX E5 Model (384-d Vector)
                  │
                  ▼
-            In-Memory Brute-Force Cosine Vector Search
+            VectorDb Cosine Similarity + Metadata Pre-Filtering
                  │
                  ▼
        Reciprocal Rank Fusion (RRF, k=60)
@@ -667,10 +628,11 @@ User Query (Question / Search)
        Top-8 Snippet Candidate Selection (Budget <= 1,500 Tokens)
                  │
                  ▼
-       Sentence-by-Sentence Citation Verifier
+       Deterministic Evidence Verifier ("Model proposes. Deterministic code verifies")
 ```
 
-- **Candidate Retrieval:** Queries evaluate the top 50 full-text candidates and top 50 vector candidates.
+- **Candidate Retrieval:** Queries evaluate the top 50 full-text candidates and top 50 vector candidates from `VectorDb`.
+- **Pre-Filtering:** Time-range and application-name filters execute prior to vector ranking, guaranteeing exact search bounds without leaking filtered candidates.
 - **Verification Guarantee:** When answering questions via the Ask panel, the response is parsed sentence-by-sentence. Each sentence must map directly to an authenticated evidence snippet ID. Unverified sentences are visually marked with warning chips.
 
 ---
@@ -735,18 +697,28 @@ The desktop UI is rendered as a hardware-accelerated, transparent desktop overla
 ├──────────────────────────┼─────────────────────────────────────────────┤
 │ Rust Host vs Sidecar     │ Loopback 127.0.0.1, authenticated PID owner │
 ├──────────────────────────┼─────────────────────────────────────────────┤
-│ Application vs Database  │ SQLCipher AES-256-CBC, DPAPI protected key  │
+│ Application vs Storage   │ Local VectorDb (AES-CTR authenticated), SQLCipher AES-256, DPAPI key │
 ├──────────────────────────┼─────────────────────────────────────────────┤
 │ Application vs Network   │ Confined exclusively to approved tsr-net    │
 ├──────────────────────────┼─────────────────────────────────────────────┤
 │ Screen Text vs Prompts   │ Escaped passive data in <screen_content>    │
+├──────────────────────────┼─────────────────────────────────────────────┤
+│ Text vs Embeddings       │ Mandatory PII masking & pseudonyms (mask_pii)│
 └──────────────────────────┴─────────────────────────────────────────────┘
 ```
 
-### 16.1 Content-Free Auditing
+### 16.1 PII Detection, Masking & Scoped Pseudonyms
+Before text reaches model prompts, embedding models, vector storage, or search indexes, it is processed by `tsr_guard::redact::mask_pii`:
+- **Categorical Coverage:** Personal names, email addresses, phone numbers, Aadhaar numbers, PAN identifiers, credit cards, bank accounts, IFSC codes, physical addresses, dates of birth, passwords, API keys, and OTPs.
+- **Typed Standard Placeholders:** Standard tokens (`[PERSON_01]`, `[EMAIL]`, `[PHONE]`, `[CARD]`, `[API_KEY]`, etc.) preserve contextual sentence semantics without exposing sensitive values.
+- **Document-Scoped Pseudonymization:** Repeated references to the same person within a session map to the same stable pseudonym (`[PERSON_01]`, `[PERSON_02]`) without reversible identity tables.
+- **Pre-Embedding Guarantee:** Embeddings are generated exclusively from masked text. Raw PII is never converted into vector embeddings or stored in `VectorDb`.
+- **Secondary Generation Validation:** Model-generated sentences and draft responses pass through a secondary redaction pass before display.
+
+### 16.2 Content-Free Auditing
 Diagnostic logs (`tracing`) strictly drop all text contents. Allowed log entries contain only event identifiers, numeric durations, error codes, and bounded counts.
 
-### 16.2 Known Residual Security Risks
+### 16.3 Known Residual Security Risks
 - **Upstream WebView2 Connection ([ADR-0002](docs/adr/0002-webview2-outbound-connection.md)):** Microsoft's WebView2 runtime makes a single outbound HTTPS connection to Microsoft servers during startup, bypassing application proxy flags. Tessera's own Rust code is air-gapped, but total network silence cannot be guaranteed while WebView2 is active.
 - **Endpoint Memory Exposure:** Windows pagefiles (`pagefile.sys`) and hibernation files (`hiberfil.sys`) can theoretically capture unencrypted memory pages if the OS swaps memory during execution.
 

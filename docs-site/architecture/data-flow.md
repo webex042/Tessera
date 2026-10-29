@@ -27,8 +27,10 @@ flowchart TD
     end
 
     subgraph STORAGE["3. Safety & Persistence"]
-        REDACT_ENGINE["Regex + Checksum Redaction (Cards, Aadhaar, PAN, Keys)"]
+        REDACT_ENGINE["PII Masking Engine: Typed Tokens & Pseudonyms"]
         SQL_WRITE["Atomic Transaction: items + sources Tables"]
+        VEC_INGEST["Local Embedding (multilingual-e5-small)"]
+        VEC_WRITE[("Encrypted VectorDb: Vectors, Chunks & Metadata")]
         FTS_SYNC["SQLite FTS5 Full-Text Index Triggers"]
     end
 
@@ -38,6 +40,13 @@ flowchart TD
         FACT_VAL["Deterministic Code Validation (Evidence Match Dice >= 0.9)"]
         REDACT_PASS2["Second Redaction Pass"]
         FACTS_WRITE["Atomic Write: facts + evidence Tables"]
+    end
+
+    subgraph RETRIEVAL["5. Semantic Retrieval & Ask"]
+        QUERY_IN["User Query / Search"]
+        QUERY_MASK["Query PII Sanitization"]
+        HYBRID_SEARCH["Hybrid Retrieval: VectorDb Cosine + FTS5 + RRF"]
+        SNIPPET_GEN["Verified Snippets Assembly"]
     end
 
     %% Flow
@@ -59,6 +68,8 @@ flowchart TD
     FLUSH_COND -- "Flush" --> REDACT_ENGINE
     
     REDACT_ENGINE --> SQL_WRITE
+    REDACT_ENGINE --> VEC_INGEST
+    VEC_INGEST --> VEC_WRITE
     SQL_WRITE --> FTS_SYNC
     SQL_WRITE --> JOB_SCHED
     
@@ -66,6 +77,12 @@ flowchart TD
     LLM_CALL --> FACT_VAL
     FACT_VAL --> REDACT_PASS2
     REDACT_PASS2 --> FACTS_WRITE
+
+    QUERY_IN --> QUERY_MASK
+    QUERY_MASK --> HYBRID_SEARCH
+    VEC_WRITE -.-> HYBRID_SEARCH
+    FTS_SYNC -.-> HYBRID_SEARCH
+    HYBRID_SEARCH --> SNIPPET_GEN
 ```
 
 ---

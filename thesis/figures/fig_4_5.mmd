@@ -1,0 +1,89 @@
+erDiagram
+  SOURCES ||--o{ ITEMS : "produces"
+  ITEMS ||--o{ CHUNKS : "chunked into"
+  ITEMS ||--o{ FACT_EVIDENCE : "quoted by"
+  FACTS ||--|{ FACT_EVIDENCE : "supported by"
+  PEOPLE ||--o{ PERSON_ALIASES : "known as"
+  PEOPLE |o--o{ FACTS : "owns"
+  ITEMS ||--o{ SUMMARY_SOURCES : "cited in"
+  SUMMARIES ||--o{ SUMMARY_SOURCES : "cites"
+  ITEMS ||--o{ JOBS : "scheduled for"
+
+  SOURCES {
+    int id PK
+    text kind "url, file or app"
+    text app_exe
+    text window_title "redacted"
+    text url "tokens stripped"
+    int first_seen
+    int last_seen
+  }
+  ITEMS {
+    int id PK
+    int source_id FK
+    int started_at
+    int ended_at
+    text acquisition "uia, ocr, vlm, ext"
+    text text "redacted"
+    int simhash
+    int redaction_count
+    text extraction "pending, done, failed"
+  }
+  FACTS {
+    int id PK
+    text kind "task, commitment, decision, event, question, note"
+    text text
+    int owner_id FK
+    int due_at
+    text status "open, done, proposed_done, needs_review"
+    text confidence
+    text prompt_ver
+    text model
+    int schema_ver
+  }
+  FACT_EVIDENCE {
+    int fact_id FK
+    int item_id FK
+    text quote
+    int start_ch
+    int end_ch
+    text match "exact, normalized, fuzzy"
+  }
+  CHUNKS {
+    int id PK
+    int item_id FK
+    int ord
+    text model
+    int dims
+    real scale
+    blob vec "int8 vector"
+  }
+  PEOPLE {
+    int id PK
+    text display_name
+    int is_self
+  }
+  PERSON_ALIASES {
+    int person_id FK
+    text kind "name, email, handle"
+    text alias
+  }
+  SUMMARIES {
+    int id PK
+    text level "hour, day, week, month"
+    int period_start
+    int period_end
+    int stale
+  }
+  SUMMARY_SOURCES {
+    int summary_id FK
+    int item_id FK
+    int child_id FK
+  }
+  JOBS {
+    int id PK
+    int item_id FK
+    text kind "extract, embed, vlm"
+    text state
+    int attempts
+  }

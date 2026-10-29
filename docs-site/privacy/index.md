@@ -20,8 +20,8 @@ flowchart LR
     end
 
     subgraph TESSERA ["Tessera Architecture (Zero-Cloud)"]
-        SCREEN2["Your Screen Text"] --> REDACT["tsr-guard\n(Secret Redaction)"]
-        REDACT --> VAULT[("Encrypted Local SQLite\n(Protected by DPAPI)")]
+        SCREEN2["Your Screen Text"] --> REDACT["tsr-guard\n(PII Masking & Typed Placeholders)"]
+        REDACT --> VAULT[("Encrypted Local VectorDb & Store\n(Protected by DPAPI)")]
         VAULT --> LOCAL_MODEL["Local 4B Model\n(On Your Own PC)"]
     end
 ```
@@ -33,17 +33,19 @@ flowchart LR
 ### Pillar 1: Zero Outbound Network Requests
 Tessera's Rust backend code contains no networking libraries for cloud telemetry or analytics. When network auditing tools (`tools/netmon.ps1`) monitor Tessera for 10 minutes of continuous operation, application code produces **0 outbound network connections**. The only network socket initialized is a private local loopback (`127.0.0.1`) connecting the host to the sidecar.
 
-### Pillar 2: Redaction *Before* Storage (The "Black Marker" Analogy)
-Think of `tsr-guard` as an automated security inspector standing with a black permanent marker:
-* Before any text captured from your screen is written to disk, it is scanned against a deterministic suite of **355 regular expression patterns**.
-* If a credit card number, GitHub personal access token, AWS secret key, or private email is found, it is permanently overwritten with an opaque token (e.g., `[REDACTED_API_KEY]`).
+### Pillar 2: Redaction & PII Masking *Before* Embedding & Storage
+Think of `tsr-guard` as an automated security inspector standing with a typed privacy marker:
+* Before any text captured from your screen is embedded or written to disk, it is scanned against deterministic detection patterns and checksum validation.
+* Supported categories include personal names (with document-scoped deterministic pseudonyms `[PERSON_01]`), emails (`[EMAIL]`), phone numbers (`[PHONE]`), Aadhaar (`[AADHAAR]`), PAN (`[PAN]`), credit cards (`[CARD]`), bank accounts (`[BANK_ACCOUNT]`), addresses (`[ADDRESS]`), dates of birth (`[DATE_OF_BIRTH]`), passwords (`[PASSWORD]`), and API keys (`[API_KEY]`).
+* Redaction is strictly applied **before** embedding generation, ensuring that vector representations never encode raw PII.
 * The raw secret is erased from volatile memory immediately and never touches persistent storage.
 
-### Pillar 3: Encryption at Rest via Windows DPAPI
-All indexed text, window titles, session histories, and derived memory vectors are stored in a local SQLite database encrypted with **AES-256** using the Windows Data Protection API (DPAPI):
-* The encryption master key is wrapped using Windows `CryptProtectData`.
-* The key is tied directly to your Windows user account credentials and TPM security chip.
-* If someone steals your laptop's hard drive or copies the database file without knowing your Windows login, the database appears as unreadable cryptographic noise.
+### Pillar 3: Encryption at Rest via Windows DPAPI & Local VectorDb
+All indexed text, window titles, session histories, chunks, and vector embeddings are stored in local databases protected with **AES-256** and DPAPI-derived keys:
+* Vector embeddings, redacted chunk payloads, and retrieval metadata persist in `tessera_vectors.enc`, encrypted with an authenticated SHA-256 CTR stream keystream and HMAC tag.
+* Relational facts, sources, and audit logs persist in an encrypted SQLite store.
+* The master keys are protected using Windows `CryptProtectData` tied directly to your Windows user credentials and TPM chip.
+* If someone steals your laptop's hard drive or copies the database files without knowing your Windows login, the persistent files appear as unreadable cryptographic noise.
 
 ### Pillar 4: Content-Free Logging
 Debugging application errors must never compromise privacy. Tessera enforces a strict **content-free logging policy**:

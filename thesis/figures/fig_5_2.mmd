@@ -1,0 +1,26 @@
+flowchart LR
+  subgraph S1["1. Retrieve"]
+    direction TB
+    Q["User question<br/>or search query"] --> F0["Parse filters:<br/>time range, app,<br/>fact kind"]
+    F0 --> K1["Keyword channel:<br/>FTS5 BM25 over items,<br/>top 50"]
+    F0 --> K2["Facts channel:<br/>FTS5 over facts, mapped<br/>to evidence items, top 50"]
+    F0 --> V1["Vector channel:<br/>e5-small query embedding,<br/>cosine over int8 chunks"]
+  end
+  subgraph S2["2. Filter and fuse"]
+    direction TB
+    FL["Filters per channel:<br/>current blocklist,<br/>suppressed identities"] --> RRF["Reciprocal Rank Fusion<br/>sum of 1 / (60 + rank)"]
+    RRF --> REC["Recency multiplier<br/>1 + 0.15 x 0.5 ^ (age / 14 d)"]
+    REC --> TOP["Top 8 snippets,<br/>one per source,<br/>about 1500 tokens"]
+  end
+  subgraph S3["3. Answer and verify"]
+    direction TB
+    GEN["Model answers in JSON:<br/>one sentence per<br/>cited snippet id"] --> VER{"Per-sentence check:<br/>does the cited snippet<br/>support the sentence?"}
+    VER -- "yes" --> SH["Show sentence<br/>with a citation chip"]
+    VER -- "no" --> HD["Hide sentence,<br/>count as unverified"]
+    SH --> OUT["Answer, or<br/>'I couldn't find that'<br/>plus the top three sources"]
+    HD --> OUT
+  end
+  K1 --> FL
+  K2 --> FL
+  V1 --> FL
+  TOP --> GEN

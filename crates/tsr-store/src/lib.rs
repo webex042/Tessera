@@ -14,8 +14,10 @@ pub mod jobs;
 #[cfg(windows)]
 pub mod keystore;
 pub mod migrate;
+pub mod migration;
 pub mod people;
 pub mod summaries;
+pub mod vectordb;
 
 use std::path::Path;
 

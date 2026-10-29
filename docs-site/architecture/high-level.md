@@ -40,6 +40,7 @@ flowchart TB
 
         subgraph STORAGE_SUBSYSTEM ["Encrypted Persistence (tsr-store)"]
             DPAPI_ENGINE["Windows DPAPI Key Derivation"]
+            VECTOR_DB[("Encrypted VectorDb\n(Vectors, Chunks & Metadata)")]
             SQLCIPHER_DB[("Encrypted SQLite DB\n(WAL Mode + AES-256)")]
             FTS5_INDEX["SQLite FTS5 BM25 Full-Text Index"]
         end
@@ -52,6 +53,7 @@ flowchart TB
 
         subgraph RETRIEVAL_SUBSYSTEM ["Retrieval Subsystem (tsr-retrieval)"]
             EMBEDDER["ONNX Runtime Embedder (multilingual-e5-small)"]
+            VECTOR_SEARCH["Cosine Similarity & Metadata Filtering"]
             RRF_ENGINE["Reciprocal Rank Fusion (k=60 Hybrid Search)"]
         end
     end

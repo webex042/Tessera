@@ -121,6 +121,9 @@ pub fn search(
     filter: &Filter<'_>,
     o: &Opts,
 ) -> Result<(Vec<Hit>, Diagnostics), StoreError> {
+    // Sanitize query to protect user PII before search and embedding
+    let clean_query = tsr_guard::redact::mask_pii(query).text;
+    let q_ref = if clean_query.trim().is_empty() { query } else { &clean_query };
     let mut d = Diagnostics::default();
     let mut metas: HashMap<i64, ItemMeta> = HashMap::new();
     let mut allowed = |conn: &Connection, id: i64, d: &mut Diagnostics| -> Result<bool, StoreError> {
@@ -136,7 +139,7 @@ pub fn search(
     // Keyword channel over items.
     let mut lexical: Vec<i64> = Vec::new();
     if o.use_lexical {
-        for h in tsr_store::items::search_any(conn, query, (o.per_channel * 2) as u32)? {
+        for h in tsr_store::items::search_any(conn, q_ref, (o.per_channel * 2) as u32)? {
             if lexical.len() < o.per_channel && !lexical.contains(&h.item_id) && allowed(conn, h.item_id, &mut d)? {
                 lexical.push(h.item_id);
             }
@@ -147,7 +150,7 @@ pub fn search(
     // Facts channel: rank of the best fact per evidence item.
     let mut fact_items: Vec<i64> = Vec::new();
     if o.use_facts {
-        for (fid, _) in tsr_store::facts::search(conn, query, (o.per_channel * 2) as u32)? {
+        for (fid, _) in tsr_store::facts::search(conn, q_ref, (o.per_channel * 2) as u32)? {
             for e in tsr_store::facts::evidence(conn, fid)? {
                 if fact_items.len() < o.per_channel
                     && !fact_items.contains(&e.item_id)
@@ -164,7 +167,7 @@ pub fn search(
     let mut vector: Vec<(i64, (i64, i64))> = Vec::new();
     match (index, embedder) {
         (Some(ix), Some(e)) if o.use_vector && !ix.is_empty() && ix.model == e.model_id() => {
-            match embed(e, &[query.to_owned()], Kind::Query) {
+            match embed(e, &[q_ref.to_owned()], Kind::Query) {
                 Ok(q) => {
                     // Over-fetch, then filter: the filter needs the database.
                     for h in ix.search(&q[0], o.per_channel * 3, &|_| true) {
@@ -211,6 +214,132 @@ pub fn search(
     for (i, id) in fact_items.iter().enumerate() {
         add(*id, i + 1, 2, None);
     }
+    let mut hits: Vec<Hit> = fused
+        .into_values()
+        .map(|mut h| {
+            let started = metas.get(&h.item_id).map(|m| m.started_at).unwrap_or(0);
+            h.started_at = started;
+            let age_days = ((o.now_ms - started).max(0) as f64) / 86_400_000.0;
+            h.score *= 1.0 + o.recency_weight * 0.5f64.powf(age_days / o.half_life_days);
+            h
+        })
+        .collect();
+    hits.sort_by(|a, b| {
+        b.score
+            .total_cmp(&a.score)
+            .then(b.started_at.cmp(&a.started_at))
+            .then(a.item_id.cmp(&b.item_id))
+    });
+    hits.truncate(o.k);
+    Ok((hits, d))
+}
+
+/// Hybrid search querying the local encrypted VectorDb directly for semantic vector similarity.
+pub fn search_vectordb(
+    conn: &Connection,
+    vdb: Option<&tsr_store::vectordb::VectorDb>,
+    embedder: Option<&dyn Embedder>,
+    query: &str,
+    filter: &Filter<'_>,
+    o: &Opts,
+) -> Result<(Vec<Hit>, Diagnostics), StoreError> {
+    let clean_query = tsr_guard::redact::mask_pii(query).text;
+    let q_ref = if clean_query.trim().is_empty() { query } else { &clean_query };
+    let mut d = Diagnostics::default();
+    let mut metas: HashMap<i64, ItemMeta> = HashMap::new();
+    let mut allowed = |conn: &Connection, id: i64, d: &mut Diagnostics| -> Result<bool, StoreError> {
+        if let Some(m) = metas.get(&id) {
+            return Ok(m.allowed);
+        }
+        let m = meta(conn, id, filter, d)?;
+        let a = m.allowed;
+        metas.insert(id, m);
+        Ok(a)
+    };
+
+    // Keyword channel over items.
+    let mut lexical: Vec<i64> = Vec::new();
+    if o.use_lexical {
+        for h in tsr_store::items::search_any(conn, q_ref, (o.per_channel * 2) as u32)? {
+            if lexical.len() < o.per_channel && !lexical.contains(&h.item_id) && allowed(conn, h.item_id, &mut d)? {
+                lexical.push(h.item_id);
+            }
+        }
+    }
+    d.lexical = lexical.len();
+
+    // Facts channel: rank of the best fact per evidence item.
+    let mut fact_items: Vec<i64> = Vec::new();
+    if o.use_facts {
+        for (fid, _) in tsr_store::facts::search(conn, q_ref, (o.per_channel * 2) as u32)? {
+            for e in tsr_store::facts::evidence(conn, fid)? {
+                if fact_items.len() < o.per_channel
+                    && !fact_items.contains(&e.item_id)
+                    && allowed(conn, e.item_id, &mut d)?
+                {
+                    fact_items.push(e.item_id);
+                }
+            }
+        }
+    }
+    d.facts = fact_items.len();
+
+    // Vector channel via local encrypted VectorDb.
+    let mut vector: Vec<(i64, (i64, i64))> = Vec::new();
+    match (vdb, embedder) {
+        (Some(db), Some(e)) if o.use_vector && !db.is_empty() => {
+            match embed(e, &[q_ref.to_owned()], Kind::Query) {
+                Ok(q) => {
+                    let vfilter = tsr_store::vectordb::VectorFilter {
+                        model: Some(e.model_id().to_owned()),
+                        ..Default::default()
+                    };
+                    for h in db.search(&q[0], o.per_channel * 3, Some(&vfilter)) {
+                        if vector.len() < o.per_channel && allowed(conn, h.item_id, &mut d)? {
+                            vector.push((h.item_id, (h.metadata.start_ch, h.metadata.end_ch)));
+                        }
+                    }
+                }
+                Err(_) => d.vector_unavailable = true,
+            }
+        }
+        _ => d.vector_unavailable = o.use_vector,
+    }
+    d.vector = vector.len();
+
+    // Reciprocal Rank Fusion.
+    let mut fused: BTreeMap<i64, Hit> = BTreeMap::new();
+    let mut add = |id: i64, rank: usize, ch: u8, span: Option<(i64, i64)>| {
+        let h = fused.entry(id).or_insert(Hit {
+            item_id: id,
+            score: 0.0,
+            lexical_rank: None,
+            vector_rank: None,
+            fact_rank: None,
+            span: None,
+            started_at: 0,
+        });
+        h.score += 1.0 / (o.rrf_k + rank as f64);
+        match ch {
+            0 => h.lexical_rank = Some(rank),
+            1 => {
+                h.vector_rank = Some(rank);
+                h.span = span;
+            }
+            2 => h.fact_rank = Some(rank),
+            _ => {}
+        }
+    };
+    for (i, id) in lexical.into_iter().enumerate() {
+        add(id, i + 1, 0, None);
+    }
+    for (i, (id, span)) in vector.into_iter().enumerate() {
+        add(id, i + 1, 1, Some(span));
+    }
+    for (i, id) in fact_items.into_iter().enumerate() {
+        add(id, i + 1, 2, None);
+    }
+
     let mut hits: Vec<Hit> = fused
         .into_values()
         .map(|mut h| {

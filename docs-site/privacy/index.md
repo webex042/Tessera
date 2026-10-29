@@ -36,9 +36,15 @@ Tessera's Rust backend code contains no networking libraries for cloud telemetry
 ### Pillar 2: Redaction & PII Masking *Before* Embedding & Storage
 Think of `tsr-guard` as an automated security inspector standing with a typed privacy marker:
 * Before any text captured from your screen is embedded or written to disk, it is scanned against deterministic detection patterns and checksum validation.
-* Supported categories include personal names (with document-scoped deterministic pseudonyms `[PERSON_01]`), emails (`[EMAIL]`), phone numbers (`[PHONE]`), Aadhaar (`[AADHAAR]`), PAN (`[PAN]`), credit cards (`[CARD]`), bank accounts (`[BANK_ACCOUNT]`), addresses (`[ADDRESS]`), dates of birth (`[DATE_OF_BIRTH]`), passwords (`[PASSWORD]`), and API keys (`[API_KEY]`).
-* Redaction is strictly applied **before** embedding generation, ensuring that vector representations never encode raw PII.
-* The raw secret is erased from volatile memory immediately and never touches persistent storage.
+* Supported categories and typed placeholders include:
+  - Personal names: `[PERSON_01]`, `[PERSON_02]` (deterministic document-scoped pseudonyms)
+  - Contact information: `[EMAIL]`, `[PHONE]`
+  - National & financial IDs: `[AADHAAR]`, `[PAN]`, `[CARD]`, `[BANK_ACCOUNT]`, `[IFSC]`
+  - Personal demographics: `[ADDRESS]`, `[DATE_OF_BIRTH]`
+  - Credentials & secrets: `[PASSWORD]`, `[SECRET]`, `[API_KEY]`, `[JWT]`, `[PRIVATE_KEY]`, `[OTP]`
+* Masking occurs **before** embedding generation, ensuring that vector representations and `VectorDb` payloads never encode raw sensitive identifiers.
+* Retrieved snippets and model responses undergo secondary validation before display.
+* *Note on Limits:* Tessera does not claim universal PII detection or complete anonymity; detection relies on deterministic heuristics and checksums, with known boundaries around uncontextualized names and unstructured text.
 
 ### Pillar 3: Encryption at Rest via Windows DPAPI & Local VectorDb
 All indexed text, window titles, session histories, chunks, and vector embeddings are stored in local databases protected with **AES-256** and DPAPI-derived keys:

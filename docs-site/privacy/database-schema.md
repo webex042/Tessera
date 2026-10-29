@@ -128,6 +128,11 @@ CREATE TABLE evidence (
 
 In addition to relational tables, semantic retrieval persistence is managed by `tsr_store::vectordb::VectorDb` inside `%LOCALAPPDATA%\Tessara\tessera_vectors.enc`.
 
+> [!NOTE] Architectural Separation of Concerns
+> Tessera maintains a strict dual-database architecture:
+> - **SQLCipher (`tessara.db`):** Persists relational tables (`sources`, `items`, `facts`, `evidence`, `people`, `aliases`, `jobs`, `audit_events`) and FTS5 keyword index.
+> - **`VectorDb` (`tessera_vectors.enc`):** Persists 384-dimensional embeddings and text chunks for encrypted semantic vector similarity search.
+
 ### `VectorRecord` Schema
 ```rust
 pub struct VectorRecord {
@@ -153,5 +158,21 @@ pub struct VectorMetadata {
     pub start_ch: i64,
     pub end_ch: i64,
     pub provenance: Option<String>,
+}
+
+pub struct VectorFilter {
+    pub app_name: Option<String>,
+    pub memory_type: Option<String>,
+    pub window_title_contains: Option<String>,
+    pub since_timestamp_ms: Option<i64>,
+    pub until_timestamp_ms: Option<i64>,
+    pub item_id: Option<i64>,
+}
+
+pub struct VectorHit {
+    pub id: String,
+    pub score: f32,                // Cosine similarity in range [-1.0, 1.0]
+    pub text: String,
+    pub metadata: VectorMetadata,
 }
 ```

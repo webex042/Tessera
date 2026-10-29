@@ -47,16 +47,30 @@ flowchart TD
     CODE_VERIFY --> FINAL_ANSWER["Grounded Answer with Verified Citations"]
 ```
 
-### Semantic Search Operations (`search_vectordb`)
-Semantic retrieval executes directly against `VectorDb`:
-1. **Query Preprocessing:** The query string is masked using `mask_pii` before generating embeddings, ensuring that sensitive search terms are not leaked into vector representations.
-2. **Metadata Pre-Filtering:** Filters out non-matching records (by application name, source ID, item IDs, or timestamp ranges) before calculating dot products.
-3. **Cosine Similarity Search:** Computes normalized vector dot products, ranking matches by descending similarity score.
-4. **Reciprocal Rank Fusion (RRF):** Fuses semantic hits with full-text keyword hits and structured fact evidence.
+### End-to-End Retrieval Pipeline
+
+The semantic retrieval workflow executes through the following ten stages:
+
+1. **Query Submission:** The user submits a search query or natural language question through the desktop interface.
+2. **Query PII Sanitization:** The query text is screened and masked using `tsr_guard::redact::mask_pii` before generating embeddings or logging.
+3. **Full-Text Lexical Retrieval:** Lexical matching retrieves the top 50 candidates using SQLite's FTS5 full-text engine with BM25 keyword scoring over stored item texts and structured facts.
+4. **Local Query Embedding Generation:** The pinned ONNX Runtime embedder runs `multilingual-e5-small` locally to produce a 384-dimensional query vector.
+5. **VectorDb Cosine Similarity Search:** The query vector is evaluated against `VectorDb` (`search_vectordb`), applying metadata pre-filtering (by application names, time ranges, item IDs, source IDs, or memory types) and computing cosine similarity.
+6. **Reciprocal Rank Fusion (RRF):** Ranks from the applicable retrieval channels are fused using standard RRF with constant $k = 60$:
+
+   $$\text{RRF Score}(d) = \sum_{c} \frac{1}{60 + \text{Rank}_c(d)}$$
+
+7. **Recency Multiplier:** An exponential half-life recency multiplier re-weights items based on age:
+
+   $$\text{Final Score}(d) = \text{RRF Score}(d) \times \left(1 + 0.15 \times 0.5^{\frac{\text{Age in Days}}{14}}\right)$$
+
+8. **Snippet Candidate Selection:** Up to eight top-ranked snippet candidates are assembled within the documented context budget of 1,500 tokens.
+9. **Deterministic Evidence Verification:** Sentence-by-sentence deterministic code verifies that claims produced by the model are substantiated by verbatim or normalized spans within the cited evidence snippets.
+10. **Authenticated Citations:** Answers provide authenticated snippet identifiers linking verified claims directly to the underlying source items in the local store.
 
 ### Deterministic Evidence Validation
 Tessera preserves the foundational principle:
 
 > **The model proposes. Deterministic code verifies.**
 
-High vector similarity alone is never treated as proof of truth. When generating answers to questions, every sentence produced by the model must cite an authenticated snippet ID, and deterministic code verifies that claims are supported by verbatim or normalized spans in the source evidence. Unverified claims are flagged or suppressed.
+Semantic similarity helps retrieve relevant context efficiently, but high vector similarity does not independently establish factual correctness. When answering questions via the Ask panel, the model proposes structured sentence outputs with citation pointers, and deterministic verification code verifies that claims match verbatim or normalized substrings in the authenticated source snippets. Sentences that fail verification or fabricate citations are suppressed or visually flagged.

@@ -36,15 +36,31 @@ Raw Text Stream ──► Contextual Pattern Detection ──► Algorithmic Che
 | **Personal Names** | `[PERSON_01]`, `[PERSON_02]` | Honorifics, context verbs, greetings, with deterministic document-scoped pseudonym mapping |
 | **Email Addresses** | `[EMAIL]` | RFC 5322 alphanumeric email pattern with domain validation |
 | **Telephone Numbers** | `[PHONE]` | International E.164 and localized Indian/US telephone patterns |
-| **Aadhaar Numbers** | `[AADHAAR]` | 12-digit UID and 16-digit VID validated via Verhoeff base-10 dihedral checksum |
+| **Aadhaar Identifiers** | `[AADHAAR]` | 12-digit UID and 16-digit VID validated via Verhoeff base-10 dihedral checksum |
 | **PAN Identifiers** | `[PAN]` | 10-character Indian PAN alphanumeric structure checksum |
 | **Payment Cards** | `[CARD]` | Luhn checksum algorithm (Visa, Mastercard, Amex, Discover) |
-| **Bank Accounts & IFSC** | `[BANK_ACCOUNT]`, `[IFSC]` | Contextual account numbers, 11-character RBI IFSC branch codes, IBAN checksum |
-| **Physical Addresses** | `[ADDRESS]` | Street, avenue, sector, building, apartment patterns with postal code heuristics |
+| **Bank Account Identifiers** | `[BANK_ACCOUNT]` | Contextual account numbers, international IBAN format validation |
+| **IFSC Identifiers** | `[IFSC]` | 11-character RBI IFSC branch codes |
+| **Physical Addresses & Postal Codes** | `[ADDRESS]` | Street, avenue, sector, building, apartment patterns with postal code / PIN heuristics |
 | **Dates of Birth** | `[DATE_OF_BIRTH]` | DOB / Birth date context markers paired with calendar date formats |
-| **Passwords & Secrets** | `[PASSWORD]`, `[SECRET]` | Keyword-value prompts (`password: ...`), high-entropy secret patterns |
-| **API Keys & Credentials** | `[API_KEY]`, `[JWT]` | AWS access keys (`AKIA...`), OpenAI tokens (`sk-...`), GitHub PATs (`ghp_...`), JWTs |
-| **OTPs & Verification Codes** | `[OTP]` | 4-8 digit numeric codes paired with English and Hinglish verification cues |
+| **Passwords** | `[PASSWORD]` | Keyword-value prompts (`password: ...`), authentication secret patterns |
+| **Generic Secrets** | `[SECRET]` | High-entropy generic secret strings and credential values |
+| **API Keys & Access Tokens** | `[API_KEY]` | AWS access keys (`AKIA...`), OpenAI tokens (`sk-...`), GitHub PATs (`ghp_...`), Slack tokens |
+| **JSON Web Tokens** | `[JWT]` | Standard three-part base64url encoded tokens (`ey...`) |
+| **Private Keys** | `[PRIVATE_KEY]` | PEM private key blocks (`-----BEGIN PRIVATE KEY-----`) |
+| **One-Time Passwords** | `[OTP]` | 4-8 digit numeric codes paired with English and Hinglish verification cues |
+
+### The PII Protection Lifecycle
+
+The privacy engine enforces masking across five distinct stages of the data path:
+
+1. **Session Screening:** Raw text captured from active desktop windows is screened through the `tsr-guard` protection layer before entering session buffers.
+2. **Pre-Embedding Masking:** PII is masked before text chunking and embedding (`embed_item_to_vectordb`). Embeddings are generated exclusively from sanitized text chunks.
+3. **Query Sanitization:** Search queries and question-answering prompts are sanitized with `mask_pii()` before generating query embeddings.
+4. **Secondary Redaction Pass:** Retrieved evidence snippets and model-generated responses undergo a secondary redaction pass before display in the UI or inclusion in draft responses.
+5. **Typed Placeholders & Scoped Pseudonyms:** Standard typed placeholders and deterministic, document-scoped pseudonyms maintain semantic readability without leaking original identifiers.
+
+The explicit purpose of this architecture is to prevent raw sensitive identifiers from entering model prompts, embedding inputs, and vector-index payloads through any documented application path.
 
 ### Deterministic Pseudonym Mapping
 To maintain readability and conversational coherence without exposing personal identities, repeated occurrences of personal names within a document context receive deterministic pseudonyms:
@@ -52,7 +68,7 @@ To maintain readability and conversational coherence without exposing personal i
 - Subsequent mentions of `Alice` $\rightarrow$ `[PERSON_01]`
 - `Bob Jones` $\rightarrow$ `[PERSON_02]`
 
-Original identities are never stored in reversible token tables or exposed via pseudonym generation.
+Original identities are never stored in reversible token lookup tables or exposed via pseudonym generation.
 
 ### Algorithmic Checksum Verification
 To prevent excessive false positives while guaranteeing high detection recall, regex matches are verified with domain checksum algorithms:
@@ -61,6 +77,12 @@ To prevent excessive false positives while guaranteeing high detection recall, r
 - **Indian PAN:** 10-character alphanumeric format validated against official structural checksum patterns.
 - **Passports & Voter IDs:** Standard format verification.
 - **API Keys & Cryptographic Tokens:** High-entropy token matchers for AWS access keys (`AKIA...`), OpenAI keys (`sk-...`), GitHub tokens (`ghp_...`), Slack tokens, and PEM private keys (`-----BEGIN PRIVATE KEY-----`).
+
+### Detection Accuracy & Known Limitations
+Tessera makes no claim that all possible PII can be detected under every circumstance, or that automated masking guarantees complete anonymity:
+- Contextual name detection relies on linguistic indicators (honorifics, greetings, role prepositions); isolated or uncapitalized names without context cues are intentionally preserved to avoid degrading technical and academic prose.
+- Handwritten text, corrupted OCR output, or novel identifier formats outside supported pattern definitions may not be flagged.
+- Physical address detection uses bounded structural patterns; non-standard or partial street descriptions may bypass heuristics.
 
 ### Verification Scorecard
 Evaluated against the versioned secret corpus (`tests/fixtures/redaction/`):

@@ -103,11 +103,18 @@ flowchart TD
 - **SimHash:** Computes a 64-bit SimHash over word 3-shingles. If the Hamming distance is $\le 3$, text is treated as unchanged.
 - **Window Sessions:** Groups interactions by `(exe, HWND, URL/title)`. Buffers text in memory until focus leaves for $> 30\text{s}$, continuous use reaches 5 minutes, or the buffer exceeds 6,000 characters.
 
-### 4. Redaction & Cryptographic Storage
-- **Pre-Storage Scrubbing:** Passwords, OTPs, credit cards, Indian national identity numbers (Aadhaar, PAN), passports, voter IDs, and high-entropy API keys are replaced with redaction markers.
-- **Encrypted Persistence:** Redacted text is written to `items` inside the SQLCipher database. Database triggers automatically update the SQLite FTS5 search index.
+### 4. PII Masking & Persistent Storage
+- **Pre-Embedding & Pre-Storage Scrubbing:** Screen text is processed through `tsr_guard::redact::mask_pii`. Personal names (with deterministic document-scoped pseudonyms `[PERSON_01]`), contact details (`[EMAIL]`, `[PHONE]`), national IDs (`[AADHAAR]`, `[PAN]`), financial identifiers (`[CARD]`, `[BANK_ACCOUNT]`, `[IFSC]`), physical addresses (`[ADDRESS]`), dates of birth (`[DATE_OF_BIRTH]`), credentials (`[PASSWORD]`, `[SECRET]`, `[API_KEY]`, `[JWT]`, `[PRIVATE_KEY]`), and OTPs (`[OTP]`) are replaced with typed placeholders.
+- **VectorDb Ingestion:** Text chunks are embedded locally using the ONNX Runtime `multilingual-e5-small` model into 384-dimensional vectors and stored encrypted at rest in `tessera_vectors.enc` (`VectorDb`) alongside metadata.
+- **Relational Persistence:** Redacted session items and sources are written in atomic transactions to SQLCipher. Database triggers automatically update the SQLite FTS5 search index.
 
 ### 5. Structured Extraction & Evidence Verification
 - **Model Ingestion:** An extraction job is enqueued in the P1 priority scheduler.
 - **Evidence Verification:** Model output must match a strict JSON schema. Every extracted fact must supply an evidence quote that matches a substring ($Dice \ge 0.9$) within the original captured screen item. Fabricated facts are discarded.
 - **Second Redaction Pass:** A second redaction pass is executed over model outputs before writing to `facts` and `evidence`.
+
+### 6. Semantic Retrieval & Ask with Sources
+- **Query Sanitization:** User queries are sanitized with `mask_pii` before generating embeddings or executing keyword searches.
+- **Hybrid Retrieval:** Fuses full-text keyword retrieval (FTS5 BM25) and `VectorDb` cosine similarity search with metadata pre-filtering using Reciprocal Rank Fusion ($k=60$) and an exponential recency decay multiplier.
+- **Snippet Assembly:** The top 8 candidate snippets within a 1,500 token budget are presented as grounded context.
+- **Deterministic Verification:** Generated sentences cite authenticated snippet IDs and are verified against cited snippet text before display.

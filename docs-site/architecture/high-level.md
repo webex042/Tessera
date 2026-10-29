@@ -34,7 +34,7 @@ flowchart TB
 
         subgraph GUARD_SUBSYSTEM ["Deterministic Safety (tsr-guard)"]
             BLOCKLIST["Process Blocklist (Browsers / Incognito)"]
-            REDACTOR["Regex Secret Redaction (355 Rules)"]
+            PII_MASKER["PII Masking & Scoped Pseudonyms (mask_pii)"]
             INJ_FILTER["Prompt Injection Delimiter Guard"]
         end
 
@@ -78,7 +78,7 @@ flowchart TB
     RUNG1 -.-> |Timeout / Empty| RUNG2
     RUNG2 -.-> |WGC Unsupported| GDI_FALLBACK
     RUNG1 & RUNG2 & GDI_FALLBACK --> SIMHASH
-    SIMHASH --> REDACTOR --> SQLCIPHER_DB
+    SIMHASH --> PII_MASKER --> VECTOR_DB & SQLCIPHER_DB
     SQLCIPHER_DB <---> FTS5_INDEX
 
     SQLCIPHER_DB -.-> |Extraction Job Request| SCHEDULER
@@ -89,8 +89,8 @@ flowchart TB
     LOOPBACK_TCP --> LLAMA_ENGINE --> GGUF_WEIGHTS
     GGUF_WEIGHTS --> BACKEND_VULKAN & BACKEND_CPU
 
-    RETRIEVAL_SUBSYSTEM <---> SQLCIPHER_DB
-    EMBEDDER --> RRF_ENGINE
+    RETRIEVAL_SUBSYSTEM <---> VECTOR_DB & SQLCIPHER_DB
+    EMBEDDER --> VECTOR_SEARCH --> RRF_ENGINE
 ```
 
 ---
@@ -109,8 +109,8 @@ To understand how Tessera functions as an integrated system, let us examine the 
 1. **Window Change Event:** When you switch windows, the Windows OS notifies `tsr-win` via a `WinEventHook`.
 2. **Content Capture:** `tsr-capture` samples the window text. If UI Automation succeeds within 285 milliseconds, text is extracted directly. If not, it falls back to Windows Graphics Capture (WGC) and OCR.
 3. **Deduplication:** A 64-bit SimHash compares the text against the previous frame. If the content has not meaningfully changed, processing stops immediately, saving battery and CPU cycles.
-4. **Redaction Gate:** New text passes through `tsr-guard`. Credit cards, passwords, API keys, and sensitive tokens are overwritten with redaction placeholders.
-5. **Encrypted Persistence:** Scrubbed text is written to SQLite inside `tsr-store`, protected by DPAPI encryption.
+4. **PII Masking Gate:** New text passes through `tsr-guard::redact::mask_pii`. Names (deterministic pseudonyms), contact info, national IDs, payment cards, credentials, and secrets are replaced with typed placeholders before embedding or storage.
+5. **Encrypted Persistence:** Scrubbed text and 384-d embeddings are persisted to `VectorDb` (`tessera_vectors.enc`), while relational items, facts, and FTS5 indexes are stored in SQLCipher (`tessara.db`).
 6. **Inference Request:** When a question is asked or an extraction is needed, `tsr-infer` sends a structured JSON prompt across a local TCP socket (`127.0.0.1`) to the sidecar.
 
 ### C. Which Component Initiates Each Operation
@@ -119,8 +119,8 @@ To understand how Tessera functions as an integrated system, let us examine the 
 * **Maintenance & Pruning:** Initiated by internal **Background Timers** in the host orchestration tier (cleaning up old history, compressing embeddings).
 
 ### D. Where Data is Processed, Stored, and Transmitted
-* **Processing:** Screen parsing and redaction occur in host CPU memory (`tsr-guard`). Neural network tensor math occurs in GPU VRAM (or CPU cache via AVX2).
-* **Storage:** Data resides exclusively on the local drive in an encrypted SQLite database located at `%LOCALAPPDATA%\Tessera\store.db`.
+* **Processing:** Screen parsing and PII masking occur in host CPU memory (`tsr-guard`). Neural network tensor math occurs in GPU VRAM (or CPU cache via AVX2).
+* **Storage:** Data resides exclusively on the local drive in an encrypted `VectorDb` (`tessera_vectors.enc`) and an encrypted SQLite database located at `%LOCALAPPDATA%\Tessara\tessara.db`.
 * **Transmission:** **Zero data is transmitted across the internet.** All network calls from application code are strictly forbidden. The only network socket used is a local loopback (`127.0.0.1`) connecting the host to the sidecar.
 
 ### E. What Happens When a Component Fails (Fault Tolerance)

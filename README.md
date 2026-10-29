@@ -585,21 +585,23 @@ Extracted items are categorized under a unified schema:
 
 ### 12.1 Embedded Encrypted Vector Database (`VectorDb`)
 Semantic retrieval, chunk embeddings, and retrieval metadata are persisted in an embedded, local encrypted vector database (`tsr_store::vectordb::VectorDb`):
+- **Core Architecture & Types:** Implemented via `VectorDb`, `VectorRecord`, `VectorMetadata`, `VectorFilter`, and `VectorHit`. Persists 384-dimensional vectors generated with `multilingual-e5-small`.
 - **Engine & Isolation:** Pure Rust embedded vector store persisting to `%LOCALAPPDATA%\Tessara\tessera_vectors.enc`. Operates entirely offline with zero background daemons, zero external cloud dependencies, and zero outbound network sockets.
 - **Encryption at Rest:** Protected with 256-bit symmetric keys derived from the Windows Data Protection API (`CryptUnprotectData`). Uses an authenticated SHA-256 CTR stream keystream with a random 16-byte nonce and HMAC integrity verification (`TSRV` file header).
-- **Native Cosine Search & Pre-Filtering:** Computes high-precision cosine similarity across 384-dimensional normalized float vectors and scaled int8 quantized vectors, supporting zero-leakage metadata pre-filtering by application name, timestamp range, item ID, and memory type.
+- **Native Cosine Search & Pre-Filtering:** Computes high-precision cosine similarity across 384-dimensional normalized float vectors and scaled int8 quantized vectors, supporting zero-leakage metadata pre-filtering (`VectorFilter`) by application name, timestamp range, item ID, and memory type.
 - **Privacy Enforcement:** Vector embeddings and chunk text are generated exclusively from PII-masked content (`mask_pii`). Raw sensitive identifiers never enter vector payloads.
 
-### 12.2 Relational Store & Entity Architecture
-Relational facts, sources, and audit logs are managed in a local SQLCipher 4 database:
-- **Engine:** SQLCipher 4 using AES-256-CBC with PBKDF2 key derivation and WAL mode.
+### 12.2 Relational Store & Coexistence with SQLCipher
+Tessera maintains a strict separation of concerns between vector retrieval and relational persistence. SQLCipher is not deleted or completely removed:
+- **Engine:** SQLCipher 4 using AES-256-CBC with PBKDF2 key derivation and WAL mode (`tessara.db`).
+- **Coexistence Scope:** While `VectorDb` is the dedicated store for vector similarity and semantic search, SQLCipher remains the active store for relational entities: structured facts, evidence quotes, window items, application sources, people/aliases, background extraction jobs, content-free audit logs, and SQLite FTS5 BM25 keyword indexing.
 - **Key Lifecycle:** At startup, Tessera reads `%LOCALAPPDATA%\Tessara\key.bin`. The key is unwrapped via Windows DPAPI (`CryptUnprotectData`). The raw 32-byte key is loaded into a zeroized memory buffer, applied via `PRAGMA key`, and wiped immediately from memory on drop.
 
 ### 12.3 Idempotent Data Migration Utility
 Tessera provides a safe migration utility (`tsr_store::migration::migrate_sqlcipher_to_vectordb`) to migrate legacy SQLCipher chunk data to the encrypted `VectorDb`:
-- **Automated Backup:** Creates `tessara.db.bak` before performing migration operations.
-- **PII Scrubbing:** Applies full PII masking (`mask_pii`) to text and metadata during ingestion.
-- **Idempotent & Non-Destructive:** Retains the original SQLCipher database intact and allows safe re-runs without duplicate records.
+- **Automated Backup:** Automatically backs up the active database to `tessara.db.bak` before initiating migration.
+- **PII Scrubbing:** Applies full PII masking (`mask_pii`) with typed placeholders to text and metadata during ingestion.
+- **Idempotent & Non-Destructive:** Retains the original SQLCipher database intact; original records are not dropped, enabling safe verification and repeat execution without duplicate records.
 
 ---
 
@@ -709,11 +711,27 @@ The desktop UI is rendered as a hardware-accelerated, transparent desktop overla
 
 ### 16.1 PII Detection, Masking & Scoped Pseudonyms
 Before text reaches model prompts, embedding models, vector storage, or search indexes, it is processed by `tsr_guard::redact::mask_pii`:
-- **Categorical Coverage:** Personal names, email addresses, phone numbers, Aadhaar numbers, PAN identifiers, credit cards, bank accounts, IFSC codes, physical addresses, dates of birth, passwords, API keys, and OTPs.
-- **Typed Standard Placeholders:** Standard tokens (`[PERSON_01]`, `[EMAIL]`, `[PHONE]`, `[CARD]`, `[API_KEY]`, etc.) preserve contextual sentence semantics without exposing sensitive values.
+- **Categorical Coverage & Typed Placeholders:**
+  - Personal names: `[PERSON_01]`, `[PERSON_02]` (document-scoped deterministic pseudonyms)
+  - Email addresses: `[EMAIL]`
+  - Telephone numbers: `[PHONE]`
+  - Aadhaar identifiers: `[AADHAAR]`
+  - PAN identifiers: `[PAN]`
+  - Payment cards: `[CARD]`
+  - Bank account identifiers: `[BANK_ACCOUNT]`
+  - IFSC identifiers: `[IFSC]`
+  - Physical addresses and postal codes: `[ADDRESS]`
+  - Dates of birth: `[DATE_OF_BIRTH]`
+  - Passwords: `[PASSWORD]`
+  - Generic secrets: `[SECRET]`
+  - API keys and access tokens: `[API_KEY]`
+  - JSON Web Tokens: `[JWT]`
+  - Private keys: `[PRIVATE_KEY]`
+  - One-time passwords: `[OTP]`
 - **Document-Scoped Pseudonymization:** Repeated references to the same person within a session map to the same stable pseudonym (`[PERSON_01]`, `[PERSON_02]`) without reversible identity tables.
 - **Pre-Embedding Guarantee:** Embeddings are generated exclusively from masked text. Raw PII is never converted into vector embeddings or stored in `VectorDb`.
 - **Secondary Generation Validation:** Model-generated sentences and draft responses pass through a secondary redaction pass before display.
+- **Heuristic Boundaries:** Detection relies on pattern heuristics and checksum algorithms (e.g. Verhoeff for Aadhaar, Luhn for cards). Universal detection across completely uncontextualized or arbitrary unstructured text is not guaranteed.
 
 ### 16.2 Content-Free Auditing
 Diagnostic logs (`tracing`) strictly drop all text contents. Allowed log entries contain only event identifiers, numeric durations, error codes, and bounded counts.

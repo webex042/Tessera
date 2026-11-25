@@ -20,7 +20,16 @@ export function AskView() {
     const subs = [
       on<AnswerSentence>("ask_sentence", (s) => setSentences((v) => [...v, s])),
       on<Answer>("ask_done", (a) => (setDone(a), setSentences(a.sentences), setAnswering(false))),
-      on<{ code: string }>("ask_error", () => (setAnswering(false), setErr("The model's answer couldn't be used. The sources are below."))),
+      on<{ code: string }>("ask_error", (e) => (
+        setAnswering(false),
+        setErr(
+          e.code === "ask_quota_exceeded"
+            ? "Groq free-tier rate or daily quota limit reached. You can still browse the sources below."
+            : e.code === "ask_model_unauthorized"
+              ? "Groq API key is missing or invalid. The sources are below."
+              : "The model's answer couldn't be used. The sources are below.",
+        )
+      )),
     ];
     return () => subs.forEach((p) => p.then((u) => u()));
   }, []);

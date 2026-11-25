@@ -44,12 +44,13 @@ flowchart TD
     RRF --> AGE_DECAY["Recency Multiplier: 1 + 0.15 * 0.5^(age/14d)"]
     AGE_DECAY --> CAND_SNIPPETS["Candidate Snippets (Max 1,500 Tokens)"]
     CAND_SNIPPETS --> CODE_VERIFY["Deterministic Evidence Verification"]
-    CODE_VERIFY --> FINAL_ANSWER["Grounded Answer with Verified Citations"]
+    CODE_VERIFY --> OUT_REDACT["Secondary Output Redaction"]
+    OUT_REDACT --> FINAL_ANSWER["Grounded Answer with Verified Citations"]
 ```
 
 ### End-to-End Retrieval Pipeline
 
-The semantic retrieval workflow executes through the following ten stages:
+The semantic retrieval workflow executes through the following eleven stages:
 
 1. **Query Submission:** The user submits a search query or natural language question through the desktop interface.
 2. **Query PII Sanitization:** The query text is screened and masked using `tsr_guard::redact::mask_pii` before generating embeddings or logging.
@@ -67,6 +68,7 @@ The semantic retrieval workflow executes through the following ten stages:
 8. **Snippet Candidate Selection:** Up to eight top-ranked snippet candidates are assembled within the documented context budget of 1,500 tokens.
 9. **Deterministic Evidence Verification:** Sentence-by-sentence deterministic code verifies that claims produced by the model are substantiated by verbatim or normalized spans within the cited evidence snippets.
 10. **Authenticated Citations:** Answers provide authenticated snippet identifiers linking verified claims directly to the underlying source items in the local store.
+11. **Appropriate Output Redaction:** Verified answers and cited snippets undergo secondary redaction before rendering in the UI or populating clipboard/draft buffers, ensuring that no sensitive patterns slip through to the user interface.
 
 ### Deterministic Evidence Validation
 Tessera preserves the foundational principle:

@@ -402,6 +402,18 @@ impl Runner for DraftRunner {
                 emit("draft_error", json!({"code": "draft_cancelled"}));
                 Outcome::Cancelled
             }
+            Err(tsr_draft::draft::DraftError::Model(
+                tsr_infer::client::ClientError::RateLimited { .. }
+                | tsr_infer::client::ClientError::QuotaExhausted
+                | tsr_infer::client::ClientError::BackgroundDeferred { .. },
+            )) => {
+                emit("draft_error", json!({"code": "draft_quota_exceeded"}));
+                Outcome::Done
+            }
+            Err(tsr_draft::draft::DraftError::Model(tsr_infer::client::ClientError::Unauthorized)) => {
+                emit("draft_error", json!({"code": "draft_model_unauthorized"}));
+                Outcome::Done
+            }
             Err(tsr_draft::draft::DraftError::Model(_)) => {
                 emit("draft_error", json!({"code": E_MODEL.code}));
                 Outcome::Failed { retryable: false }

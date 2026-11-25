@@ -82,9 +82,7 @@ fn semantic_retrieval_with_vectordb_and_pii_masking() {
     )
     .unwrap();
 
-    let raw_text_2 = Sensitive::new(
-        "Bob mentioned the cafeteria lunch menu for today is pizza and pasta.".to_string(),
-    );
+    let raw_text_2 = Sensitive::new("Bob mentioned the cafeteria lunch menu for today is pizza and pasta.".to_string());
     let it2 = insert_item(
         &conn,
         &NewItem {
@@ -153,7 +151,13 @@ fn semantic_retrieval_with_vectordb_and_pii_masking() {
     // 4. Deletion cleans up VectorDb completely
     let deleted = vdb.delete_by_item(it1);
     assert!(deleted > 0);
-    assert_eq!(vdb.search(&[0.1; 384], 10, None).iter().filter(|h| h.item_id == it1).count(), 0);
+    assert_eq!(
+        vdb.search(&[0.1; 384], 10, None)
+            .iter()
+            .filter(|h| h.item_id == it1)
+            .count(),
+        0
+    );
 
     // 5. Persistence encryption test
     vdb.save().unwrap();

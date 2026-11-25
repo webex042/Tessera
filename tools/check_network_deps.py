@@ -32,7 +32,10 @@ NETWORK_CRATES = {
 # Workspace members allowed to reach network crates, and why.
 ALLOWED_MEMBERS = {"tsr-net"}
 # Third-party crates allowed to pull network code only when a named feature is enabled.
-FEATURE_GATED_ALLOW = {"updater": {"tauri-plugin-updater"}}
+FEATURE_GATED_ALLOW = {
+    "updater": {"tauri-plugin-updater"},
+    "groq": {"tsr-net"},
+}
 
 
 def cargo_metadata(manifest_path: str | None, features: list[str], locked: bool) -> dict:

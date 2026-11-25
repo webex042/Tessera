@@ -33,6 +33,14 @@ pub enum ClientError {
     Status(u16),
     #[error("unexpected response shape: {0}")]
     BadResponse(&'static str),
+    #[error("rate limited; retry after {retry_after_ms} ms")]
+    RateLimited { retry_after_ms: u64 },
+    #[error("daily quota exhausted")]
+    QuotaExhausted,
+    #[error("background quota reserve exceeded; retry after {retry_after_ms} ms")]
+    BackgroundDeferred { retry_after_ms: u64 },
+    #[error("provider does not support image inputs")]
+    UnsupportedModality,
 }
 
 impl ClientError {
@@ -81,7 +89,15 @@ pub struct ChatResponse {
     pub elapsed_ms: u64,
 }
 
-/// What a caller of the model needs; implemented by [`LoopbackClient`] and by test doubles.
+/// Whether a model call serves interactive `P0` UI work or background batching (`P1`/`P2`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum CallPriority {
+    #[default]
+    Interactive,
+    Background,
+}
+
+/// What a caller of the model needs; implemented by [`LoopbackClient`], external providers, and test doubles.
 pub trait ChatModel: Send + Sync {
     fn chat(&self, req: &ChatRequest, cancel: &CancelToken) -> Result<ChatResponse, ClientError>;
 
@@ -97,6 +113,27 @@ pub trait ChatModel: Send + Sync {
         let r = self.chat(req, cancel)?;
         on_delta(r.content.expose());
         Ok(r)
+    }
+
+    fn chat_with_priority(
+        &self,
+        req: &ChatRequest,
+        priority: CallPriority,
+        cancel: &CancelToken,
+    ) -> Result<ChatResponse, ClientError> {
+        let _ = priority;
+        self.chat(req, cancel)
+    }
+
+    fn chat_streaming_with_priority(
+        &self,
+        req: &ChatRequest,
+        priority: CallPriority,
+        cancel: &CancelToken,
+        on_delta: &mut dyn FnMut(&str),
+    ) -> Result<ChatResponse, ClientError> {
+        let _ = priority;
+        self.chat_streaming(req, cancel, on_delta)
     }
 }
 

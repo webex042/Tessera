@@ -27,8 +27,7 @@ pub fn backup_database(db_path: &Path) -> Result<PathBuf, StoreError> {
         return Err(StoreError::KeyMissing);
     }
     let backup_path = db_path.with_extension("db.bak");
-    fs::copy(db_path, &backup_path)
-        .map_err(|e| StoreError::KeyFile(format!("database backup failed: {e:?}")))?;
+    fs::copy(db_path, &backup_path).map_err(|e| StoreError::KeyFile(format!("database backup failed: {e:?}")))?;
     tracing::info!(backup = %backup_path.display(), "database backed up prior to vector migration");
     Ok(backup_path)
 }

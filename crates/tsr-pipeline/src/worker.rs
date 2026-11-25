@@ -10,7 +10,7 @@
 
 use rusqlite::Connection;
 use tsr_infer::cancel::CancelToken;
-use tsr_infer::client::ChatModel;
+use tsr_infer::client::{ChatModel, ClientError};
 use tsr_infer::runtime::Runner;
 use tsr_infer::sched::{Dispatch, JobSpec, Outcome, Priority, Resource, SubmitError};
 use tsr_retrieval::embed::Embedder;
@@ -98,6 +98,14 @@ impl<F: FnMut() -> CtxOwned + Send> Runner for ExtractRunner<F> {
                 _ => Outcome::Done,
             },
             Err(ExtractError::NotFound) => Outcome::Done, // deleted meanwhile: nothing to do
+            Err(ExtractError::Model(
+                ClientError::RateLimited { retry_after_ms } | ClientError::BackgroundDeferred { retry_after_ms },
+            )) => Outcome::Deferred {
+                retry_in_ms: retry_after_ms.max(5_000),
+            },
+            Err(ExtractError::Model(ClientError::QuotaExhausted | ClientError::Unauthorized)) => {
+                Outcome::Deferred { retry_in_ms: 300_000 }
+            }
             Err(_) => Outcome::Failed { retryable: true },
         }
     }

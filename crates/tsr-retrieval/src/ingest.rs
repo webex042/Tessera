@@ -58,7 +58,13 @@ pub fn embed_item(
     let spans = chunk(&masked_text);
     let texts: Vec<String> = spans
         .iter()
-        .map(|c| masked_text.chars().skip(c.start_ch).take(c.end_ch - c.start_ch).collect())
+        .map(|c| {
+            masked_text
+                .chars()
+                .skip(c.start_ch)
+                .take(c.end_ch - c.start_ch)
+                .collect()
+        })
         .collect();
     let vecs = match embed(e, &texts, Kind::Passage) {
         Ok(v) => v,
@@ -121,7 +127,13 @@ pub fn embed_item_to_vectordb(
     let spans = chunk(&masked_text);
     let texts: Vec<String> = spans
         .iter()
-        .map(|c| masked_text.chars().skip(c.start_ch).take(c.end_ch - c.start_ch).collect())
+        .map(|c| {
+            masked_text
+                .chars()
+                .skip(c.start_ch)
+                .take(c.end_ch - c.start_ch)
+                .collect()
+        })
         .collect();
     let vecs = match embed(e, &texts, Kind::Passage) {
         Ok(v) => v,
@@ -153,8 +165,12 @@ pub fn embed_item_to_vectordb(
             metadata: tsr_store::vectordb::VectorMetadata {
                 item_id,
                 source_id: Some(item.source_id),
-                app_name: src.as_ref().and_then(|s| s.app_name.clone().or_else(|| Some(s.app_exe.clone()))),
-                window_title: src.as_ref().and_then(|s| s.window_title.as_ref().map(|t| t.expose().clone())),
+                app_name: src
+                    .as_ref()
+                    .and_then(|s| s.app_name.clone().or_else(|| Some(s.app_exe.clone()))),
+                window_title: src
+                    .as_ref()
+                    .and_then(|s| s.window_title.as_ref().map(|t| t.expose().clone())),
                 url: src.as_ref().and_then(|s| s.url.as_ref().map(|u| u.expose().clone())),
                 memory_type: "passage".to_string(),
                 timestamp_ms: item.started_at,

@@ -123,7 +123,11 @@ pub fn search(
 ) -> Result<(Vec<Hit>, Diagnostics), StoreError> {
     // Sanitize query to protect user PII before search and embedding
     let clean_query = tsr_guard::redact::mask_pii(query).text;
-    let q_ref = if clean_query.trim().is_empty() { query } else { &clean_query };
+    let q_ref = if clean_query.trim().is_empty() {
+        query
+    } else {
+        &clean_query
+    };
     let mut d = Diagnostics::default();
     let mut metas: HashMap<i64, ItemMeta> = HashMap::new();
     let mut allowed = |conn: &Connection, id: i64, d: &mut Diagnostics| -> Result<bool, StoreError> {
@@ -244,7 +248,11 @@ pub fn search_vectordb(
     o: &Opts,
 ) -> Result<(Vec<Hit>, Diagnostics), StoreError> {
     let clean_query = tsr_guard::redact::mask_pii(query).text;
-    let q_ref = if clean_query.trim().is_empty() { query } else { &clean_query };
+    let q_ref = if clean_query.trim().is_empty() {
+        query
+    } else {
+        &clean_query
+    };
     let mut d = Diagnostics::default();
     let mut metas: HashMap<i64, ItemMeta> = HashMap::new();
     let mut allowed = |conn: &Connection, id: i64, d: &mut Diagnostics| -> Result<bool, StoreError> {
@@ -287,22 +295,20 @@ pub fn search_vectordb(
     // Vector channel via local encrypted VectorDb.
     let mut vector: Vec<(i64, (i64, i64))> = Vec::new();
     match (vdb, embedder) {
-        (Some(db), Some(e)) if o.use_vector && !db.is_empty() => {
-            match embed(e, &[q_ref.to_owned()], Kind::Query) {
-                Ok(q) => {
-                    let vfilter = tsr_store::vectordb::VectorFilter {
-                        model: Some(e.model_id().to_owned()),
-                        ..Default::default()
-                    };
-                    for h in db.search(&q[0], o.per_channel * 3, Some(&vfilter)) {
-                        if vector.len() < o.per_channel && allowed(conn, h.item_id, &mut d)? {
-                            vector.push((h.item_id, (h.metadata.start_ch, h.metadata.end_ch)));
-                        }
+        (Some(db), Some(e)) if o.use_vector && !db.is_empty() => match embed(e, &[q_ref.to_owned()], Kind::Query) {
+            Ok(q) => {
+                let vfilter = tsr_store::vectordb::VectorFilter {
+                    model: Some(e.model_id().to_owned()),
+                    ..Default::default()
+                };
+                for h in db.search(&q[0], o.per_channel * 3, Some(&vfilter)) {
+                    if vector.len() < o.per_channel && allowed(conn, h.item_id, &mut d)? {
+                        vector.push((h.item_id, (h.metadata.start_ch, h.metadata.end_ch)));
                     }
                 }
-                Err(_) => d.vector_unavailable = true,
             }
-        }
+            Err(_) => d.vector_unavailable = true,
+        },
         _ => d.vector_unavailable = o.use_vector,
     }
     d.vector = vector.len();

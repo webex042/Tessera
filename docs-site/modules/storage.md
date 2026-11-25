@@ -103,7 +103,7 @@ pub fn open_encrypted(path: &Path, key: &[u8; KEY_LEN]) -> Result<Connection, St
 
 ---
 
-## 2. Database Schema & Tables
+## 5. Database Schema & Tables
 
 Tessera tracks memories and derived intelligence across ten core tables:
 

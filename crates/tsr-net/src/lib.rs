@@ -6,5 +6,7 @@
 //! network-capable dependency.
 
 pub mod download;
+pub mod groq;
 
 pub use download::{Approval, DownloadConfig, DownloadError, FileOutcome, Progress, download_model};
+pub use groq::{GroqClient, GroqConfig};

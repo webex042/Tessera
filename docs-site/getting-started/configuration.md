@@ -73,3 +73,23 @@ Below is an example of the default configuration generated during initialization
 - **`retention_days` (integer, default: `90`)**
   - Maximum age of captured items and window sessions.
   - Items older than this limit are pruned during background maintenance, cascading through associated full-text index records and embedding vectors.
+
+---
+
+## LLM Provider Environment Variables (`local` vs `groq`)
+
+By default, Tessera runs strictly offline against the local `llama-server` sidecar (`TSR_LLM_PROVIDER=local`). When compiled with the optional `--features groq` Cargo flag, you can explicitly opt into Groq inference without downloading the local ~2.5 GB GGUF model:
+
+| Variable | Default | Purpose |
+| :--- | :--- | :--- |
+| `TSR_LLM_PROVIDER` | `local` | Set to `groq` to activate the Groq backend (`local` keeps local sidecar inference as strict default). |
+| `GROQ_API_KEY` | *(unset)* | Groq API key loaded from process env, `.env`/`.env.local`, or DPAPI-encrypted `%LOCALAPPDATA%\Tessara\groq_key.bin`. |
+| `GROQ_MODEL` | `openai/gpt-oss-20b` | Model sent to Groq Chat Completions (`https://api.groq.com/openai/v1/chat/completions`). |
+| `GROQ_REASONING_EFFORT` | `low` | Sets `reasoning_effort` (`low` \| `medium` \| `high`) with `include_reasoning: false` on `gpt-oss` models. |
+| `TSR_GROQ_BASE_URL` | `https://api.groq.com/openai/v1` | Optional base URL override (HTTPS required outside loopback tests). |
+
+### Free-Tier Quota Protection
+
+In `groq` mode, `tsr-store::quota::QuotaTracker` persists usage counters in SQLCipher (`settings` key `groq_quota_v1`) and stays under conservative free-tier ceilings (`20 RPM`, `700 RPD`, `6,000 TPM`, `150,000 TPD`):
+- Background `extract` and `rollup` jobs yield when daily usage reaches `70%` or minute usage reaches `65%`, falling back to extractive summaries and preserving remaining tokens for interactive `ask` and `draft` calls.
+- Image/VLM requests return `UnsupportedModality` on text-only `openai/gpt-oss-20b`.

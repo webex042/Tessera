@@ -514,9 +514,10 @@ The model manager (`tsr-models` CLI and library) enforces four verifiable status
 
 ### 9.2 The `tsr-net` Boundary
 To guarantee data privacy, network connectivity is confined entirely to `crates/tsr-net`:
-- **Automated Verification:** The Python script `tools/check_network_deps.py` analyzes the full `cargo metadata` dependency graph on every build. If any workspace crate other than `tsr-net` pulls in network crates (`reqwest`, `hyper`, `curl`, `native-tls`), compilation fails.
+- **Automated Verification:** The Python script `tools/check_network_deps.py` analyzes the full `cargo metadata` dependency graph on every build (including `--features tessara/groq`). If any workspace crate other than `tsr-net` pulls in network crates (`reqwest`, `hyper`, `curl`, `native-tls`), compilation fails.
 - **Explicit Approval Tokens:** Model downloads cannot start programmatically. The API requires an `Approval` struct instantiated only by user command-line confirmation (`--approve`) or UI onboarding clicks.
 - **Resumable Downloads:** Downloads write to `<model>.part` with an accompanying `.part.json` metadata record. The final file appears only via atomic rename after a full SHA-256 verification pass against `tools/models.lock`.
+- **Optional Opt-In Groq Provider (`--features groq`):** `crates/tsr-net/src/groq.rs` provides an OpenAI-compatible `ChatModel` implementation targeting `https://api.groq.com/openai/v1/chat/completions` (default model `openai/gpt-oss-20b`). It is compiled out of default air-gapped builds (`TSR_LLM_PROVIDER=local`), enforces HTTPS via OS SChannel TLS with proxies and redirects disabled, enforces SQLCipher-backed free-tier rate/daily quotas (`20 RPM`, `700 RPD`, `6,000 TPM`, `150,000 TPD`) that reserve interactive P0 capacity, and refuses screen image frames (`UnsupportedModality`).
 
 ---
 
@@ -631,11 +632,15 @@ User Query (Question / Search)
                  │
                  ▼
        Deterministic Evidence Verifier ("Model proposes. Deterministic code verifies")
+                 │
+                 ▼
+       Secondary Output Redaction ──► Grounded Answer with Verified Citations
 ```
 
 - **Candidate Retrieval:** Queries evaluate the top 50 full-text candidates and top 50 vector candidates from `VectorDb`.
 - **Pre-Filtering:** Time-range and application-name filters execute prior to vector ranking, guaranteeing exact search bounds without leaking filtered candidates.
 - **Verification Guarantee:** When answering questions via the Ask panel, the response is parsed sentence-by-sentence. Each sentence must map directly to an authenticated evidence snippet ID. Unverified sentences are visually marked with warning chips.
+- **Output Redaction:** Verified answers and cited snippets undergo secondary redaction before rendering to prevent accidental exposure of sensitive patterns.
 
 ---
 
@@ -737,7 +742,8 @@ Before text reaches model prompts, embedding models, vector storage, or search i
 Diagnostic logs (`tracing`) strictly drop all text contents. Allowed log entries contain only event identifiers, numeric durations, error codes, and bounded counts.
 
 ### 16.3 Known Residual Security Risks
-- **Upstream WebView2 Connection ([ADR-0002](docs/adr/0002-webview2-outbound-connection.md)):** Microsoft's WebView2 runtime makes a single outbound HTTPS connection to Microsoft servers during startup, bypassing application proxy flags. Tessera's own Rust code is air-gapped, but total network silence cannot be guaranteed while WebView2 is active.
+- **Upstream WebView2 Connection ([ADR-0002](docs/adr/0002-webview2-outbound-connection.md)):** Microsoft's WebView2 runtime makes a single outbound HTTPS connection to Microsoft servers during startup, bypassing application proxy flags. Tessera's own Rust code is air-gapped by default (`TSR_LLM_PROVIDER=local`), but total network silence cannot be guaranteed while WebView2 is active.
+- **Opt-In Cloud Provider Notice (`TSR_LLM_PROVIDER=groq`):** When built with `--features groq` and explicitly configured with `TSR_LLM_PROVIDER=groq`, masked prompt text (filtered through `tsr_guard::redact`) is transmitted over TLS to Groq's API endpoint. Image frames (`VLM`) remain disabled (`UnsupportedModality`), and `GROQ_API_KEY` stays strictly in `Zeroizing` host memory or DPAPI storage (`groq_key.bin`), never exposed to the UI or diagnostics.
 - **Endpoint Memory Exposure:** Windows pagefiles (`pagefile.sys`) and hibernation files (`hiberfil.sys`) can theoretically capture unencrypted memory pages if the OS swaps memory during execution.
 
 ---
@@ -783,19 +789,28 @@ python tools/fetch_sidecar.py llama_cpp vulkan-x64
 # 5. Run full workspace test suite
 cargo test --workspace -- --include-ignored
 
-# 6. Build desktop binary with custom protocol support
+# 6. Build desktop binary with custom protocol support (local air-gapped default)
 cargo build -p tessara --features custom-protocol
+
+# 6b. Optional build with Groq cloud inference support
+cargo build -p tessara --features "custom-protocol,groq"
 
 # 7. Validate dependency boundaries and evaluation fixtures
 python tools/check_network_deps.py --locked
+python tools/check_network_deps.py --locked --features tessara/groq
 python evals/validate.py
 ```
+
+### 18.3 Running with Groq Free Tier & Zero-Cost Distribution
+- **Using Groq without Downloading Local GGUF Weights:** When built with `--features groq` and started with `TSR_LLM_PROVIDER=groq` plus `GROQ_API_KEY` (via `.env`, environment variables, or DPAPI `%LOCALAPPDATA%\Tessara\groq_key.bin`), Tessera routes `ask`, `draft`, `extract`, and `rollup` completions to `openai/gpt-oss-20b` without requiring the ~2.5 GB local GGUF model download.
+- **Free Desktop Distribution:** Package the per-user Windows NSIS installer via `pnpm tauri build --features groq` (with `"bundle": { "active": true }` enabled in `tauri.conf.json`) and distribute installers at `$0` using **GitHub Releases**. **Never bake `GROQ_API_KEY` into release artifacts** — end users supply their own key via `.env` or DPAPI on first setup (BYOK).
+- **Free Documentation Hosting:** The static VitePress site (`docs-site/`) deploys on **Vercel**'s free Hobby tier using [`vercel.json`](vercel.json) and [`docs-site/vercel.json`](docs-site/vercel.json). *(If centralized key brokerage is ever needed beyond desktop BYOK, an optional future Cloudflare Workers + D1 proxy can hold shared rate-limited credentials off-device.)*
 
 ---
 
 ## 19. Configuration Reference
 
-Configuration is managed via `%LOCALAPPDATA%\Tessara\config.json`:
+Configuration is managed via `%LOCALAPPDATA%\Tessara\config.json` and optional environment variables (see [`.env.example`](.env.example)):
 
 | Setting Key | Type | Default | Accepted Values | Description |
 |---|---|---|---|---|
@@ -807,6 +822,10 @@ Configuration is managed via `%LOCALAPPDATA%\Tessara\config.json`:
 | `capture.cadence_active_s`| int | `5` | `1..60` | Sampling interval on active typing/interaction. |
 | `capture.quality_threshold`| float | `0.55` | `0.0..1.0` | OCR quality score below which Rung 3 VLM triggers. |
 | `storage.retention_days` | int | `90` | `1..365` | Retention limit before automatic item pruning. |
+| `TSR_LLM_PROVIDER` | env | `"local"` | `"local"`, `"groq"` | Selects local `llama-server` sidecar (default) or opt-in Groq client. |
+| `GROQ_API_KEY` | env | *(unset)* | Groq API key (or DPAPI `groq_key.bin`) | Authenticates Groq HTTPS requests; never exposed to UI/logs. |
+| `GROQ_MODEL` | env | `"openai/gpt-oss-20b"` | Groq chat model ID | Overrides Groq chat/reasoning model identifier. |
+| `GROQ_REASONING_EFFORT` | env | `"low"` | `"low"`, `"medium"`, `"high"` | Reasoning effort cap sent to `gpt-oss` models (`include_reasoning: false`). |
 
 ---
 

@@ -7,6 +7,9 @@ description: Step-by-step production deployment instructions, configuration sett
 
 The Tessera documentation website (`docs-site/`) is architected for static generation and instant global edge distribution using **Vercel**. It requires zero server runtimes, zero cloud databases, and zero external API keys.
 
+> [!NOTE] Hosting Boundary & Desktop Runtime Decoupling
+> Vercel hosts **only** the static VitePress documentation website (`docs-site/`). It does **not** host, execute, or provide access to the desktop application's local encrypted vector database (`VectorDb`), SQLCipher database, or semantic retrieval pipeline. All screen capture, PII masking, embedding generation (`multilingual-e5-small`), vector indexing (`tessera_vectors.enc`), and deterministic evidence verification occur strictly within the local Windows desktop application runtime. The desktop application's local databases are never transmitted to, stored in, or accessible by the deployed website.
+
 ---
 
 ## Deployment Architecture Options
@@ -125,6 +128,7 @@ VitePress generates clean URLs that pair with Vercel's edge routing:
 * Search runs locally inside the user's browser using `@vitepress/client` MiniSearch.
 * All documentation pages, headings, and code titles are indexed during `vitepress build`.
 * No external API calls are made to Algolia, OpenAI, or third-party search servers.
+* *Distinction from Desktop Retrieval:* This static documentation search is strictly confined to browser-side keyword indexing of markdown pages. It is entirely separate from the desktop application's local semantic retrieval pipeline (which executes locally via ONNX embeddings, `VectorDb` cosine similarity, and RRF hybrid fusion).
 
 ### 3. Client-Side Mermaid Diagrams
 * Mermaid diagrams are rendered on the client side via `Mermaid.vue`.

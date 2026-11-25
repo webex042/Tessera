@@ -187,6 +187,18 @@ impl Runner for AskRunner {
                 Outcome::Done
             }
             Err(_) if cancel.is_cancelled() => Outcome::Cancelled,
+            Err(tsr_retrieval::ask::AskError::Model(
+                tsr_infer::client::ClientError::RateLimited { .. }
+                | tsr_infer::client::ClientError::QuotaExhausted
+                | tsr_infer::client::ClientError::BackgroundDeferred { .. },
+            )) => {
+                emit("ask_error", json!({"code": "ask_quota_exceeded"}));
+                Outcome::Done
+            }
+            Err(tsr_retrieval::ask::AskError::Model(tsr_infer::client::ClientError::Unauthorized)) => {
+                emit("ask_error", json!({"code": "ask_model_unauthorized"}));
+                Outcome::Done
+            }
             Err(_) => {
                 emit("ask_error", json!({"code": "ask_invalid_output"}));
                 Outcome::Done

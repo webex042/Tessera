@@ -173,7 +173,10 @@ impl VectorDb {
                 if let Some(list) = self.by_item.get_mut(&old_item) {
                     list.retain(|&i| i != existing_idx);
                 }
-                self.by_item.entry(record.metadata.item_id).or_default().push(existing_idx);
+                self.by_item
+                    .entry(record.metadata.item_id)
+                    .or_default()
+                    .push(existing_idx);
             }
             self.records[existing_idx] = record;
         } else {
@@ -285,8 +288,8 @@ impl VectorDb {
 
     /// Persist the database to disk encrypted with the DPAPI-derived key.
     pub fn save(&self) -> Result<(), StoreError> {
-        let plaintext = serde_json::to_vec(&self.records)
-            .map_err(|e| StoreError::KeyFile(format!("json serialization: {e}")))?;
+        let plaintext =
+            serde_json::to_vec(&self.records).map_err(|e| StoreError::KeyFile(format!("json serialization: {e}")))?;
 
         // Generate 16-byte nonce
         let nonce = generate_nonce();
@@ -307,14 +310,13 @@ impl VectorDb {
         // Atomic write via temp file
         let tmp = self.path.with_extension("tmp");
         {
-            let mut f = fs::File::create(&tmp)
-                .map_err(|e| StoreError::KeyFile(format!("create tmp: {:?}", e.kind())))?;
+            let mut f =
+                fs::File::create(&tmp).map_err(|e| StoreError::KeyFile(format!("create tmp: {:?}", e.kind())))?;
             f.write_all(&output)
                 .and_then(|_| f.sync_all())
                 .map_err(|e| StoreError::KeyFile(format!("write/sync: {:?}", e.kind())))?;
         }
-        fs::rename(&tmp, &self.path)
-            .map_err(|e| StoreError::KeyFile(format!("rename tmp: {:?}", e.kind())))?;
+        fs::rename(&tmp, &self.path).map_err(|e| StoreError::KeyFile(format!("rename tmp: {:?}", e.kind())))?;
 
         Ok(())
     }
@@ -348,8 +350,8 @@ impl VectorDb {
         let plaintext = crypt_ctr(ciphertext, &self.key, nonce);
 
         // Deserialize
-        let records: Vec<VectorRecord> = serde_json::from_slice(&plaintext)
-            .map_err(|_| StoreError::WrongKeyOrNotDatabase)?;
+        let records: Vec<VectorRecord> =
+            serde_json::from_slice(&plaintext).map_err(|_| StoreError::WrongKeyOrNotDatabase)?;
 
         self.records = records;
         self.rebuild_indices();
@@ -491,7 +493,8 @@ mod tests {
 
         {
             let mut db = VectorDb::new(path.clone(), &key);
-            db.insert(test_record("v1", 10, vec![0.6, 0.8], "Masked [PERSON_01]")).unwrap();
+            db.insert(test_record("v1", 10, vec![0.6, 0.8], "Masked [PERSON_01]"))
+                .unwrap();
             db.save().unwrap();
         }
 
@@ -544,4 +547,3 @@ mod tests {
         assert_eq!(db.len(), 0);
     }
 }
-

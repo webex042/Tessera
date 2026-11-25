@@ -183,7 +183,12 @@ mod tests {
     #[test]
     fn schemas_keep_their_declared_key_order() {
         let keys = |p: &Prompt| -> Vec<String> {
-            p.schema.as_ref().unwrap()["properties"].as_object().unwrap().keys().cloned().collect()
+            p.schema.as_ref().unwrap()["properties"]
+                .as_object()
+                .unwrap()
+                .keys()
+                .cloned()
+                .collect()
         };
         assert_eq!(keys(&ASK_V2), ["sentences", "insufficient"]);
         assert_eq!(keys(&EXTRACTION_V1), ["summary", "facts", "people"]);

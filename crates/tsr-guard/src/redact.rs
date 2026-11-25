@@ -206,7 +206,9 @@ static UPI: LazyLock<Regex> = LazyLock::new(|| {
     )
 });
 static PHONE: LazyLock<Regex> = LazyLock::new(|| {
-    re(r"(?:\+91[\s-]?|\b0)?\b[6-9]\d{4}[\s-]?\d{5}\b|\+\d{1,3}[\s-]?(?:\(\d{1,4}\)[\s-]?)?\d{2,4}[\s-]?\d{3,4}(?:[\s-]?\d{3,4})?\b")
+    re(
+        r"(?:\+91[\s-]?|\b0)?\b[6-9]\d{4}[\s-]?\d{5}\b|\+\d{1,3}[\s-]?(?:\(\d{1,4}\)[\s-]?)?\d{2,4}[\s-]?\d{3,4}(?:[\s-]?\d{3,4})?\b",
+    )
 });
 static EMAIL: LazyLock<Regex> =
     LazyLock::new(|| re(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b"));
@@ -214,23 +216,27 @@ static NAME_HONORIFIC: LazyLock<Regex> = LazyLock::new(|| {
     re(r"\b(?:Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|Prof\.?|Shri|Smt\.?|Sir|Madam)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b")
 });
 static NAME_CONTEXT: LazyLock<Regex> = LazyLock::new(|| {
-    re(r"(?i:\b(?:my\s+name\s+is|contact|meet\s+with|attended\s+by|assigned\s+to|reported\s+by|name\s*[:=]))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b")
+    re(
+        r"(?i:\b(?:my\s+name\s+is|contact|meet\s+with|attended\s+by|assigned\s+to|reported\s+by|name\s*[:=]))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b",
+    )
 });
-static NAME_GREETING: LazyLock<Regex> = LazyLock::new(|| {
-    re(r"(?i:\b(?:Dear|Hi|Hello))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b")
-});
+static NAME_GREETING: LazyLock<Regex> =
+    LazyLock::new(|| re(r"(?i:\b(?:Dear|Hi|Hello))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b"));
 static ADDRESS: LazyLock<Regex> = LazyLock::new(|| {
-    re(r"(?i)\b(?:address\s*[:=]|lives?\s+at|residing\s+at)\s*([0-9A-Za-z\s,.-]{5,60}?(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Lane|Ln\.?|Boulevard|Blvd\.?|Drive|Dr\.?|Marg|Nagar|Sector|Block|Apartment|Apt\.?|Suite|Ste\.?|Floor|Building|Bldg\.?)(?:\s*,?\s*[A-Za-z\s]+,?\s*(?:\b\d{6}\b|\b\d{5}(?:-\d{4})?\b))?)\b")
+    re(
+        r"(?i)\b(?:address\s*[:=]|lives?\s+at|residing\s+at)\s*([0-9A-Za-z\s,.-]{5,60}?(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Lane|Ln\.?|Boulevard|Blvd\.?|Drive|Dr\.?|Marg|Nagar|Sector|Block|Apartment|Apt\.?|Suite|Ste\.?|Floor|Building|Bldg\.?)(?:\s*,?\s*[A-Za-z\s]+,?\s*(?:\b\d{6}\b|\b\d{5}(?:-\d{4})?\b))?)\b",
+    )
 });
 static POSTAL_CODE: LazyLock<Regex> = LazyLock::new(|| {
     re(r"(?i)\b(?:pin\s*code|pincode|postal\s*code|zip\s*code)\s*[:#-]?\s*(\d{6}|\d{5}(?:-\d{4})?)\b")
 });
 static DOB: LazyLock<Regex> = LazyLock::new(|| {
-    re(r"(?i)\b(?:dob|date\s+of\s+birth|born\s+(?:on)?|d\.o\.b\.?|birth\s*date)\b[^\S\n]*(?:[:=]|is)?\s*(\d{1,2}[-/. ]\d{1,2}[-/. ]\d{2,4}|\d{4}[-/. ]\d{1,2}[-/. ]\d{1,2}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})\b")
+    re(
+        r"(?i)\b(?:dob|date\s+of\s+birth|born\s+(?:on)?|d\.o\.b\.?|birth\s*date)\b[^\S\n]*(?:[:=]|is)?\s*(\d{1,2}[-/. ]\d{1,2}[-/. ]\d{2,4}|\d{4}[-/. ]\d{1,2}[-/. ]\d{1,2}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})\b",
+    )
 });
-static IBAN: LazyLock<Regex> = LazyLock::new(|| {
-    re(r"(?i)\b(?:iban\s*[:#-]?)?\s*([A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}(?:[A-Z0-9]{1,16})?)\b")
-});
+static IBAN: LazyLock<Regex> =
+    LazyLock::new(|| re(r"(?i)\b(?:iban\s*[:#-]?)?\s*([A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}(?:[A-Z0-9]{1,16})?)\b"));
 
 fn digits(s: &str) -> Vec<u8> {
     s.bytes().filter(u8::is_ascii_digit).map(|b| b - b'0').collect()

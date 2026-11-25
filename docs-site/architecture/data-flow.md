@@ -118,3 +118,4 @@ flowchart TD
 - **Hybrid Retrieval:** Fuses full-text keyword retrieval (FTS5 BM25) and `VectorDb` cosine similarity search with metadata pre-filtering using Reciprocal Rank Fusion ($k=60$) and an exponential recency decay multiplier.
 - **Snippet Assembly:** The top 8 candidate snippets within a 1,500 token budget are presented as grounded context.
 - **Deterministic Verification:** Generated sentences cite authenticated snippet IDs and are verified against cited snippet text before display.
+- **Output Redaction:** Verified answers and cited spans undergo secondary redaction before presentation in the interface.

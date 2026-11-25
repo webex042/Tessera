@@ -597,6 +597,8 @@ enum Call {
     Ok(String, Vec<Highlight>),
     /// Output invalid twice: fall back to an extractive summary.
     Failed,
+    /// Free-tier rate limit or quota reserve deferred background LLM call; fall back to extractive.
+    QuotaThrottled,
     Cancelled,
     Preempted,
     /// Transport or process failure: retry later, write nothing.
@@ -640,6 +642,9 @@ fn call(
             }
             Err(ClientError::Http(HttpError::Cancelled(CancelReason::Preempted))) => return Call::Preempted,
             Err(ClientError::Http(HttpError::Cancelled(_))) => return Call::Cancelled,
+            Err(
+                ClientError::RateLimited { .. } | ClientError::QuotaExhausted | ClientError::BackgroundDeferred { .. },
+            ) => return Call::QuotaThrottled,
             Err(ClientError::BadResponse(_)) => {} // counts as an invalid output
             Err(_) => return Call::Unavailable,
         }
@@ -719,6 +724,7 @@ pub fn run_period(
         match model_summary(m, p, &input, ctx, cancel) {
             Call::Ok(s, h) => written = Some((s, h, ROLLUP_V1.ver, ctx.model_id)),
             Call::Failed => model_failed = true,
+            Call::QuotaThrottled => {} // Preserves automatic code-only extractive fallback without quota churn.
             Call::Cancelled => return Ok(Generated::Cancelled),
             Call::Preempted => return Ok(Generated::Preempted),
             Call::Unavailable => return Ok(Generated::ModelUnavailable),

@@ -22,12 +22,53 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use crate::cancel::{CancelReason, CancelToken};
-use crate::client::ChatModel;
+use crate::client::{CallPriority, ChatModel, ChatRequest, ChatResponse, ClientError};
 use crate::metrics::{ProcessUsage, Snapshot};
 use crate::sched::{
-    Config as SchedConfig, Dispatch, Finish, Gates, JobId, JobSpec, Outcome, Resource, SchedulerCore, SubmitError,
+    Config as SchedConfig, Dispatch, Finish, Gates, JobId, JobSpec, Outcome, Priority, Resource, SchedulerCore,
+    SubmitError,
 };
+use crate::sidecar::{LaunchError, SidecarProcess};
 use crate::supervisor::{Launch, State, Supervisor, Unavailable};
+
+/// Dummy [`Launch`] used when [`Runtime`] runs with an external [`ChatModel`] instead of a local sidecar.
+pub struct NoLaunch;
+
+impl Launch for NoLaunch {
+    type P = SidecarProcess;
+    fn launch(&mut self, _: &CancelToken) -> Result<Self::P, LaunchError> {
+        Err(LaunchError::Cancelled)
+    }
+}
+
+struct PriorityModel<'a> {
+    inner: &'a dyn ChatModel,
+    priority: CallPriority,
+}
+
+impl ChatModel for PriorityModel<'_> {
+    fn chat(&self, req: &ChatRequest, cancel: &CancelToken) -> Result<ChatResponse, ClientError> {
+        self.inner.chat_with_priority(req, self.priority, cancel)
+    }
+
+    fn chat_streaming(
+        &self,
+        req: &ChatRequest,
+        cancel: &CancelToken,
+        on_delta: &mut dyn FnMut(&str),
+    ) -> Result<ChatResponse, ClientError> {
+        self.inner
+            .chat_streaming_with_priority(req, self.priority, cancel, on_delta)
+    }
+}
+
+enum ModelBackend<L: Launch> {
+    Sidecar(Box<Mutex<Supervisor<L>>>),
+    External {
+        model: Arc<dyn ChatModel>,
+        label: &'static str,
+    },
+}
 
 /// Runs one dispatched job. `model` is `Some` for model jobs. Must check `cancel` at safe
 /// boundaries (the loopback client does so while streaming) and must not commit partial results:
@@ -68,7 +109,7 @@ pub struct Completion {
 struct Shared<L: Launch> {
     core: Mutex<SchedulerCore>,
     cv: Condvar,
-    sup: Mutex<Supervisor<L>>,
+    backend: ModelBackend<L>,
     tokens: Mutex<HashMap<JobId, CancelToken>>,
     gates: Mutex<Gates>,
     on_battery: AtomicBool,
@@ -89,6 +130,26 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|p| p.into_inner())
 }
 
+impl Runtime<NoLaunch> {
+    /// Start the runtime with an already-ready external [`ChatModel`] (e.g. Groq) instead of
+    /// spawning a local llama-server sidecar.
+    pub fn start_external(
+        sched: SchedConfig,
+        model: Arc<dyn ChatModel>,
+        label: &'static str,
+        model_runner: Box<dyn Runner>,
+        embed_runner: Box<dyn Runner>,
+    ) -> Self {
+        Self::start_with_backend(
+            sched,
+            ModelBackend::External { model, label },
+            IdlePolicy::default(),
+            model_runner,
+            embed_runner,
+        )
+    }
+}
+
 impl<L: Launch + 'static> Runtime<L> {
     pub fn start(
         sched: SchedConfig,
@@ -97,10 +158,26 @@ impl<L: Launch + 'static> Runtime<L> {
         model_runner: Box<dyn Runner>,
         embed_runner: Box<dyn Runner>,
     ) -> Self {
+        Self::start_with_backend(
+            sched,
+            ModelBackend::Sidecar(Box::new(Mutex::new(sup))),
+            idle,
+            model_runner,
+            embed_runner,
+        )
+    }
+
+    fn start_with_backend(
+        sched: SchedConfig,
+        backend: ModelBackend<L>,
+        idle: IdlePolicy,
+        model_runner: Box<dyn Runner>,
+        embed_runner: Box<dyn Runner>,
+    ) -> Self {
         let shared = Arc::new(Shared {
             core: Mutex::new(SchedulerCore::new(sched)),
             cv: Condvar::new(),
-            sup: Mutex::new(sup),
+            backend,
             tokens: Mutex::new(HashMap::new()),
             gates: Mutex::new(Gates::default()),
             on_battery: AtomicBool::new(false),
@@ -169,17 +246,45 @@ impl<L: Launch + 'static> Runtime<L> {
         *lock(&self.shared.idle) = p;
     }
 
+    pub fn is_external(&self) -> bool {
+        matches!(self.shared.backend, ModelBackend::External { .. })
+    }
+
+    pub fn external_label(&self) -> Option<&'static str> {
+        match &self.shared.backend {
+            ModelBackend::External { label, .. } => Some(*label),
+            ModelBackend::Sidecar(_) => None,
+        }
+    }
+
     pub fn sidecar_state(&self) -> State {
-        lock(&self.shared.sup).state()
+        match &self.shared.backend {
+            ModelBackend::Sidecar(sup) => lock(sup).state(),
+            ModelBackend::External { .. } => State::Ready,
+        }
     }
 
     pub fn sidecar_pid(&self) -> Option<u32> {
-        lock(&self.shared.sup).pid()
+        match &self.shared.backend {
+            ModelBackend::Sidecar(sup) => lock(sup).pid(),
+            ModelBackend::External { .. } => None,
+        }
     }
 
-    /// Run `f` with the supervisor locked (diagnostics, user "retry").
+    /// Run `f` with the supervisor locked (diagnostics, user "retry"). Returns `None` for external models.
+    pub fn try_with_supervisor<T>(&self, f: impl FnOnce(&mut Supervisor<L>) -> T) -> Option<T> {
+        match &self.shared.backend {
+            ModelBackend::Sidecar(sup) => Some(f(&mut lock(sup))),
+            ModelBackend::External { .. } => None,
+        }
+    }
+
+    /// Legacy convenience wrapper when using a sidecar supervisor.
     pub fn with_supervisor<T>(&self, f: impl FnOnce(&mut Supervisor<L>) -> T) -> T {
-        f(&mut lock(&self.shared.sup))
+        match &self.shared.backend {
+            ModelBackend::Sidecar(sup) => f(&mut lock(sup)),
+            ModelBackend::External { .. } => panic!("with_supervisor called on external model runtime"),
+        }
     }
 
     pub fn snapshot(&self) -> Snapshot {
@@ -188,9 +293,12 @@ impl<L: Launch + 'static> Runtime<L> {
             let c = lock(&self.shared.core);
             (c.depth(), c.oldest_ms(now), c.metrics.clone())
         };
-        let (state, counters, pid) = {
-            let s = lock(&self.shared.sup);
-            (s.state(), s.counters, s.pid())
+        let (state, counters, pid) = match &self.shared.backend {
+            ModelBackend::Sidecar(sup) => {
+                let s = lock(sup);
+                (s.state(), s.counters, s.pid())
+            }
+            ModelBackend::External { .. } => (State::Ready, Default::default(), None),
         };
         Snapshot {
             queue_depth: depth,
@@ -219,7 +327,9 @@ impl<L: Launch + 'static> Runtime<L> {
         for t in self.threads.drain(..) {
             let _ = t.join();
         }
-        lock(&self.shared.sup).stop(Instant::now());
+        if let ModelBackend::Sidecar(sup) = &self.shared.backend {
+            lock(sup).stop(Instant::now());
+        }
     }
 }
 
@@ -303,29 +413,52 @@ fn worker<L: Launch>(s: Arc<Shared<L>>, r: Resource, mut runner: Box<dyn Runner>
         let token = CancelToken::new();
         lock(&s.tokens).insert(d.id, token.clone());
 
+        let call_prio = match d.spec.priority {
+            Priority::P0 => CallPriority::Interactive,
+            Priority::P1 | Priority::P2 => CallPriority::Background,
+        };
         let outcome = if r == Resource::Model {
-            let ready = lock(&s.sup).ensure_ready(Instant::now(), &token);
-            match ready {
-                Ok(client) => {
+            match &s.backend {
+                ModelBackend::Sidecar(sup) => {
+                    let ready = lock(sup).ensure_ready(Instant::now(), &token);
+                    match ready {
+                        Ok(client) => {
+                            let wrapped = PriorityModel {
+                                inner: &client,
+                                priority: call_prio,
+                            };
+                            s.model_active.fetch_add(1, Ordering::AcqRel);
+                            s.model_total.fetch_add(1, Ordering::AcqRel);
+                            let o = runner.run(&d, Some(&wrapped), &token);
+                            s.model_active.fetch_sub(1, Ordering::AcqRel);
+                            o
+                        }
+                        Err(Unavailable::Backoff { retry_in_ms }) => Outcome::Deferred { retry_in_ms },
+                        Err(Unavailable::Failed) => {
+                            if d.spec.priority == Priority::P0 {
+                                // The user is waiting: tell them now instead of queueing silently.
+                                Outcome::Failed { retryable: false }
+                            } else {
+                                Outcome::Deferred { retry_in_ms: 60_000 }
+                            }
+                        }
+                        Err(Unavailable::Cancelled) => match token.reason() {
+                            Some(CancelReason::Preempted) => Outcome::Preempted,
+                            _ => Outcome::Cancelled,
+                        },
+                    }
+                }
+                ModelBackend::External { model, .. } => {
+                    let wrapped = PriorityModel {
+                        inner: model.as_ref(),
+                        priority: call_prio,
+                    };
                     s.model_active.fetch_add(1, Ordering::AcqRel);
                     s.model_total.fetch_add(1, Ordering::AcqRel);
-                    let o = runner.run(&d, Some(&client), &token);
+                    let o = runner.run(&d, Some(&wrapped), &token);
                     s.model_active.fetch_sub(1, Ordering::AcqRel);
                     o
                 }
-                Err(Unavailable::Backoff { retry_in_ms }) => Outcome::Deferred { retry_in_ms },
-                Err(Unavailable::Failed) => {
-                    if d.spec.priority == crate::sched::Priority::P0 {
-                        // The user is waiting: tell them now instead of queueing silently.
-                        Outcome::Failed { retryable: false }
-                    } else {
-                        Outcome::Deferred { retry_in_ms: 60_000 }
-                    }
-                }
-                Err(Unavailable::Cancelled) => match token.reason() {
-                    Some(CancelReason::Preempted) => Outcome::Preempted,
-                    _ => Outcome::Cancelled,
-                },
             }
         } else {
             s.embed_total.fetch_add(1, Ordering::AcqRel);
@@ -366,8 +499,11 @@ fn monitor<L: Launch>(s: Arc<Shared<L>>) {
         for r in [Resource::Model, Resource::Embedder] {
             preempt_if_needed(&s, r);
         }
-        // Health checks: skip if a worker is busy starting the sidecar (lock held).
-        if let Ok(mut sup) = s.sup.try_lock() {
+        // Health checks and idle unload apply only to the local sidecar.
+        let ModelBackend::Sidecar(sup_mutex) = &s.backend else {
+            continue;
+        };
+        if let Ok(mut sup) = sup_mutex.try_lock() {
             sup.tick(now);
         }
         // Idle unload.
@@ -382,14 +518,14 @@ fn monitor<L: Launch>(s: Arc<Shared<L>>) {
             // try_lock: never wait for a sidecar start while holding the queue lock.
             let go = core.idle(Resource::Model)
                 && idle_for >= timeout
-                && s.sup.try_lock().map(|g| g.is_loaded()).unwrap_or(false);
+                && sup_mutex.try_lock().map(|g| g.is_loaded()).unwrap_or(false);
             if go {
                 core.set_unloading(true);
             }
             go
         };
         if should {
-            lock(&s.sup).unload(Instant::now());
+            lock(sup_mutex).unload(Instant::now());
             lock(&s.core).set_unloading(false);
             s.cv.notify_all();
         }

@@ -9,13 +9,17 @@ publish.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+tsr-core = { path = "../tsr-core" }
+tsr-guard = { path = "../tsr-guard" }
 tsr-infer = { path = "../tsr-infer" }
+tsr-store = { path = "../tsr-store" }
+zeroize.workspace = true
 # TLS through the operating system (SChannel on Windows, using the Windows certificate store), no
 # gzip, no cookies, no JSON helpers. Proxies are disabled in code. See plan §15.4.
 ureq = { version = "=3.5.0", default-features = false, features = ["native-tls-no-default"] }
 
 [dev-dependencies]
-sha2.workspace = true
 tempfile = "3"

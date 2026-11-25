@@ -33,8 +33,9 @@ flowchart TD
 | **Directory** | `docs-site/` | Root repository (`src-tauri/`, `crates/`, `ui/`) |
 | **Platform** | Vercel Edge Network | Microsoft Windows 11 (x64) |
 | **Output Type** | Pure Static HTML, JS, CSS, SVG | Native Win32 / WebView2 binary (`.exe`) + NSIS installer |
-| **Runtime Backend** | None (Client-side MiniSearch index) | Local Rust engine, SQLCipher, `llama-server` sidecar |
-| **Data Boundary** | Zero telemetry, zero external search APIs | 100% loopback, DPAPI-encrypted local database |
+| **Runtime Backend** | None (Client-side MiniSearch index) | Local Rust engine, SQLCipher, `llama-server` sidecar (default) or opt-in Groq API (`--features groq`) |
+| **Data Boundary** | Zero telemetry, zero external search APIs | 100% loopback by default, DPAPI-encrypted local database (or masked BYOK TLS when `TSR_LLM_PROVIDER=groq`) |
+| **Free Hosting / Dist** | Vercel Hobby static deployment ($0) | GitHub Releases NSIS installer ($0, no API keys bundled) |
 | **CI / CD Pipeline** | Vercel GitHub App (preview + production) | `.github/workflows/ci.yml` & `nightly-evals.yml` |
 
 ---

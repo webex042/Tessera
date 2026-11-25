@@ -16,6 +16,7 @@ pub mod keystore;
 pub mod migrate;
 pub mod migration;
 pub mod people;
+pub mod quota;
 pub mod summaries;
 pub mod vectordb;
 

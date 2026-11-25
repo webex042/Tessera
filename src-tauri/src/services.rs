@@ -69,14 +69,116 @@ impl Runner for Deferring {
     }
 }
 
+enum ActiveRuntime {
+    Local(Runtime<CandidatesLauncher>),
+    #[cfg(feature = "groq")]
+    External(Runtime<tsr_infer::runtime::NoLaunch>),
+}
+
+impl ActiveRuntime {
+    fn set_on_battery(&self, on_battery: bool) {
+        match self {
+            ActiveRuntime::Local(rt) => rt.set_on_battery(on_battery),
+            #[cfg(feature = "groq")]
+            ActiveRuntime::External(rt) => rt.set_on_battery(on_battery),
+        }
+    }
+
+    fn snapshot(&self) -> tsr_infer::metrics::Snapshot {
+        match self {
+            ActiveRuntime::Local(rt) => rt.snapshot(),
+            #[cfg(feature = "groq")]
+            ActiveRuntime::External(rt) => rt.snapshot(),
+        }
+    }
+
+    fn backend_label(&self) -> Option<String> {
+        match self {
+            ActiveRuntime::Local(rt) => rt
+                .try_with_supervisor(|s| s.launcher().active().map(str::to_owned))
+                .flatten(),
+            #[cfg(feature = "groq")]
+            ActiveRuntime::External(rt) => rt.external_label().map(str::to_owned),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ProviderKind {
+    Local,
+    Groq,
+}
+
+fn parse_dotenv(path: &Path, out: &mut std::collections::HashMap<String, String>) {
+    let Ok(raw) = std::fs::read_to_string(path) else {
+        return;
+    };
+    for line in raw.lines() {
+        let t = line.trim();
+        if t.is_empty() || t.starts_with('#') {
+            continue;
+        }
+        let t = t.strip_prefix("export ").unwrap_or(t).trim_start();
+        let Some((k, v)) = t.split_once('=') else {
+            continue;
+        };
+        let key = k.trim();
+        let mut val = v.trim();
+        if ((val.starts_with('"') && val.ends_with('"')) || (val.starts_with('\'') && val.ends_with('\'')))
+            && val.len() >= 2
+        {
+            val = &val[1..val.len() - 1];
+        }
+        if !key.is_empty() && !val.is_empty() {
+            out.entry(key.to_owned()).or_insert_with(|| val.to_owned());
+        }
+    }
+}
+
+fn load_env_fallbacks(data_dir: &Path) -> std::collections::HashMap<String, String> {
+    let mut map = std::collections::HashMap::new();
+    if let Ok(cwd) = std::env::current_dir() {
+        parse_dotenv(&cwd.join(".env.local"), &mut map);
+        parse_dotenv(&cwd.join(".env"), &mut map);
+    }
+    if let Ok(exe) = std::env::current_exe()
+        && let Some(dir) = exe.parent()
+    {
+        parse_dotenv(&dir.join(".env"), &mut map);
+    }
+    parse_dotenv(&data_dir.join(".env"), &mut map);
+    map
+}
+
+fn env_or(dotenv: &std::collections::HashMap<String, String>, key: &str) -> Option<String> {
+    std::env::var(key)
+        .ok()
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty())
+        .or_else(|| dotenv.get(key).cloned())
+}
+
+fn resolve_provider(dotenv: &std::collections::HashMap<String, String>) -> ProviderKind {
+    match env_or(dotenv, "TSR_LLM_PROVIDER")
+        .unwrap_or_else(|| "local".to_owned())
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "groq" => ProviderKind::Groq,
+        _ => ProviderKind::Local,
+    }
+}
+
 pub struct Services {
     pub views: Arc<Core>,
     pub drafts: Arc<crate::drafts::Drafts>,
     pub asks: Arc<crate::ask::Asks>,
     paused: AtomicBool,
     capture: Mutex<Option<CaptureHandle<StoreSink>>>,
-    runtime: Option<Runtime<CandidatesLauncher>>,
+    runtime: Option<ActiveRuntime>,
     model_files: bool,
+    #[cfg(feature = "groq")]
+    quota: Option<Arc<tsr_store::quota::QuotaTracker>>,
     stop: Arc<AtomicBool>,
     /// Writes today's brief (plan §11.2); separate from the read connection behind `views`.
     brief_conn: Mutex<rusqlite::Connection>,
@@ -171,88 +273,174 @@ impl Services {
         .map_err(|e| format!("capture: {:?}", e.kind()))?;
 
         let stop = Arc::new(AtomicBool::new(false));
-        let cands = candidates(&dir.join("models"), third_party);
-        let model_files = cands.is_some();
-        let runtime = match cands {
-            None => None,
-            Some((specs, labels)) => {
-                let open = || {
-                    let c = tsr_store::keystore::open_store(dir).map_err(|e| e.to_string())?;
-                    c.busy_timeout(Duration::from_secs(10)).map_err(|e| e.to_string())?;
-                    Ok::<_, String>(c)
-                };
-                let ex = tsr_pipeline::worker::ExtractRunner {
-                    conn: open()?,
-                    make_ctx: move || {
-                        let tz = local_tz();
-                        let bl2 = Blocklist::compile(&builtin_rules()).0;
-                        tsr_pipeline::worker::CtxOwned {
-                            user_name: String::new(),
-                            user_aliases: Vec::new(),
-                            tz: tz.iana_name().unwrap_or("UTC").to_owned(),
-                            date_order: tsr_pipeline::dates::DateOrder::Dmy,
-                            blocklist: bl2,
-                            redact: tsr_guard::redact::Options::default(),
-                            model_id: "qwen3-vl-4b-instruct-q4_k_m".into(),
-                            now_ms: now_ms(),
+        let dotenv = load_env_fallbacks(dir);
+        let provider = resolve_provider(&dotenv);
+        let open = || {
+            let c = tsr_store::keystore::open_store(dir).map_err(|e| e.to_string())?;
+            c.busy_timeout(Duration::from_secs(10)).map_err(|e| e.to_string())?;
+            Ok::<_, String>(c)
+        };
+        type RunnerPair = (Box<dyn Runner>, Box<dyn Runner>);
+        let make_runners = |model_id: String| -> Result<RunnerPair, String> {
+            let m2 = model_id.clone();
+            let ex = tsr_pipeline::worker::ExtractRunner {
+                conn: open()?,
+                make_ctx: move || {
+                    let tz = local_tz();
+                    let bl2 = Blocklist::compile(&builtin_rules()).0;
+                    tsr_pipeline::worker::CtxOwned {
+                        user_name: String::new(),
+                        user_aliases: Vec::new(),
+                        tz: tz.iana_name().unwrap_or("UTC").to_owned(),
+                        date_order: tsr_pipeline::dates::DateOrder::Dmy,
+                        blocklist: bl2,
+                        redact: tsr_guard::redact::Options::default(),
+                        model_id: model_id.clone(),
+                        now_ms: now_ms(),
+                    }
+                },
+            };
+            let rollup = tsr_pipeline::worker::RollupRunner {
+                conn: open()?,
+                tz: local_tz(),
+                model_id: m2,
+                redact: tsr_guard::redact::Options::default(),
+                clock: now_ms,
+                idle_ms,
+            };
+            Ok((Box::new(ex), Box::new(rollup)))
+        };
+
+        let mut model_files = false;
+        #[cfg(feature = "groq")]
+        let mut quota_tracker: Option<Arc<tsr_store::quota::QuotaTracker>> = None;
+
+        let runtime: Option<ActiveRuntime> = match provider {
+            ProviderKind::Local => {
+                let cands = candidates(&dir.join("models"), third_party);
+                model_files = cands.is_some();
+                match cands {
+                    None => None,
+                    Some((specs, labels)) => {
+                        let (ex, rollup) = make_runners("qwen3-vl-4b-instruct-q4_k_m".into())?;
+                        Some(ActiveRuntime::Local(Runtime::start(
+                            SchedConfig::default(),
+                            Supervisor::new(
+                                SupConfig::default(),
+                                CandidatesLauncher::new(specs, labels),
+                                now_ms() as u64,
+                            ),
+                            IdlePolicy::default(),
+                            Box::new(tsr_pipeline::worker::ByKind(vec![
+                                ("extract", ex),
+                                ("rollup", rollup),
+                                ("draft", Box::new(drafts.runner())),
+                                ("ask", Box::new(asks.runner())),
+                            ])),
+                            Box::new(Deferring),
+                        )))
+                    }
+                }
+            }
+            ProviderKind::Groq => {
+                #[cfg(feature = "groq")]
+                {
+                    let env_key = env_or(&dotenv, "GROQ_API_KEY").map(zeroize::Zeroizing::new);
+                    let dpapi_key = tsr_store::keystore::load_groq_api_key(dir).ok().flatten();
+                    match env_key.or(dpapi_key) {
+                        None => {
+                            eprintln!("tessara: groq provider requested without GROQ_API_KEY");
+                            None
                         }
-                    },
-                };
-                let rollup = tsr_pipeline::worker::RollupRunner {
-                    conn: open()?,
-                    tz: local_tz(),
-                    model_id: "qwen3-vl-4b-instruct-q4_k_m".into(),
-                    redact: tsr_guard::redact::Options::default(),
-                    clock: now_ms,
-                    idle_ms,
-                };
-                let rt = Runtime::start(
-                    SchedConfig::default(),
-                    Supervisor::new(
-                        SupConfig::default(),
-                        CandidatesLauncher::new(specs, labels),
-                        now_ms() as u64,
-                    ),
-                    IdlePolicy::default(),
-                    Box::new(tsr_pipeline::worker::ByKind(vec![
-                        ("extract", Box::new(ex)),
-                        ("rollup", Box::new(rollup)),
-                        ("draft", Box::new(drafts.runner())),
-                        ("ask", Box::new(asks.runner())),
-                    ])),
-                    Box::new(Deferring),
-                );
-                // Feed durable jobs to the scheduler (extraction only: no embedder installed yet).
-                let feed = open()?;
-                let stop2 = stop.clone();
-                let submitter = rt.submitter();
-                let draft_submitter = rt.submitter();
-                drafts.set_submit(Box::new(move |spec| draft_submitter.submit(spec).is_ok()));
-                let ask_submitter = rt.submitter();
-                asks.set_submit(Box::new(move |spec| ask_submitter.submit(spec).is_ok()));
-                std::thread::Builder::new()
-                    .name("tsr-job-feed".into())
-                    .spawn(move || {
-                        let tz = local_tz();
-                        let mut last_rollup = std::time::Instant::now() - ROLLUP_EVERY;
-                        while !stop2.load(Ordering::Acquire) {
-                            let _ = tsr_pipeline::worker::submit_pending(&feed, &["extract"], 500, &mut |s| {
-                                submitter.submit(s)
-                            });
-                            if last_rollup.elapsed() >= ROLLUP_EVERY {
-                                last_rollup = std::time::Instant::now();
-                                let now = now_ms();
-                                if tsr_pipeline::rollup::due(&feed, now, &tz, idle_ms()).is_ok_and(|d| !d.is_empty()) {
-                                    let _ = submitter.submit(tsr_pipeline::worker::rollup_spec(now));
+                        Some(api_key) => {
+                            let mut cfg = tsr_net::GroqConfig::from_env_or(api_key);
+                            if let Some(m) = env_or(&dotenv, "GROQ_MODEL") {
+                                cfg.model = m;
+                            }
+                            if let Some(b) = env_or(&dotenv, "TSR_GROQ_BASE_URL") {
+                                let b = b.trim_end_matches('/');
+                                cfg.endpoint = if b.ends_with("/chat/completions") {
+                                    b.to_owned()
+                                } else {
+                                    format!("{b}/chat/completions")
+                                };
+                            }
+                            if let Some(e) = env_or(&dotenv, "GROQ_REASONING_EFFORT")
+                                && matches!(e.to_ascii_lowercase().as_str(), "low" | "medium" | "high")
+                            {
+                                cfg.reasoning_effort = e.to_ascii_lowercase();
+                            }
+                            let model_name = cfg.model.clone();
+                            let quota = Arc::new(tsr_store::quota::QuotaTracker::open(
+                                open()?,
+                                tsr_store::quota::QuotaLimits::default(),
+                            ));
+                            match tsr_net::GroqClient::new(cfg, quota.clone()) {
+                                Ok(client) => {
+                                    model_files = true;
+                                    quota_tracker = Some(quota);
+                                    let (ex, rollup) = make_runners(model_name)?;
+                                    Some(ActiveRuntime::External(Runtime::start_external(
+                                        SchedConfig::default(),
+                                        Arc::new(client),
+                                        "groq",
+                                        Box::new(tsr_pipeline::worker::ByKind(vec![
+                                            ("extract", ex),
+                                            ("rollup", rollup),
+                                            ("draft", Box::new(drafts.runner())),
+                                            ("ask", Box::new(asks.runner())),
+                                        ])),
+                                        Box::new(Deferring),
+                                    )))
+                                }
+                                Err(_) => {
+                                    eprintln!("tessara: failed to initialize Groq client");
+                                    None
                                 }
                             }
-                            std::thread::sleep(Duration::from_secs(5));
                         }
-                    })
-                    .map_err(|e| format!("feeder: {:?}", e.kind()))?;
-                Some(rt)
+                    }
+                }
+                #[cfg(not(feature = "groq"))]
+                {
+                    eprintln!("tessara: groq provider requested in build without groq feature");
+                    None
+                }
             }
         };
+
+        if let Some(rt) = &runtime {
+            // Wire interactive P0 submitters and start durable background feeder.
+            let feed = open()?;
+            let stop2 = stop.clone();
+            match rt {
+                ActiveRuntime::Local(inner) => {
+                    let s1 = inner.submitter();
+                    let s2 = inner.submitter();
+                    let s3 = inner.submitter();
+                    drafts.set_submit(Box::new(move |spec| s1.submit(spec).is_ok()));
+                    asks.set_submit(Box::new(move |spec| s2.submit(spec).is_ok()));
+                    spawn_feeder(feed, stop2, 500, move |spec| s3.submit(spec), || true, false)?;
+                }
+                #[cfg(feature = "groq")]
+                ActiveRuntime::External(inner) => {
+                    let s1 = inner.submitter();
+                    let s2 = inner.submitter();
+                    let s3 = inner.submitter();
+                    drafts.set_submit(Box::new(move |spec| s1.submit(spec).is_ok()));
+                    asks.set_submit(Box::new(move |spec| s2.submit(spec).is_ok()));
+                    let q_gate = quota_tracker.clone();
+                    spawn_feeder(
+                        feed,
+                        stop2,
+                        5,
+                        move |spec| s3.submit(spec),
+                        move || q_gate.as_ref().is_none_or(|q| q.background_allowed(now_ms()).is_ok()),
+                        true,
+                    )?;
+                }
+            }
+        }
         if runtime.is_none() {
             // No model: code-only rollups so Timeline week/month still has summaries.
             let mut conn = tsr_store::keystore::open_store(dir).map_err(|e| e.to_string())?;
@@ -291,6 +479,8 @@ impl Services {
             capture: Mutex::new(Some(capture)),
             runtime,
             model_files,
+            #[cfg(feature = "groq")]
+            quota: quota_tracker,
             stop,
             brief_conn: Mutex::new(brief_conn),
         })
@@ -324,13 +514,20 @@ impl Services {
             ),
             Some(rt) => {
                 let snap = rt.snapshot();
-                let state = match snap.sidecar_state {
+                #[cfg_attr(not(feature = "groq"), allow(unused_mut))]
+                let mut state = match snap.sidecar_state {
                     tsr_infer::supervisor::State::Ready => "loaded",
                     tsr_infer::supervisor::State::Starting | tsr_infer::supervisor::State::Backoff => "restarting",
                     tsr_infer::supervisor::State::Failed => "unavailable",
                     tsr_infer::supervisor::State::Stopped => "ready",
                 };
-                let backend = rt.with_supervisor(|s| s.launcher().active().map(str::to_owned));
+                #[cfg(feature = "groq")]
+                if let Some(q) = &self.quota
+                    && q.snapshot(now_ms()).daily_exhausted
+                {
+                    state = "unavailable";
+                }
+                let backend = rt.backend_label();
                 (
                     ModelStatus {
                         state: state.into(),
@@ -389,5 +586,76 @@ impl Services {
             let CaptureCore { sink, .. } = core;
             drop(sink.finish());
         }
+    }
+}
+
+fn spawn_feeder<F, G>(
+    mut feed: rusqlite::Connection,
+    stop: Arc<AtomicBool>,
+    extract_batch: u32,
+    submit: F,
+    allow_background: G,
+    extractive_fallback_when_throttled: bool,
+) -> Result<(), String>
+where
+    F: Fn(tsr_infer::sched::JobSpec) -> Result<tsr_infer::sched::JobId, tsr_infer::sched::SubmitError> + Send + 'static,
+    G: Fn() -> bool + Send + 'static,
+{
+    std::thread::Builder::new()
+        .name("tsr-job-feed".into())
+        .spawn(move || {
+            let tz = local_tz();
+            let mut last_rollup = std::time::Instant::now() - ROLLUP_EVERY;
+            while !stop.load(Ordering::Acquire) {
+                let bg_ok = allow_background();
+                if bg_ok {
+                    let _ =
+                        tsr_pipeline::worker::submit_pending(&feed, &["extract"], extract_batch, &mut |s| submit(s));
+                }
+                if last_rollup.elapsed() >= ROLLUP_EVERY {
+                    last_rollup = std::time::Instant::now();
+                    let now = now_ms();
+                    if tsr_pipeline::rollup::due(&feed, now, &tz, idle_ms()).is_ok_and(|d| !d.is_empty()) {
+                        if bg_ok {
+                            let _ = submit(tsr_pipeline::worker::rollup_spec(now));
+                        } else if extractive_fallback_when_throttled {
+                            let ctx = tsr_pipeline::rollup::RollupCtx {
+                                tz: &tz,
+                                redact: tsr_guard::redact::Options::default(),
+                                model_id: "extractive",
+                                now_ms: now,
+                            };
+                            let cancel = tsr_infer::cancel::CancelToken::new();
+                            let _ = tsr_pipeline::rollup::run_all_due(&mut feed, None, &ctx, idle_ms(), &cancel);
+                        }
+                    }
+                }
+                std::thread::sleep(Duration::from_secs(5));
+            }
+        })
+        .map(|_| ())
+        .map_err(|e| format!("feeder: {:?}", e.kind()))
+}
+
+#[cfg(test)]
+mod provider_tests {
+    use super::*;
+
+    #[test]
+    fn provider_defaults_strictly_to_local() {
+        let empty = std::collections::HashMap::new();
+        assert!(resolve_provider(&empty) == ProviderKind::Local);
+
+        let mut groq = std::collections::HashMap::new();
+        groq.insert("TSR_LLM_PROVIDER".into(), "groq".into());
+        assert!(resolve_provider(&groq) == ProviderKind::Groq);
+
+        let mut upper = std::collections::HashMap::new();
+        upper.insert("TSR_LLM_PROVIDER".into(), "GROQ".into());
+        assert!(resolve_provider(&upper) == ProviderKind::Groq);
+
+        let mut bogus = std::collections::HashMap::new();
+        bogus.insert("TSR_LLM_PROVIDER".into(), "cloud".into());
+        assert!(resolve_provider(&bogus) == ProviderKind::Local);
     }
 }

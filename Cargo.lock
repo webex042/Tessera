@@ -4389,12 +4389,14 @@ dependencies = [
  "tsr-draft",
  "tsr-guard",
  "tsr-infer",
+ "tsr-net",
  "tsr-pipeline",
  "tsr-retrieval",
  "tsr-store",
  "tsr-win",
  "webview2-com",
  "windows",
+ "zeroize",
 ]
 
 [[package]]
@@ -4871,8 +4873,12 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.21",
  "tracing",
+ "tsr-core",
+ "tsr-guard",
  "tsr-infer",
+ "tsr-store",
  "ureq",
+ "zeroize",
 ]
 
 [[package]]

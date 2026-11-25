@@ -116,8 +116,10 @@ pnpm build:ui
 python tools/fetch_sidecar.py onnxruntime win-x64
 python tools/fetch_sidecar.py llama_cpp cpu-x64
 
-# 4. Compile the native host with custom-protocol feature
+# 4. Compile the native host with custom-protocol feature (local air-gapped default)
 cargo build -p tessara --release --features custom-protocol --locked
+# Optional Groq build (still defaults to TSR_LLM_PROVIDER=local at runtime):
+cargo build -p tessara --release --features "custom-protocol,groq" --locked
 
 # 5. Build NSIS bundle (when bundle.active is enabled in tauri.conf.json)
 pnpm tauri build
@@ -125,3 +127,12 @@ pnpm tauri build
 
 The resulting installer is generated at:
 `target/release/bundle/nsis/Tessera_0.0.1_x64-setup.exe`
+
+---
+
+## Free Desktop & Documentation Distribution
+
+- **Windows Desktop Installer (GitHub Releases, `$0`):** Publish the signed or unsigned `Tessera_0.0.1_x64-setup.exe` NSIS installer on GitHub Releases at zero hosting cost.
+  - **Strict Credential Rule (BYOK):** Never embed `GROQ_API_KEY` or `.env` files inside distributed binaries or installers. Users switching `TSR_LLM_PROVIDER=groq` supply their own key via environment variables, a local `.env` file, or DPAPI `%LOCALAPPDATA%\Tessara\groq_key.bin`.
+- **Documentation Website (Vercel Hobby, `$0`):** `docs-site/` builds as static HTML/JS/CSS/SVG via `vercel.json` and `docs-site/vercel.json` without any backend server or secrets.
+- **Optional Future Proxy Pattern:** If centralized shared-quota hosting is ever required instead of per-user keys, deploy a thin edge proxy (for example, **Cloudflare Workers** + **Cloudflare D1** free tier for per-user rate accounting) storing `GROQ_API_KEY` server-side as a Worker secret rather than distributing keys to desktop clients.

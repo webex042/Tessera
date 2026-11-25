@@ -18,7 +18,10 @@ const MAGIC: &[u8; 4] = b"TSRK";
 const VERSION: u8 = 1;
 pub const DB_FILE: &str = "tessara.db";
 pub const KEY_FILE: &str = "key.bin";
+pub const GROQ_KEY_FILE: &str = "groq_key.bin";
 pub const VECTOR_DB_FILE: &str = "tessera_vectors.enc";
+
+const GROQ_MAGIC: &[u8; 4] = b"TSRG";
 
 pub struct StorePaths {
     pub db: PathBuf,
@@ -103,4 +106,73 @@ pub fn open_vector_db(data_dir: &Path) -> Result<crate::vectordb::VectorDb, Stor
     let db = crate::vectordb::VectorDb::open_or_create(&p.vector_db, &key)?;
     tracing::info!(records = db.len(), "vector store opened");
     Ok(db)
+}
+
+/// Protect a Groq API key at rest under Windows DPAPI (`%LOCALAPPDATA%\Tessara\groq_key.bin`).
+/// Never writes plaintext secrets to disk or logs.
+pub fn save_groq_api_key(data_dir: &Path, api_key: &str) -> Result<(), StoreError> {
+    let trimmed = api_key.trim();
+    if trimmed.is_empty() {
+        return Err(StoreError::Invalid("empty groq api key"));
+    }
+    fs::create_dir_all(data_dir).map_err(|e| StoreError::KeyFile(format!("data dir: {:?}", e.kind())))?;
+    let path = data_dir.join(GROQ_KEY_FILE);
+    let wrapped = tsr_win::dpapi::protect(trimmed.as_bytes()).map_err(|e| StoreError::Dpapi(e.code))?;
+    let tmp = path.with_extension("bin.tmp");
+    {
+        let mut f = fs::File::create(&tmp).map_err(|e| StoreError::KeyFile(format!("create: {:?}", e.kind())))?;
+        f.write_all(GROQ_MAGIC)
+            .and_then(|_| f.write_all(&[VERSION]))
+            .and_then(|_| f.write_all(&wrapped))
+            .and_then(|_| f.sync_all())
+            .map_err(|e| StoreError::KeyFile(format!("write: {:?}", e.kind())))?;
+    }
+    fs::rename(&tmp, &path).map_err(|e| StoreError::KeyFile(format!("rename: {:?}", e.kind())))?;
+    Ok(())
+}
+
+/// Load a DPAPI-wrapped Groq API key if stored on this machine, or `Ok(None)` if absent.
+pub fn load_groq_api_key(data_dir: &Path) -> Result<Option<Zeroizing<String>>, StoreError> {
+    let path = data_dir.join(GROQ_KEY_FILE);
+    if !path.exists() {
+        return Ok(None);
+    }
+    let raw = fs::read(&path).map_err(|e| StoreError::KeyFile(format!("read: {:?}", e.kind())))?;
+    if raw.len() < 6 || &raw[..4] != GROQ_MAGIC {
+        return Err(StoreError::KeyFile("not a Tessara Groq key file".into()));
+    }
+    if raw[4] != VERSION {
+        return Err(StoreError::KeyFile(format!("unsupported key file version {}", raw[4])));
+    }
+    let bytes = tsr_win::dpapi::unprotect(&raw[5..]).map_err(|e| StoreError::Dpapi(e.code))?;
+    let key = String::from_utf8(bytes.to_vec()).map_err(|_| StoreError::KeyFile("groq key is not utf-8".into()))?;
+    let z = Zeroizing::new(key.trim().to_owned());
+    if z.is_empty() {
+        return Err(StoreError::KeyFile("groq key file is empty".into()));
+    }
+    Ok(Some(z))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dpapi_groq_key_round_trip() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(load_groq_api_key(dir.path()).unwrap().is_none());
+
+        let fake_key = "gsk_test_example_not_real_0123456789";
+        save_groq_api_key(dir.path(), fake_key).unwrap();
+
+        let disk = fs::read(dir.path().join(GROQ_KEY_FILE)).unwrap();
+        assert!(&disk[..4] == GROQ_MAGIC);
+        assert!(
+            !disk.windows(fake_key.len()).any(|w| w == fake_key.as_bytes()),
+            "DPAPI key file must not contain plaintext API key"
+        );
+
+        let loaded = load_groq_api_key(dir.path()).unwrap().unwrap();
+        assert_eq!(&*loaded, fake_key);
+    }
 }

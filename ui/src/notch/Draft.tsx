@@ -10,6 +10,8 @@ const MESSAGES: Record<string, string> = {
   draft_password_field: "That's a password field. Tessara never drafts there.",
   draft_blocked_app: "This app is on your blocklist, so Tessara won't read it.",
   draft_model_unavailable: "Set up the model to write drafts.",
+  draft_quota_exceeded: "Groq free-tier rate or daily quota limit reached. Try again later.",
+  draft_model_unauthorized: "Groq API key is missing or invalid. Check GROQ_API_KEY.",
   draft_target_changed: "The text box changed, so nothing was inserted. Use Copy instead.",
   draft_clipboard_not_text: "The clipboard is in use by something that can't be put back. Use Copy instead.",
   draft_invalid_output: "The model's reply wasn't a usable draft. Try again.",

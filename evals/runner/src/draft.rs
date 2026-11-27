@@ -17,6 +17,7 @@ use tsr_infer::cancel::CancelToken;
 use tsr_infer::client::ChatModel;
 
 use crate::common::*;
+use crate::profile::EvalProfile;
 
 #[derive(Debug, Deserialize)]
 struct Scenario {
@@ -59,7 +60,7 @@ fn p50(v: &mut [u64]) -> Option<u64> {
     Some(v[v.len() / 2])
 }
 
-pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str) -> (bool, Value, String) {
+pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str, profile: EvalProfile) -> (bool, Value, String) {
     let path = root().join("evals/draft/draft.json");
     let all: Vec<Scenario> =
         serde_json::from_str(&std::fs::read_to_string(path).expect("draft set")).expect("draft json");
@@ -133,31 +134,42 @@ pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str) -> (bool, Va
     let first_p50 = p50(&mut first);
     let total_p50 = p50(&mut total);
     let simulated_run = model.is_none();
-    let timing_ok = simulated_run || (first_p50.is_some_and(|f| f <= 3_000) && total_p50.is_some_and(|t| t <= 8_000));
-    let pass = unflagged_total == 0 && valid == n && timing_ok;
+    let std_t = EvalProfile::Standard.thresholds();
+    let igpu_t = EvalProfile::LocalIgpuBeta.thresholds();
+    let th = profile.thresholds();
+    let timing_ok = simulated_run
+        || (first_p50.is_some_and(|f| f <= th.draft_first_text_ms_p50_max)
+            && total_p50.is_some_and(|t| t <= th.draft_total_ms_p50_max));
+    let pass = unflagged_total <= th.draft_unflagged_unsupported_max && valid == n && timing_ok;
     let j = json!({
-        "label": label, "split": split, "simulated": simulated_run, "scenarios": n, "valid": valid,
+        "label": label, "profile": profile.id(), "split": split, "simulated": simulated_run, "scenarios": n, "valid": valid,
         "unflagged_unsupported": unflagged_total, "includes_ok": includes, "excludes_ok": excludes,
         "placeholder_ok": placeholders, "first_text_ms_p50": first_p50, "total_ms_p50": total_p50,
         "pass": pass, "rows": rows,
     });
     let md = format!(
-        "# Drafts — {label}, split {split}\n\n{}\n\n| metric | value | threshold |\n|---|---|---|\n\
-         | scenarios / valid drafts | {n} / {valid} | all valid |\n\
-         | unsupported claims shown without a flag | {unflagged_total} | 0 |\n\
-         | must-include met | {includes} / {valid} | |\n\
-         | must-not-include met | {excludes} / {valid} | |\n\
-         | placeholder when expected | {placeholders} / {valid} | |\n\
-         | first visible text, p50 | {} | ≤ 3 000 ms |\n\
-         | complete draft, p50 | {} | ≤ 8 000 ms |\n\n**{}**\n",
+        "# Drafts — {label}, split {split} (profile: `{}`)\n\n{}\n\n| metric | value | standard target | local-igpu-beta target |\n|---|---|---|---|\n\
+         | scenarios / valid drafts | {n} / {valid} | all valid | all valid |\n\
+         | unsupported claims shown without a flag | {unflagged_total} | 0 | 0 |\n\
+         | must-include met | {includes} / {valid} | | |\n\
+         | must-not-include met | {excludes} / {valid} | | |\n\
+         | placeholder when expected | {placeholders} / {valid} | | |\n\
+         | first visible text, p50 | {} | ≤ {} ms | ≤ {} ms |\n\
+         | complete draft, p50 | {} | ≤ {} ms | ≤ {} ms |\n\n**{}** (active profile: `{}`)\n",
+        profile.id(),
         if simulated_run {
             "**SIMULATED drafter:** replies with invented claims test the checker only; timings are not model timings."
         } else {
             "Real model run."
         },
         first_p50.map(|v| format!("{v} ms")).unwrap_or("—".into()),
+        std_t.draft_first_text_ms_p50_max,
+        igpu_t.draft_first_text_ms_p50_max,
         total_p50.map(|v| format!("{v} ms")).unwrap_or("—".into()),
-        if pass { "PASS" } else { "FAIL" }
+        std_t.draft_total_ms_p50_max,
+        igpu_t.draft_total_ms_p50_max,
+        if pass { "PASS" } else { "FAIL" },
+        profile.id()
     );
     (pass, j, md)
 }

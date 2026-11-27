@@ -1,18 +1,18 @@
 //! `tsr-eval`: Stage 2 evaluation runners over the real pipeline code (plan §18.3).
 //!
 //!     tsr-eval injection [--model DIR]          prompt-injection corpus (default: SIMULATED compromised model)
-//!     tsr-eval extraction --model oracle|DIR [--split heldout|dev|all]
+//!     tsr-eval extraction --model oracle|DIR [--split heldout|dev|all] [--profile P]
 //!     tsr-eval search                           retrieval: keyword, vector (SIMULATED embedder), hybrid
 //!     tsr-eval rollup [--model DIR]             week replay through rollups (no model: code-only)
-//!     tsr-eval draft [--model DIR] [--split S]  20 draft scenarios (no model: SIMULATED drafter)
-//!     tsr-eval ask [--model DIR] [--split S]    60 Ask questions (no model: SIMULATED oracle)
-//!     tsr-eval backlog                          2-hour synthetic workload through the real scheduler
-//!     tsr-eval all                              everything that needs no model (CI)
+//!     tsr-eval draft [--model DIR] [--split S] [--profile P]  20 draft scenarios (no model: SIMULATED drafter)
+//!     tsr-eval ask [--model DIR] [--split S] [--profile P]    60 Ask questions (no model: SIMULATED oracle)
+//!     tsr-eval backlog [--profile P]            2-hour synthetic workload through the real scheduler
+//!     tsr-eval scorecard                        two-profile summary over immutable measured results
+//!     tsr-eval all [--profile P]                everything that needs no model (CI)
 //!     tsr-eval seed --dest DIR                  synthetic store for manual UI checks (TSR_DATA_DIR=DIR)
 //!
-//! `--model DIR` uses real model files in DIR (verified against tools/models.lock) on the best
-//! backend this machine has. Results go to evals/results/<name>.{json,md}. Exit code 1 if a
-//! threshold fails, 2 if the run could not happen (e.g. no model).
+//! `--profile P`: `standard` (default, RTX 4050 product target) or `local-igpu-beta`
+//! (Qwen3-VL-4B on AMD integrated GPU). `--model DIR` uses real model files in DIR.
 
 mod ask;
 mod backlog;
@@ -20,11 +20,14 @@ mod common;
 mod draft;
 mod extraction;
 mod injection;
+mod profile;
 mod rollup;
 mod search;
 mod seed;
 
 use std::path::PathBuf;
+
+use crate::profile::EvalProfile;
 
 fn arg(args: &[String], name: &str) -> Option<String> {
     args.iter()
@@ -46,6 +49,16 @@ fn finish(name: &str, (pass, json, md): (bool, serde_json::Value, String)) -> bo
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().cloned().unwrap_or_default();
+    let profile = match arg(&args, "--profile") {
+        None => EvalProfile::Standard,
+        Some(p) => match EvalProfile::parse(&p) {
+            Some(ep) => ep,
+            None => {
+                eprintln!("tsr-eval: unknown --profile {p:?} (expected standard or local-igpu-beta)");
+                std::process::exit(2);
+            }
+        },
+    };
     let model_arg = arg(&args, "--model");
     // `--ids a,b,c`: run only these cases/items (diagnosis); reports are named `*_subset`.
     let ids: Option<Vec<String>> = arg(&args, "--ids").map(|s| s.split(',').map(str::to_owned).collect());
@@ -79,11 +92,11 @@ fn main() {
             match (real_dyn, model_arg.as_deref()) {
                 (Some(m), _) => finish(
                     &format!("extraction_real_{split}{}", if ids.is_some() { "_subset" } else { "" }),
-                    extraction::run(Some(m), &label, &split, ids.as_deref()),
+                    extraction::run(Some(m), &label, &split, ids.as_deref(), profile),
                 ),
                 (None, Some("oracle")) => finish(
                     &format!("extraction_oracle_{split}"),
-                    extraction::run(None, "oracle", &split, None),
+                    extraction::run(None, "oracle", &split, None, profile),
                 ),
                 _ => {
                     eprintln!("tsr-eval extraction needs --model oracle (SIMULATED) or --model DIR (real files)");
@@ -96,7 +109,7 @@ fn main() {
             let split = arg(&args, "--split").unwrap_or_else(|| "all".into());
             finish(
                 &format!("draft_{}_{split}", if real.is_some() { "real" } else { "simulated" }),
-                draft::run(real_dyn, &label, &split),
+                draft::run(real_dyn, &label, &split, profile),
             )
         }
         "ask" => {
@@ -107,7 +120,7 @@ fn main() {
                     if real.is_some() { "real" } else { "simulated" },
                     if ids.is_some() { "_subset" } else { "" }
                 ),
-                ask::run(real_dyn, &label, &split, ids.as_deref()),
+                ask::run(real_dyn, &label, &split, ids.as_deref(), profile),
             )
         }
         "rollup" => finish(
@@ -134,15 +147,27 @@ fn main() {
                 std::process::exit(2);
             }
         },
-        "backlog" => finish("backlog_simulated", backlog::run()),
+        "backlog" => finish("backlog_simulated", backlog::run(profile)),
+        "scorecard" => {
+            let (_, json, md) = profile::scorecard(&common::root());
+            let p = common::write_report("scorecard", &json, &md);
+            println!(
+                "{}\n-> {}",
+                md.lines().take(3).collect::<Vec<_>>().join("\n"),
+                p.display()
+            );
+            true
+        }
         "all" => {
             let a = finish("injection_simulated", injection::run_corpus(None, "simulated", None));
             let b = finish(
                 "extraction_oracle_heldout",
-                extraction::run(None, "oracle", "heldout", None),
+                extraction::run(None, "oracle", "heldout", None, profile),
             );
             let c = finish("search", search::run());
-            let d = finish("backlog_simulated", backlog::run());
+            let d = finish("backlog_simulated", backlog::run(profile));
+            let (_, sc_json, sc_md) = profile::scorecard(&common::root());
+            let _ = common::write_report("scorecard", &sc_json, &sc_md);
             a && b && c && d
         }
         _ => {

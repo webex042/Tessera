@@ -4,15 +4,22 @@ Status labels: **PASS** (done and verified with evidence), **PARTIAL** (done in 
 only in part), **BLOCKED** (needs an owner action, approval, account, hardware or download),
 **FAIL** (measured and missed), **NOT STARTED**. Evidence links point to committed files.
 
-Last updated: 2026-10-28.
+Last updated: 2026-11-27.
+
+> **Benchmark Profiles (`evals/runner/src/profile.rs`):** All evaluations now distinguish the
+> **Standard Product Profile** (`--profile standard`, RTX 4050 6 GB target — hardware unavailable)
+> from the **Local iGPU Beta Profile** (`--profile local-igpu-beta`, `Qwen3-VL-4B-Instruct-Q4_K_M`
+> on AMD Radeon Integrated Graphics via Vulkan). Security targets (100 % injection safety, 100 %
+> secret redaction, 0 unauthorized application network connections) are non-negotiable across both
+> profiles. Unified comparative output: `evals/results/scorecard.md`.
 
 ## Stage 2 carry-over (real model)
 
 | id | task | status | evidence / blocker |
 |---|---|---|---|
 | 2.R1 | Download Qwen3-VL-4B Q4_K_M + mmproj (approved), verify digests | PASS | `tsr-models locate --verify`: both files `digest_checked: true` |
-| 2.R2 | Held-out extraction with the real model | FAIL | After the key-order fix (ADR-0010): F1 0.533 (< 0.70); hallucinated 0 %; **0 items failed on invalid JSON** (was 15/58 with sorted keys); P 49.5 %, R 57.8 %. Before: F1 0.507. `evals/results/extraction_real_heldout.md` |
-| 2.R3 | Injection corpus with the real model | PARTIAL | first run 66/74 (5 safety failures) → guard fixed → 70/74, all 69 adversarial pass; 4 genuine-task misses. 152-case real run: 123/152 (see 7.2) |
+| 2.R2 | Held-out extraction with the real model | FAIL | Standard target `≥ 0.70`, Local iGPU Beta target `≥ 0.60` (provisional `≥ 0.50` rejected due to 1 SE margin and 49.5 % precision noise). Measured after ADR-0010: **F1 0.533** (`0 %` hallucinated, `0` schema-invalid, P 49.5 %, R 57.8 %; was F1 0.507 / 15 invalid JSON). `evals/results/extraction_real_heldout.md` |
+| 2.R3 | Injection corpus with the real model | PARTIAL | Non-negotiable target: `152/152` safe. Historical real 4B run: `123/152` (`24/39` held-out: `13` safety leaks, `10` utility/kind misses, `1` extra open fact, `5` standby timeouts). Deterministic code guard now passes `152/152` SIMULATED + `13/13` real-model safety replay (`crates/tsr-pipeline/tests/injection_real_replay.rs`), with prompt `<thread>` escaping fixed; live hardware re-run + 3rd unseen set still pending |
 
 ## Stage 3: Notch UI ([verification](stage3/verification.md))
 
@@ -60,17 +67,17 @@ Last updated: 2026-10-28.
 | id | task | status | evidence / blocker |
 |---|---|---|---|
 | 6.1 | Query filters, retrieval, prompt, streaming, verification, chips, insufficient path | PASS | `askq`/`ask` tests; SIMULATED eval PASS; preview |
-| 6.E1 | ≥ 80 % correct, ≥ 90 % verified, 0 fabricated (60 q) | FAIL | REAL ask/v2 after the key-order fix (ADR-0010): **66.7 % correct, 83.7 % verified, 0 fabricated, 0 invalid**. Before the fix: v1 15 %, v2 15 % (empty answers caused by sorted schema keys) |
-| 6.E2 | First token ≤ 2.5 s, full ≤ 10 s | FAIL | REAL (iGPU), after fix: first sentence p50 25.2 s, full 25.5 s (earlier: v1 23.7 / 18.2 s, v2 sorted keys 14.5 / 19.2 s); RTX 4050 not available |
+| 6.E1 | ≥ 80 % correct, ≥ 90 % verified, 0 fabricated (60 q) | FAIL | Standard `≥ 80 % / ≥ 90 %`; Local iGPU Beta `≥ 70 % (blind) / ≥ 85 %` (provisional `≥ 65 %` rejected: 95 % Wilson CI `[54.1 %, 77.3 %]` and `ask/v2` lacked a blind split). Measured REAL `ask/v2`: **66.7 % correct (40/60), 83.7 % verified (41/49), 0 fabricated (`PASS`), 0 invalid**. Before ADR-0010: 15 % |
+| 6.E2 | First token ≤ 2.5 s, full ≤ 10 s | FAIL | Standard `≤ 2.5 s / ≤ 10 s`, Local iGPU Beta `≤ 15 s / ≤ 30 s`. Measured REAL (iGPU): first sentence p50 **25.2 s** (`FAIL`), full **25.5 s** (`≤ 30 s`); RTX 4050 not available |
 
 ## Stage 7: Security audit ([verification](stage7/verification.md))
 
 | id | task | status | evidence / blocker |
 |---|---|---|---|
-| 7.1 | Threat-model review, gaps fixed | PASS | 6 gaps fixed (ADR-0009) |
-| 7.2 | Injection ≥ 150, secrets ≥ 300 incl. Indian IDs, in CI | PASS | 152 / 355 cases; secrets 355/355 redacted, FP 0.41 %; injection SIMULATED 140/152 (held-out half 27/39); REAL 123/152 (held-out half 24/39: 12 injected texts stored as to-dos, nothing executed); tuned-half miss s7-019 fixed, REAL re-check 6/6 |
+| 7.1 | Threat-model review, gaps fixed | PASS | 6 gaps fixed (ADR-0009) + `<thread>`/`<style_examples>` delimiter escaping and `rollup/v1` hierarchy fix |
+| 7.2 | Injection ≥ 150, secrets ≥ 300 incl. Indian IDs, in CI | PARTIAL | **152/152** SIMULATED + **13/13** real-model safety replay PASS (after `s7-002`, `s7-018`, `s7-050` fixes); secrets **355/355** redacted, FP **0.41 %** (`PASS`). Historical live 4B run remains **123/152** (`24/39` held-out) until re-run on hardware + 3rd unseen corpus |
 | 7.3 | Fuzzing | PARTIAL | randomised robustness tests (2 bugs found and fixed); cargo-fuzz BLOCKED (nightly + downloads need approval) |
-| 7.4 | 24 h network monitor | FAIL | 10-min run: Tessara 0 connections; WebView2 1 HTTPS to Microsoft (ADR-0002); 24 h run needs the owner |
+| 7.4 | 24 h network monitor | FAIL | 10-min run: Application (`tessara.exe`, `llama-server.exe`) **0** outbound connections (`PASS`); WebView2 (`msedgewebview2.exe`) **1** HTTPS connection to Microsoft (`2603:1046:c04::/48:443`, ADR-0002 `FAIL`); 24 h Sysmon/WFP + TLS SNI capture needs the owner |
 | 7.5 | Canary disk scan | PARTIAL | 0 plaintext hits, control found (60 s run); 24 h and pagefile need the owner |
 | 7.6 | cargo-deny / cargo-audit / pnpm audit, notices | PARTIAL | deny all ok (cached advisory DB); cargo-audit, pnpm audit, DB refresh BLOCKED (network); THIRD_PARTY_NOTICES.md PASS |
 | 7.7 | Tauri review | PASS | `security_config.rs` |

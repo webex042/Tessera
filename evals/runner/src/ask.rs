@@ -28,6 +28,7 @@ use tsr_retrieval::hybrid::{Filter, Opts, search};
 use tsr_store::items::Acquisition;
 
 use crate::common::*;
+use crate::profile::EvalProfile;
 
 #[derive(Deserialize)]
 struct Q {
@@ -72,7 +73,13 @@ fn p50(v: &mut [u64]) -> Option<u64> {
     Some(v[v.len() / 2])
 }
 
-pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str, only: Option<&[String]>) -> (bool, Value, String) {
+pub fn run(
+    model: Option<&dyn ChatModel>,
+    label: &str,
+    split: &str,
+    only: Option<&[String]>,
+    profile: EvalProfile,
+) -> (bool, Value, String) {
     let items = load_items();
     let qs: Vec<Q> =
         serde_json::from_str(&std::fs::read_to_string(root().join("evals/ask/ask.json")).unwrap()).unwrap();
@@ -210,33 +217,51 @@ pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str, only: Option
     };
     let (f50, t50) = (p50(&mut first), p50(&mut total));
     let simulated = model.is_none();
-    let timing_ok = simulated || (f50.is_some_and(|v| v <= 2_500) && t50.is_some_and(|v| v <= 10_000));
-    let pass = acc >= 0.80 && vshare >= 0.90 && fabricated == 0 && timing_ok;
+    let std_t = EvalProfile::Standard.thresholds();
+    let igpu_t = EvalProfile::LocalIgpuBeta.thresholds();
+    let th = profile.thresholds();
+    let timing_ok = simulated
+        || (f50.is_some_and(|v| v <= th.ask_first_sentence_ms_p50_max)
+            && t50.is_some_and(|v| v <= th.ask_total_ms_p50_max));
+    let pass = acc >= th.ask_accuracy_min
+        && vshare >= th.ask_verified_share_min
+        && fabricated <= th.ask_fabricated_max
+        && timing_ok;
     let j = json!({
-        "label": label, "split": split, "simulated": simulated, "questions": n, "invalid": invalid,
+        "label": label, "profile": profile.id(), "split": split, "simulated": simulated, "questions": n, "invalid": invalid,
         "correct": correct, "accuracy": acc, "shown_sentences": shown, "verified_sentences": verified,
         "verified_share": vshare, "fabricated_citations": fabricated,
         "first_sentence_ms_p50": f50, "total_ms_p50": t50, "pass": pass, "rows": rows,
     });
     let md = format!(
-        "# Ask — {label}, split {split}\n\n{}\nRetrieval: keyword + facts (no embedder), filters from the question; facts from SIMULATED oracle extraction.\n\n\
-         | metric | value | threshold |\n|---|---|---|\n\
-         | questions / invalid answers | {n} / {invalid} | |\n\
-         | answered correctly | {correct} ({:.1} %) | ≥ 80 % |\n\
-         | shown sentences verified | {verified} / {shown} ({:.1} %) | ≥ 90 % |\n\
-         | fabricated citations | {fabricated} | 0 |\n\
-         | first sentence, p50 | {} | ≤ 2 500 ms |\n\
-         | full answer, p50 | {} | ≤ 10 000 ms |\n\n**{}**\n",
+        "# Ask — {label}, split {split} (profile: `{}`)\n\n{}\nRetrieval: keyword + facts (no embedder), filters from the question; facts from SIMULATED oracle extraction.\n\n\
+         | metric | value | standard target | local-igpu-beta target |\n|---|---|---|---|\n\
+         | questions / invalid answers | {n} / {invalid} | | |\n\
+         | answered correctly | {correct} ({:.1} %) | ≥ {:.0} % | ≥ {:.0} % |\n\
+         | shown sentences verified | {verified} / {shown} ({:.1} %) | ≥ {:.0} % | ≥ {:.0} % |\n\
+         | fabricated citations | {fabricated} | 0 | 0 |\n\
+         | first sentence, p50 | {} | ≤ {} ms | ≤ {} ms |\n\
+         | full answer, p50 | {} | ≤ {} ms | ≤ {} ms |\n\n**{}** (active profile: `{}`)\n",
+        profile.id(),
         if simulated {
             "**SIMULATED oracle answers:** tests retrieval and citation checks, not a model; timings are not model timings.\n"
         } else {
             "Real model run.\n"
         },
         acc * 100.0,
+        std_t.ask_accuracy_min * 100.0,
+        igpu_t.ask_accuracy_min * 100.0,
         vshare * 100.0,
+        std_t.ask_verified_share_min * 100.0,
+        igpu_t.ask_verified_share_min * 100.0,
         f50.map(|v| format!("{v} ms")).unwrap_or("—".into()),
+        std_t.ask_first_sentence_ms_p50_max,
+        igpu_t.ask_first_sentence_ms_p50_max,
         t50.map(|v| format!("{v} ms")).unwrap_or("—".into()),
-        if pass { "PASS" } else { "FAIL" }
+        std_t.ask_total_ms_p50_max,
+        igpu_t.ask_total_ms_p50_max,
+        if pass { "PASS" } else { "FAIL" },
+        profile.id()
     );
     (pass, j, md)
 }

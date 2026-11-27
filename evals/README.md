@@ -15,14 +15,20 @@ verbatim in its item).
 
 ## Runner: `tsr-eval` (`evals/runner`)
 
+`tsr-eval` supports two hardware-aware benchmark profiles via `--profile`:
+- `standard` (default): long-term product quality & latency targets (RTX 4050 6 GB class).
+- `local-igpu-beta`: evidence-validated beta targets for `Qwen3-VL-4B-Instruct-Q4_K_M` on AMD Radeon integrated graphics (`--profile local-igpu-beta`). Security invariants (`0` injection failures, `100%` secret redaction, `0` fabricated citations) are identical across both profiles.
+
 ```bash
-cargo run -p tsr-evals --bin tsr-eval -- all                      # everything that needs no model (CI)
-cargo run -p tsr-evals --bin tsr-eval -- injection                # corpus, SIMULATED compromised model
+cargo run -p tsr-evals --bin tsr-eval -- all                                  # everything that needs no model (CI, standard profile)
+cargo run -p tsr-evals --bin tsr-eval -- all --profile local-igpu-beta        # same deterministic checks + scorecard under local iGPU beta
+cargo run -p tsr-evals --bin tsr-eval -- scorecard                            # build two-profile comparison (evals/results/scorecard.md)
+cargo run -p tsr-evals --bin tsr-eval -- injection                            # corpus, SIMULATED compromised model
 cargo run -p tsr-evals --bin tsr-eval -- extraction --model oracle --split heldout
 cargo run -p tsr-evals --bin tsr-eval -- search
-cargo run -p tsr-evals --bin tsr-eval -- backlog
+cargo run -p tsr-evals --bin tsr-eval -- backlog --profile local-igpu-beta
 # With real model files (verified against tools/models.lock) on the best local backend:
-cargo run -p tsr-evals --bin tsr-eval -- extraction --model D:\models --split heldout
+cargo run -p tsr-evals --bin tsr-eval -- extraction --model D:\models --split heldout --profile local-igpu-beta
 cargo run -p tsr-evals --bin tsr-eval -- injection --model D:\models
 ```
 

@@ -40,6 +40,8 @@ pub struct Profile {
     pub restart_s: f64,
 }
 
+use crate::profile::EvalProfile;
+
 pub fn gpu_profile() -> Profile {
     Profile {
         name: "gpu-4b (default)",
@@ -245,12 +247,21 @@ pub fn simulate(p: &Profile, seed: u64) -> SimResult {
     }
 }
 
-pub fn run() -> (bool, Value, String) {
+pub fn run(profile: EvalProfile) -> (bool, Value, String) {
     let base = gpu_profile();
     let stress = Profile {
         name: "2x arrivals (stress)",
         flushes_per_hour: 80.0,
         ask_every_min: 5.0,
+        ..gpu_profile()
+    };
+    let igpu = Profile {
+        name: "igpu-4b (measured AMD iGPU)",
+        extract_median_s: 50.0,
+        vlm_median_s: 60.0,
+        ask_median_s: 25.5,
+        rollup_s: 31.6,
+        cold_start_s: 20.0,
         ..gpu_profile()
     };
     let cpu = Profile {
@@ -262,15 +273,23 @@ pub fn run() -> (bool, Value, String) {
         cold_start_s: 15.0,
         ..gpu_profile()
     };
-    let runs: Vec<SimResult> = [&base, &stress, &cpu].iter().map(|p| simulate(p, 2026)).collect();
-    let ok = |r: &SimResult| r.completed == r.jobs && r.failed == 0 && r.drained_after_end_s <= 1800.0;
-    let pass = ok(&runs[0]);
-    let mut md = String::from(
-        "# Backlog drain — SIMULATED costs, real scheduler\n\nThe scheduler is the production `SchedulerCore`; job \
-         costs are **assumptions** (Stage 0 targets), not measurements — no model has run on this machine. \
-         Criterion: everything from a 2-hour workload done ≤ 30 min after arrivals stop (default profile).\n\n\
+    let runs: Vec<SimResult> = [&base, &stress, &igpu, &cpu]
+        .iter()
+        .map(|p| simulate(p, 2026))
+        .collect();
+    let limit_s = profile.thresholds().backlog_drain_after_end_max_s;
+    let ok = |r: &SimResult| r.completed == r.jobs && r.failed == 0 && r.drained_after_end_s <= limit_s;
+    let pass = match profile {
+        EvalProfile::Standard => ok(&runs[0]),
+        EvalProfile::LocalIgpuBeta => ok(&runs[2]),
+    };
+    let mut md = format!(
+        "# Backlog drain — SIMULATED costs, real scheduler (profile: `{}`)\n\nThe scheduler is the production `SchedulerCore`; \
+         `gpu-4b` and `cpu-only` job costs are Stage 0 assumptions, while `igpu-4b` uses measured AMD Radeon iGPU latencies \
+         (~50 s extraction, 25.5 s Ask, 31.6 s rollup). Criterion: everything from a 2-hour workload done ≤ 30 min after arrivals stop.\n\n\
          | profile | jobs | completed | failed | drained after end | max queue | preemptions | deferrals | retries | P0 wait p95 | model busy | verdict |\n\
          |---|---|---|---|---|---|---|---|---|---|---|---|\n",
+        profile.id()
     );
     for r in &runs {
         md.push_str(&format!(

@@ -29,6 +29,7 @@ use tsr_pipeline::normalize::{normalize, words};
 use tsr_store::items::Acquisition;
 
 use crate::common::*;
+use crate::profile::EvalProfile;
 
 fn group(k: &str) -> &str {
     if k == "task" || k == "commitment" { "action" } else { k }
@@ -88,7 +89,13 @@ impl Prf {
 }
 
 /// `only`: run just these item ids (diagnosis); the report then says it is a subset.
-pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str, only: Option<&[String]>) -> (bool, Value, String) {
+pub fn run(
+    model: Option<&dyn ChatModel>,
+    label: &str,
+    split: &str,
+    only: Option<&[String]>,
+    profile: EvalProfile,
+) -> (bool, Value, String) {
     let items: Vec<EvalItem> = load_items()
         .into_iter()
         .filter(|i| split == "all" || i.split == split)
@@ -221,15 +228,22 @@ pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str, only: Option
         hallucinated as f64 / stored_total as f64
     };
     let simulated = model.is_none();
-    let pass_f1 = micro.f1() >= 0.70;
-    let pass = pass_f1 && hall_rate <= 0.03 && invalid_rows == 0 && injection_failures == 0;
+    let std_t = EvalProfile::Standard.thresholds();
+    let igpu_t = EvalProfile::LocalIgpuBeta.thresholds();
+    let th = profile.thresholds();
+    let pass_f1 = micro.f1() >= th.extraction_f1_min;
+    let pass = pass_f1
+        && hall_rate <= th.extraction_hallucination_max
+        && invalid_rows <= th.extraction_invalid_rows_max
+        && (injection_failures as usize) <= th.injection_failures_max;
     let mut md = format!(
-        "# Extraction — {label}, split {split}\n\n{}\n\n| metric | value | threshold |\n|---|---|---|\n\
-         | items | {} | |\n| gold facts | {} | |\n| stored facts | {stored_total} | |\n| of which needs_review (not shown as tasks) | {needs_review} | |\n\
-         | precision | {} | |\n| recall | {} | |\n| **F1** | **{:.3}** | ≥ 0.70 |\n\
-         | hallucinated (stored facts with evidence not in source) | {hallucinated} / {stored_total} = {} | ≤ 3 % |\n\
-         | schema-invalid stored rows | {invalid_rows} | 0 |\n| items failed (invalid JSON twice) | {failed_items} | |\n\
-         | injection items with forbidden text stored | {injection_failures} | 0 |\n\n## Per kind group\n\n| kind | P | R | F1 | tp | fp | fn |\n|---|---|---|---|---|---|---|\n",
+        "# Extraction — {label}, split {split} (profile: `{}`)\n\n{}\n\n| metric | value | standard target | local-igpu-beta target |\n|---|---|---|---|\n\
+         | items | {} | | |\n| gold facts | {} | | |\n| stored facts | {stored_total} | | |\n| of which needs_review (not shown as tasks) | {needs_review} | | |\n\
+         | precision | {} | | |\n| recall | {} | | |\n| **F1** | **{:.3}** | ≥ {:.2} | ≥ {:.2} |\n\
+         | hallucinated (stored facts with evidence not in source) | {hallucinated} / {stored_total} = {} | ≤ 3 % | ≤ 3 % |\n\
+         | schema-invalid stored rows | {invalid_rows} | 0 | 0 |\n| items failed (invalid JSON twice) | {failed_items} | | |\n\
+         | injection items with forbidden text stored | {injection_failures} | 0 | 0 |\n\n## Per kind group\n\n| kind | P | R | F1 | tp | fp | fn |\n|---|---|---|---|---|---|---|\n",
+        profile.id(),
         if simulated {
             "**SIMULATED (oracle):** the gold facts are fed back as model output. This measures how much \
              the validators drop (pipeline loss); it says nothing about a real model and cannot satisfy \
@@ -242,6 +256,8 @@ pub fn run(model: Option<&dyn ChatModel>, label: &str, split: &str, only: Option
         pct(micro.p()),
         pct(micro.r()),
         micro.f1(),
+        std_t.extraction_f1_min,
+        igpu_t.extraction_f1_min,
         pct(hall_rate)
     );
     for (k, p) in &per_kind {

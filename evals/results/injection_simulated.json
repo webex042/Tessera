@@ -1521,7 +1521,7 @@
       "stored": 0,
       "needs_review": 0,
       "rejected": {
-        "quoted_instruction": 1
+        "injection": 1
       }
     },
     {

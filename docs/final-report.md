@@ -1,9 +1,34 @@
-# Final report: Stages 3–10 (2026-10-27/28)
+# Final report: Stages 3–10 & Hardware-Aware Benchmark Calibration (updated 2026-11-27)
 
 Status labels: PASS / PARTIAL / BLOCKED / FAIL / NOT STARTED. Per-task detail: [`ledger.md`](ledger.md).
-Machine: Windows 11, AMD Radeon integrated GPU (Vulkan), Qwen3-VL-4B-Instruct Q4_K_M + mmproj
-(downloaded with approval, digests verified). The plan's target machine (RTX 4050, 6 GB) was not
-available; every timing below is from the integrated GPU.
+Unified two-profile scorecard: [`evals/results/scorecard.md`](../evals/results/scorecard.md).
+Machine: Windows 11, AMD Ryzen 5 7530U, AMD Radeon integrated GPU (Vulkan), `Qwen3-VL-4B-Instruct-Q4_K_M` + `mmproj`
+(downloaded with approval, digests verified). The Standard Product target machine (RTX 4050, 6 GB) was not
+available; every real-model timing and accuracy number below is from the integrated GPU and must **not** be
+extrapolated as RTX 4050 performance or universal GPU/iGPU compatibility.
+
+## Hardware-Aware Benchmark Profiles (Standard vs. Local iGPU Beta)
+
+Tessera separates its long-term **Standard Product Profile** (`--profile standard`, RTX 4050 6 GB class)
+from an evidence-validated **Local iGPU Beta Profile** (`--profile local-igpu-beta`, `Qwen3-VL-4B-Instruct-Q4_K_M`
+on AMD Radeon iGPU). Security requirements (100 % injection safety, 100 % secret redaction, 0 fabricated
+citations, 0 unauthorized application network connections) are **never lowered**. Provisional candidate
+thresholds (`>= 65 %` Ask, `>= 0.50` Extraction F1) were **rejected** after variance/sample auditing because
+neither represents a statistically reliable quality floor:
+
+| Metric | Measured Result | Standard Target (RTX 4050) | Local iGPU Target (Evidence-Validated) | Local Status |
+|---|---|---|---|---|
+| Ask accuracy (60 questions) | **66.7 %** (40/60) | ≥ 80 % (blind) | ≥ 70 % (blind; ≥ 65 % rejected: 95 % Wilson CI `[54.1 %, 77.3 %]`) | **FAIL** |
+| Ask citation verification / fabricated | **83.7 %** verified; **0** fabricated | ≥ 90 % verified; 0 fabricated | ≥ 85 % verified; 0 fabricated | **FAIL** (`0` fabricated PASS) |
+| Ask latency (p50 first / total) | **25,155 ms** / **25,540 ms** | ≤ 2,500 ms / ≤ 10,000 ms | ≤ 15,000 ms / ≤ 30,000 ms | **FAIL** |
+| Extraction F1 (58 held-out items) | **0.533** (P 49.5 %, R 57.8 %) | ≥ 0.70 | ≥ 0.60 (≥ 0.50 rejected: `< 1` SE margin; 49.5 % P noise) | **FAIL** |
+| Extraction safety (hallucinated / invalid) | **0.0 %** hallucinated; **0** invalid | ≤ 3 % hallucinated; 0 invalid | ≤ 3 % hallucinated; 0 invalid | **PASS** |
+| Prompt injection resistance | **123/152** real (`24/39` held-out) | 152/152 safe (0 failures) | 152/152 safe (0 failures; non-negotiable) | **FAIL** (code guard: 152/152 sim + 13/13 replay) |
+| Secret redaction (355 / 242 clean) | **355/355 (100.0 %)**, 0.41 % FP | 100 % redacted, ≤ 2 % FP | 100 % redacted, ≤ 2 % FP (non-negotiable) | **PASS** |
+| Notch input-to-visual latency (p95) | **64 ms** (frame p95 16.8 ms) | ≤ 100 ms | ≤ 100 ms | **PASS** |
+| Screen capture exclusion | WGC+GDI pixels PASS; apps untested | Absent in all (Teams/Zoom/OBS) | Absent in all (Teams/Zoom/OBS) | **PARTIAL** |
+| Application outbound network | **0** connections (`tessara.exe`, `llama-server.exe`) | 0 unauthorized connections | 0 unauthorized connections | **PASS** (10-min; 24h pending) |
+| WebView2 outbound network (ADR-0002) | **1** HTTPS (`2603:1046:c04::/48:443`) | 0 connections | 0 connections (or verified disabled/blocked) | **FAIL** (open ADR-0002) |
 
 ## A. Summary
 

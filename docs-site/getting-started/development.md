@@ -56,16 +56,15 @@ Recommended `.vscode/settings.json`:
 ### 1. Standalone Frontend Preview (Fast UI Iteration)
 When designing panels, views, and animations in `ui/`, you can run Vite independently without compiling the Rust backend. A mock IPC bridge simulates Tauri commands:
 ```powershell
-cd ui
-pnpm dev
+npm --prefix ui run dev
 ```
 Open `http://localhost:5173` to test the floating notch interface with synthetic state data.
 
 ### 2. Full Desktop Application in Development
-To run the native desktop shell with hot-reloading:
+To run the native desktop shell:
 ```powershell
 # From repository root:
-pnpm build:ui
+npm --prefix ui run build
 cargo run -p tessara --features custom-protocol
 ```
 

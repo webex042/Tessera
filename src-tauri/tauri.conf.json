@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../ui/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": { "script": "pnpm dev", "cwd": "../ui" },
-    "beforeBuildCommand": { "script": "pnpm build", "cwd": "../ui" }
+    "beforeDevCommand": { "script": "npm run dev", "cwd": "../ui" },
+    "beforeBuildCommand": { "script": "npm run build", "cwd": "../ui" }
   },
   "app": {
     "withGlobalTauri": false,
@@ -29,12 +29,17 @@
     }
   },
   "bundle": {
-    "active": false,
+    "active": true,
     "targets": ["nsis"],
     "icon": ["icons/icon.ico", "icons/icon.png"],
     "shortDescription": "Local-first memory of your screen",
     "copyright": "Tessara contributors",
     "licenseFile": "../THIRD_PARTY_NOTICES.md",
+    "resources": {
+      "../third_party/llama_cpp/b11900/cpu-x64": "third_party/llama_cpp/b11900/cpu-x64",
+      "../third_party/llama_cpp/b11900/vulkan-x64": "third_party/llama_cpp/b11900/vulkan-x64",
+      "../third_party/onnxruntime/1.31.0/win-x64/onnxruntime-win-x64-1.31.0/lib/onnxruntime.dll": "third_party/onnxruntime/1.31.0/win-x64/onnxruntime-win-x64-1.31.0/lib/onnxruntime.dll"
+    },
     "windows": {
       "webviewInstallMode": { "type": "embedBootstrapper" },
       "nsis": {

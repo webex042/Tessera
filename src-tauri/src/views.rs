@@ -8,11 +8,15 @@
 //! - Day boundaries use the user's time zone, passed in (tests use fixed zones).
 
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
+use tsr_guard::blocklist::Blocklist;
+use tsr_retrieval::embed::Embedder;
+use tsr_store::privacy::{ClearReport, clear_all_memories, delete_single_item};
+use tsr_store::vectordb::VectorDb;
 
 pub const TOKEN_TTL: Duration = Duration::from_secs(120);
 pub const MAX_QUERY_CHARS: usize = 200;
@@ -203,9 +207,15 @@ struct Pending {
 }
 
 /// Read side of the app: one read connection (WAL keeps it unblocked by the writer).
+type EmbedderSlot = Arc<Mutex<Option<Arc<dyn Embedder>>>>;
+
 pub struct Core {
     conn: Mutex<Connection>,
     tokens: Mutex<HashMap<String, Pending>>,
+    clear_tokens: Mutex<HashMap<String, Instant>>,
+    vector_db: Option<Arc<Mutex<VectorDb>>>,
+    embedder: Option<EmbedderSlot>,
+    blocklist: Option<Arc<RwLock<Blocklist>>>,
 }
 
 /// Statuses the user may set (plan §6.5 `SetFactStatus`). `proposed_done` is set by code only.
@@ -216,7 +226,26 @@ impl Core {
         Core {
             conn: Mutex::new(conn),
             tokens: Mutex::new(HashMap::new()),
+            clear_tokens: Mutex::new(HashMap::new()),
+            vector_db: None,
+            embedder: None,
+            blocklist: None,
         }
+    }
+
+    pub fn with_vector_db(mut self, vdb: Arc<Mutex<VectorDb>>) -> Self {
+        self.vector_db = Some(vdb);
+        self
+    }
+
+    pub fn with_embedder(mut self, embedder: Arc<Mutex<Option<Arc<dyn Embedder>>>>) -> Self {
+        self.embedder = Some(embedder);
+        self
+    }
+
+    pub fn with_shared_blocklist(mut self, blocklist: Arc<RwLock<Blocklist>>) -> Self {
+        self.blocklist = Some(blocklist);
+        self
     }
 
     fn c(&self) -> std::sync::MutexGuard<'_, Connection> {
@@ -344,6 +373,76 @@ impl Core {
             return Err(E_INVALID);
         }
         let c = self.c();
+        let active_emb = self
+            .embedder
+            .as_ref()
+            .and_then(|m| m.lock().unwrap_or_else(|p| p.into_inner()).clone());
+
+        if let (Some(vdb_lock), Some(emb)) = (&self.vector_db, active_emb) {
+            let vdb = vdb_lock.lock().unwrap_or_else(|p| p.into_inner());
+            if !vdb.is_empty() {
+                let bl_guard = self
+                    .blocklist
+                    .as_ref()
+                    .map(|b| b.read().unwrap_or_else(|p| p.into_inner()));
+                let mut o = tsr_retrieval::hybrid::Opts::new(jiff::Timestamp::now().as_millisecond());
+                o.k = (limit as usize).saturating_mul(3).max(20);
+                o.use_vector = true;
+                o.use_lexical = true;
+                o.use_facts = true;
+                let filter = tsr_retrieval::hybrid::Filter {
+                    blocklist: bl_guard.as_deref(),
+                    suppressed: None,
+                };
+                if let Ok((hybrid_hits, _)) =
+                    tsr_retrieval::hybrid::search_vectordb(&c, Some(&*vdb), Some(&*emb), query, &filter, &o)
+                {
+                    let fts_hits = tsr_store::items::search_any(&c, query, (limit * 4).max(20))?;
+                    let snippets: HashMap<i64, String> = fts_hits
+                        .into_iter()
+                        .map(|h| (h.item_id, h.snippet.expose().clone()))
+                        .collect();
+                    let mut out = Vec::new();
+                    for h in hybrid_hits {
+                        let Ok(it) = c
+                            .prepare(&format!("{CARD_SQL} WHERE items.id = ?1"))?
+                            .query_row([h.item_id], card)
+                        else {
+                            continue;
+                        };
+                        if app.is_some_and(|a| !it.app.eq_ignore_ascii_case(a)) {
+                            continue;
+                        }
+                        let snippet = snippets
+                            .get(&h.item_id)
+                            .cloned()
+                            .or_else(|| it.summary.clone())
+                            .unwrap_or_else(|| {
+                                let raw: String = c
+                                    .query_row("SELECT text FROM items WHERE id = ?1", [h.item_id], |r| r.get(0))
+                                    .unwrap_or_default();
+                                if let Some((s, e)) = h.span {
+                                    let seg: String = raw
+                                        .chars()
+                                        .skip(s.max(0) as usize)
+                                        .take((e - s).clamp(1, 200) as usize)
+                                        .collect();
+                                    if !seg.trim().is_empty() {
+                                        return seg;
+                                    }
+                                }
+                                raw.chars().take(180).collect()
+                            });
+                        out.push(SearchHit { item: it, snippet });
+                        if out.len() as u32 == limit {
+                            break;
+                        }
+                    }
+                    return Ok(out);
+                }
+            }
+        }
+
         let hits = tsr_store::items::search_any(&c, query, limit * 3)?;
         let mut out = Vec::new();
         for h in hits {
@@ -362,6 +461,53 @@ impl Core {
             }
         }
         Ok(out)
+    }
+
+    /// Delete a single captured memory item and cascade across SQLCipher, FTS5, facts, and VectorDb.
+    pub fn delete_item(&self, item_id: i64, now_ms: i64) -> Result<(), ApiError> {
+        if item_id <= 0 {
+            return Err(E_INVALID);
+        }
+        let mut c = self.c();
+        let removed = if let Some(vdb_lock) = &self.vector_db {
+            let mut vdb = vdb_lock.lock().unwrap_or_else(|p| p.into_inner());
+            delete_single_item(&mut c, Some(&mut vdb), item_id, now_ms)?
+        } else {
+            delete_single_item(&mut c, None, item_id, now_ms)?
+        };
+        if !removed {
+            return Err(E_NOT_FOUND);
+        }
+        Ok(())
+    }
+
+    /// Issue a single-use token authorizing wiping all captured and derived memories.
+    pub fn propose_clear_memories(&self, now: Instant) -> String {
+        let token = new_token();
+        let mut t = self.clear_tokens.lock().unwrap_or_else(|p| p.into_inner());
+        t.retain(|_, issued| now.duration_since(*issued) < TOKEN_TTL);
+        t.insert(token.clone(), now);
+        token
+    }
+
+    /// Wipe all memories across SQLCipher and VectorDb if the token is valid and unexpired.
+    pub fn clear_memories(&self, token: &str, now: Instant, now_ms: i64) -> Result<ClearReport, ApiError> {
+        let issued = self
+            .clear_tokens
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .remove(token)
+            .ok_or(E_TOKEN)?;
+        if now.duration_since(issued) >= TOKEN_TTL {
+            return Err(E_TOKEN);
+        }
+        let mut c = self.c();
+        if let Some(vdb_lock) = &self.vector_db {
+            let mut vdb = vdb_lock.lock().unwrap_or_else(|p| p.into_inner());
+            Ok(clear_all_memories(&mut c, Some(&mut vdb), now_ms)?)
+        } else {
+            Ok(clear_all_memories(&mut c, None, now_ms)?)
+        }
     }
 
     pub fn item(&self, id: i64) -> Result<ItemDetail, ApiError> {

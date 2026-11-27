@@ -6,7 +6,7 @@
 //! it cites, then `ask_done` with the whole answer. Citation chips open the item inside the
 //! notch; nothing outside Tessara is opened.
 
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
 
 use rusqlite::Connection;
 use serde::Serialize;
@@ -17,7 +17,9 @@ use tsr_infer::client::{ChatModel, ChatRequest};
 use tsr_infer::runtime::Runner;
 use tsr_infer::sched::{Dispatch, JobSpec, Outcome, Priority, Resource};
 use tsr_retrieval::ask::{Snippet, answer, request, snippets};
-use tsr_retrieval::hybrid::{Filter, Opts, search};
+use tsr_retrieval::embed::Embedder;
+use tsr_retrieval::hybrid::{Filter, Opts, search, search_vectordb};
+use tsr_store::vectordb::VectorDb;
 
 use crate::drafts::Emit;
 use crate::views::{ApiError, E_INVALID, E_STORE};
@@ -27,6 +29,8 @@ pub struct AskStart {
     pub snippets: Vec<Snippet>,
     /// A model will answer (otherwise the UI shows the sources only).
     pub answering: bool,
+    /// True if semantic VectorDb search contributed to retrieval for this query.
+    pub vector_used: bool,
 }
 
 struct Job {
@@ -34,12 +38,17 @@ struct Job {
     snippets: Vec<Snippet>,
 }
 
+type AskSubmitFn = Arc<dyn Fn(JobSpec) -> bool + Send + Sync>;
+type EmbedderSlot = Arc<Mutex<Option<Arc<dyn Embedder>>>>;
+
 pub struct Asks {
     conn: Mutex<Connection>,
-    blocklist: Blocklist,
+    blocklist: Arc<RwLock<Blocklist>>,
     pending: Arc<Mutex<Option<Job>>>,
-    submit: OnceLock<Box<dyn Fn(JobSpec) -> bool + Send + Sync>>,
+    submit: Mutex<Option<AskSubmitFn>>,
     emit: Arc<OnceLock<Emit>>,
+    vector_db: Option<Arc<Mutex<VectorDb>>>,
+    embedder: Option<EmbedderSlot>,
     seq: Mutex<u64>,
 }
 
@@ -47,12 +56,29 @@ impl Asks {
     pub fn new(conn: Connection, blocklist: Blocklist) -> Self {
         Asks {
             conn: Mutex::new(conn),
-            blocklist,
+            blocklist: Arc::new(RwLock::new(blocklist)),
             pending: Arc::new(Mutex::new(None)),
-            submit: OnceLock::new(),
+            submit: Mutex::new(None),
             emit: Arc::new(OnceLock::new()),
+            vector_db: None,
+            embedder: None,
             seq: Mutex::new(0),
         }
+    }
+
+    pub fn with_shared_blocklist(mut self, blocklist: Arc<RwLock<Blocklist>>) -> Self {
+        self.blocklist = blocklist;
+        self
+    }
+
+    pub fn with_vector_db(mut self, vdb: Arc<Mutex<VectorDb>>) -> Self {
+        self.vector_db = Some(vdb);
+        self
+    }
+
+    pub fn with_embedder(mut self, embedder: Arc<Mutex<Option<Arc<dyn Embedder>>>>) -> Self {
+        self.embedder = Some(embedder);
+        self
     }
 
     pub fn set_emitter(&self, e: Emit) {
@@ -60,7 +86,11 @@ impl Asks {
     }
 
     pub fn set_submit(&self, f: Box<dyn Fn(JobSpec) -> bool + Send + Sync>) {
-        let _ = self.submit.set(f);
+        *self.submit.lock().unwrap_or_else(|p| p.into_inner()) = Some(Arc::from(f));
+    }
+
+    pub fn clear_submit(&self) {
+        *self.submit.lock().unwrap_or_else(|p| p.into_inner()) = None;
     }
 
     pub fn runner(&self) -> AskRunner {
@@ -87,11 +117,30 @@ impl Asks {
         let mut o = Opts::new(now);
         o.k = 40;
         o.use_vector = false;
+        let bl_guard = self.blocklist.read().unwrap_or_else(|p| p.into_inner());
         let filter = Filter {
-            blocklist: Some(&self.blocklist),
+            blocklist: Some(&*bl_guard),
             suppressed: None,
         };
-        let (hits, _) = search(&c, None, None, q, &filter, &o)?;
+        let active_emb = self
+            .embedder
+            .as_ref()
+            .and_then(|m| m.lock().unwrap_or_else(|p| p.into_inner()).clone());
+        let (hits, diag) = if let (Some(vdb_lock), Some(emb)) = (&self.vector_db, active_emb) {
+            let vdb = vdb_lock.lock().unwrap_or_else(|p| p.into_inner());
+            if !vdb.is_empty() {
+                o.use_vector = true;
+                search_vectordb(&c, Some(&*vdb), Some(&*emb), q, &filter, &o)?
+            } else {
+                o.use_vector = false;
+                search(&c, None, None, q, &filter, &o)?
+            }
+        } else {
+            o.use_vector = false;
+            search(&c, None, None, q, &filter, &o)?
+        };
+        let vector_used = diag.vector > 0;
+        drop(bl_guard);
         let mut ranked = Vec::new();
         for h in hits {
             if let Some((a, b)) = aq.range
@@ -131,7 +180,8 @@ impl Asks {
             &local.strftime("%A").to_string(),
             &label,
         );
-        let answering = match self.submit.get() {
+        let submit_fn = self.submit.lock().unwrap_or_else(|p| p.into_inner()).clone();
+        let answering = match submit_fn {
             Some(submit) if !snips.is_empty() => {
                 *self.pending.lock().unwrap_or_else(|p| p.into_inner()) = Some(Job {
                     req,
@@ -155,6 +205,7 @@ impl Asks {
         Ok(AskStart {
             snippets: snips,
             answering,
+            vector_used,
         })
     }
 }

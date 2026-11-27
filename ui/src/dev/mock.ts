@@ -3,7 +3,21 @@
 // screen capture, so this is how the UI is looked at and screenshotted. All data is synthetic.
 // Loaded from main.tsx only when `import.meta.env.DEV` and no Tauri runtime is present, so
 // production builds do not contain it.
-import type { Brief, FactDto, HotkeyInfo, HourBucket, ItemCard, LoopGroups, PeriodDto, RollupView, Status, Today } from "../ipc/types";
+import type {
+  AiSetupState,
+  BlocklistRuleDto,
+  Brief,
+  FactDto,
+  HotkeyInfo,
+  HourBucket,
+  ItemCard,
+  LoopGroups,
+  PeriodDto,
+  PrivacyInfo,
+  RollupView,
+  Status,
+  Today,
+} from "../ipc/types";
 
 const now = Date.now();
 const min = 60_000;
@@ -54,13 +68,73 @@ function buckets(): HourBucket[] {
   return [...m.values()].sort((a, b) => a.start - b.start);
 }
 
+let retentionDays = 30;
+let aiProvider: "local" | "groq" = "local";
+let cloudConsent = false;
+let hasGroqKey = false;
+let hasLocalModel = true;
+let hasEmbedder = true;
+let groqModel = "openai/gpt-oss-20b";
+let blocklistRules: BlocklistRuleDto[] = [
+  { key: "builtin.process.1password", kind: "process", scope: "all", pattern: "*1password*", is_regex: false, builtin: true, enabled: true, blocked_count: 14 },
+  { key: "builtin.title.otp", kind: "title", scope: "all", pattern: "\\botp\\b|verification code", is_regex: true, builtin: true, enabled: true, blocked_count: 3 },
+  { key: "builtin.url.banking", kind: "url", scope: "browser", pattern: "*bank*", is_regex: false, builtin: true, enabled: true, blocked_count: 6 },
+];
+
+const privacyInfo = (): PrivacyInfo => ({
+  retention_days: retentionDays,
+  ai_provider: aiProvider,
+  groq_model: groqModel,
+  cloud_consent: cloudConsent,
+  has_groq_key: hasGroqKey,
+  has_local_model: hasLocalModel,
+  vector_records: items.length * 2,
+  last_pruned_at: now - 3600_000,
+});
+
+const aiSetupState = (): AiSetupState => ({
+  provider: aiProvider,
+  runtime_state: aiProvider === "groq" ? (hasGroqKey && cloudConsent ? "ready" : "not_set_up") : hasLocalModel ? "ready" : "not_set_up",
+  backend: aiProvider === "groq" ? (hasGroqKey && cloudConsent ? "groq" : null) : hasLocalModel ? "vulkan" : null,
+  cloud_consent: cloudConsent,
+  groq_model: groqModel,
+  has_groq_key: hasGroqKey,
+  groq_key_source: hasGroqKey ? "dpapi" : "none",
+  has_local_model: hasLocalModel,
+  has_embedder: hasEmbedder,
+  groq_feature_supported: true,
+  hardware: {
+    verdict: "gpu",
+    gpu_name: "Simulated Demo GPU",
+    cpu_cores: 8,
+    ram_total_mib: 16_384,
+    ram_available_mib: 9_800,
+    disk_free_mib: 84_000,
+    local_model_bytes: 3_333_461_920,
+    embedder_bytes: 487_352_503,
+    warnings: [],
+  },
+  download: {
+    active: false,
+    target: null,
+    phase: "idle",
+    done_bytes: 0,
+    total_bytes: 0,
+    file: null,
+    error: null,
+  },
+});
+
 let paused = false;
 const status = (): Status => ({
   paused,
   capturing: !paused,
-  model: { state: "ready", backend: "vulkan" },
+  model: {
+    state: aiProvider === "groq" ? (hasGroqKey && cloudConsent ? "ready" : "not_set_up") : hasLocalModel ? "ready" : "not_set_up",
+    backend: aiProvider === "groq" ? (hasGroqKey && cloudConsent ? "groq" : null) : hasLocalModel ? "vulkan" : null,
+  },
   queue: [0, 2, 5],
-  counts: { open: 4, due_today: 1, overdue: 1, needs_review: 1, items_today: items.length },
+  counts: { open: facts.filter((f) => f.status === "open").length, due_today: 1, overdue: 1, needs_review: 1, items_today: items.length },
 });
 
 const today = (): Today => ({
@@ -206,8 +280,79 @@ async function invoke(cmd: string, args: Record<string, unknown> = {}): Promise<
         () => emit("ask_done", { sentences: [s1, s2], insufficient: false, not_found: false, fallback: [], first_sentence_ms: 400, total_ms: 900 }),
         1000,
       );
-      return { snippets, answering: true };
+      return { snippets, answering: true, vector_used: hasEmbedder };
     }
+    case "delete_item": {
+      const idx = items.findIndex((i) => i.item_id === args.itemId);
+      if (idx >= 0) items.splice(idx, 1);
+      return null;
+    }
+    case "propose_clear_memories":
+      return "2".repeat(32);
+    case "clear_memories": {
+      const removed = items.length;
+      items.length = 0;
+      facts.length = 0;
+      return { items_deleted: removed, sources_deleted: removed, facts_deleted: 8, vectors_deleted: removed * 2 };
+    }
+    case "get_privacy_settings":
+      return privacyInfo();
+    case "set_retention_days":
+      retentionDays = Number(args.days ?? 0);
+      return privacyInfo();
+    case "list_blocklist_rules":
+      return blocklistRules;
+    case "set_blocklist_rule_enabled":
+      blocklistRules = blocklistRules.map((r) => (r.key === args.key ? { ...r, enabled: Boolean(args.enabled) } : r));
+      return blocklistRules;
+    case "add_blocklist_rule": {
+      const rule: BlocklistRuleDto = {
+        key: `user.${blocklistRules.length + 1}`,
+        kind: (args.kind as BlocklistRuleDto["kind"]) ?? "process",
+        scope: (args.scope as BlocklistRuleDto["scope"]) ?? "all",
+        pattern: String(args.pattern ?? ""),
+        is_regex: Boolean(args.isRegex),
+        builtin: false,
+        enabled: true,
+        blocked_count: 0,
+      };
+      blocklistRules = [...blocklistRules, rule];
+      return blocklistRules;
+    }
+    case "remove_blocklist_rule":
+      blocklistRules = blocklistRules.filter((r) => r.key !== args.key || r.builtin);
+      return blocklistRules;
+    case "get_ai_setup":
+      return aiSetupState();
+    case "set_ai_provider":
+      if (args.cloudConsent !== null && args.cloudConsent !== undefined) cloudConsent = Boolean(args.cloudConsent);
+      if (args.groqModel) groqModel = String(args.groqModel);
+      aiProvider = args.provider === "groq" ? "groq" : "local";
+      return aiSetupState();
+    case "save_groq_config":
+      if (!args.cloudConsent) throw { code: "cloud_consent_required", message: "error.cloud_consent_required" };
+      if (args.apiKey) hasGroqKey = true;
+      groqModel = String(args.model ?? "openai/gpt-oss-20b");
+      cloudConsent = true;
+      aiProvider = "groq";
+      return aiSetupState();
+    case "remove_groq_config":
+      hasGroqKey = false;
+      cloudConsent = false;
+      aiProvider = "local";
+      return aiSetupState();
+    case "test_groq_connection":
+      return { ok: true, latency_ms: 142, code: null };
+    case "start_model_download":
+      if (args.target === "local_llm") hasLocalModel = true;
+      else hasEmbedder = true;
+      return aiSetupState();
+    case "cancel_model_download":
+      return aiSetupState();
+    case "get_diagnostics":
+      return { format: "tessara-diagnostics/1", mode: "synthetic-demo", store: { items: items.length, facts: facts.length } };
+    case "save_diagnostics":
+      return "diagnostics-demo.json";
     case "draft_generate": {
       const full = "Hi Ravi, the revised budget sheet is attached (Q3_budget_v4.xlsx). I'll send the travel split by Friday 30 Oct.";
       for (let i = 1; i <= 4; i++) setTimeout(() => emit("draft_chunk", { text: full.slice(0, (full.length * i) / 4) }), i * 150);

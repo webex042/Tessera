@@ -12,6 +12,7 @@ import './style.css'
 
 import DocWindowBar from './components/DocWindowBar.vue'
 import HomeArchive from './components/HomeArchive.vue'
+import HomeNotchPreview from './components/HomeNotchPreview.vue'
 import Mermaid from './components/Mermaid.vue'
 import StatusBadge from './components/StatusBadge.vue'
 import StatusTicker from './components/StatusTicker.vue'
@@ -28,6 +29,7 @@ export default {
       'doc-before': () => h(DocWindowBar),
     }),
   enhanceApp({ app }) {
+    app.component('HomeNotchPreview', HomeNotchPreview)
     app.component('Mermaid', Mermaid)
     app.component('StatusBadge', StatusBadge)
   },

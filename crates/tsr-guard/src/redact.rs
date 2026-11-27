@@ -217,14 +217,14 @@ static NAME_HONORIFIC: LazyLock<Regex> = LazyLock::new(|| {
 });
 static NAME_CONTEXT: LazyLock<Regex> = LazyLock::new(|| {
     re(
-        r"(?i:\b(?:my\s+name\s+is|contact|meet\s+with|attended\s+by|assigned\s+to|reported\s+by|name\s*[:=]))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b",
+        r"(?i:\b(?:my\s+name\s+is|contact|meet\s+with|attended\s+by|assigned\s+to|reported\s+by|(?:name|owner|counterparty|from|to|sender|recipient)\s*[:=]))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b",
     )
 });
 static NAME_GREETING: LazyLock<Regex> =
     LazyLock::new(|| re(r"(?i:\b(?:Dear|Hi|Hello))\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b"));
 static ADDRESS: LazyLock<Regex> = LazyLock::new(|| {
     re(
-        r"(?i)\b(?:address\s*[:=]|lives?\s+at|residing\s+at)\s*([0-9A-Za-z\s,.-]{5,60}?(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Lane|Ln\.?|Boulevard|Blvd\.?|Drive|Dr\.?|Marg|Nagar|Sector|Block|Apartment|Apt\.?|Suite|Ste\.?|Floor|Building|Bldg\.?)(?:\s*,?\s*[A-Za-z\s]+,?\s*(?:\b\d{6}\b|\b\d{5}(?:-\d{4})?\b))?)\b",
+        r"(?i)\b(?:(?:address|home)\s*[:=]|lives?\s+at|residing\s+at)\s*([0-9A-Za-z\s,.-]{5,60}?(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Lane|Ln\.?|Boulevard|Blvd\.?|Drive|Dr\.?|Marg|Nagar|Sector|Block|Apartment|Apt\.?|Suite|Ste\.?|Floor|Building|Bldg\.?)(?:\s*,?\s*[A-Za-z\s]+,?\s*(?:\b\d{6}\b|\b\d{5}(?:-\d{4})?\b))?)\b",
     )
 });
 static POSTAL_CODE: LazyLock<Regex> = LazyLock::new(|| {

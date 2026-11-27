@@ -13,6 +13,7 @@ ui/dist/
 # --- Tauri ---
 src-tauri/target/
 src-tauri/gen/
+dist-release/
 # Sidecar binaries are fetched by tools/fetch-sidecar.ps1 (pinned in tools/sidecar.lock)
 src-tauri/binaries/*
 !src-tauri/binaries/.gitkeep

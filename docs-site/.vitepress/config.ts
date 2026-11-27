@@ -166,6 +166,7 @@ export default defineConfigWithTheme<ThemeConfig>({
 
     nav: [
       { text: 'Overview', link: '/guide/', activeMatch: '^/guide/' },
+      { text: 'Download', link: '/download', activeMatch: '^/download' },
       { text: 'Getting Started', link: '/getting-started/', activeMatch: '^/getting-started/' },
       { text: 'Architecture', link: '/architecture/', activeMatch: '^/architecture/' },
       { text: 'Core Systems', link: '/modules/', activeMatch: '^/modules/' },
@@ -218,6 +219,7 @@ export default defineConfigWithTheme<ThemeConfig>({
           text: 'getting started',
           items: [
             { text: 'Overview', link: '/getting-started/' },
+            { text: 'Download & Installers', link: '/download' },
             { text: 'Prerequisites', link: '/getting-started/prerequisites' },
             { text: 'Installation & Setup', link: '/getting-started/installation' },
             { text: 'Development Environment', link: '/getting-started/development' },
@@ -328,6 +330,7 @@ export default defineConfigWithTheme<ThemeConfig>({
           text: 'deployment & ci/cd',
           items: [
             { text: 'Overview', link: '/deployment/' },
+            { text: 'Download & Installers', link: '/download' },
             { text: 'Vercel Hosting', link: '/deployment/vercel-hosting' },
             { text: 'Desktop Packaging', link: '/deployment/packaging' },
             { text: 'Release Engineering', link: '/deployment/release-engineering' },

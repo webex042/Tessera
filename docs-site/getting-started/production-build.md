@@ -8,17 +8,18 @@ This document covers compiling Tessera for optimized release deployment.
 
 Ensure all React assets are compiled to static bundles:
 ```powershell
-pnpm build:ui
+npm --prefix ui run build
 ```
 This runs `tsc --noEmit` and `vite build`, writing the output to `ui/dist/`.
 
 ---
 
-## 2. Compile Release Rust Binary
+## 2. Compile Release Rust Binary & Bundle Installer
 
-Compile the workspace in release mode with link-time optimization (LTO):
+Compile the workspace in release mode with thin LTO (`--features "custom-protocol,groq"` keeps `local` as the strict default while enabling opt-in Groq BYOK):
 ```powershell
-cargo build --release -p tessara --features custom-protocol
+cargo build --locked --release -p tessara --features "custom-protocol,groq"
+.\node_modules\.bin\tauri.cmd build --features groq --bundles nsis
 ```
 
 ### Compiler Optimization Profile
@@ -46,9 +47,10 @@ Before distributing any compiled artifacts, run the security gates:
 ```powershell
 # 1. Verify no unauthorized crates pull in network dependencies
 python tools/check_network_deps.py --locked
+python tools/check_network_deps.py --locked --features tessara/groq
 
 # 2. Run cargo deny checks for license compliance and security advisories
-cargo deny check
+cargo deny --locked check
 ```
 
 ---

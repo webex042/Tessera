@@ -8,9 +8,12 @@ import { OpenLoopsView } from "./views/OpenLoopsView";
 import { SearchView } from "./views/SearchView";
 import { AskView } from "./views/AskView";
 import { DiagnosticsView } from "./views/DiagnosticsView";
+import { PrivacyView } from "./views/PrivacyView";
+import { SetupView } from "./views/SetupView";
 import { TimelineView } from "./views/TimelineView";
 
 export type Tab = "today" | "ask" | "loops" | "search" | "timeline";
+type Subview = "none" | "diagnostics" | "privacy" | "setup";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "today", label: "Today" },
@@ -51,19 +54,25 @@ export function Expanded(props: {
     tabRefs.current[next.id]?.focus();
   };
 
-  const [diag, setDiag] = useState(false);
+  const [subview, setSubview] = useState<Subview>("none");
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   let view: ReactNode;
   if (tab === "today") view = <TodayView />;
   else if (tab === "loops") view = <OpenLoopsView />;
   else if (tab === "search") view = <SearchView />;
-  else if (tab === "ask") view = <AskView />;
+  else if (tab === "ask") view = <AskView status={status} onOpenSetup={() => setSubview("setup")} />;
   else view = <TimelineView />;
+
+  const selectTab = (t: Tab) => {
+    setSubview("none");
+    onTab(t);
+  };
 
   return (
     <div
       role="dialog"
       aria-label="Tessara"
-      onKeyDown={(e) => e.key === "Escape" && onClose()}
+      onKeyDown={(e) => e.key === "Escape" && (subview !== "none" ? setSubview("none") : onClose())}
       className={`notch-surface notch-panel m-1 flex h-[512px] flex-col rounded-2xl text-sm ${shown ? "is-shown" : ""}`}
     >
       <div className="flex items-center gap-2 border-b border-[var(--notch-line)] px-3 py-2">
@@ -76,10 +85,10 @@ export function Expanded(props: {
               }}
               role="tab"
               id={`tab-${t.id}`}
-              aria-selected={tab === t.id}
+              aria-selected={subview === "none" && tab === t.id}
               aria-controls={`panel-${t.id}`}
               tabIndex={tab === t.id ? 0 : -1}
-              onClick={() => onTab(t.id)}
+              onClick={() => selectTab(t.id)}
               className="notch-tab rounded-lg px-3 py-1"
             >
               {t.label}
@@ -93,16 +102,45 @@ export function Expanded(props: {
           ✕
         </button>
       </div>
+      {subview === "none" && status?.model.state === "not_set_up" && !bannerDismissed && (
+        <div className="flex items-center gap-2 border-b border-[var(--notch-line)] px-3 py-1.5 text-[11px]">
+          <span className="notch-muted">AI model not set up yet (capture stays paused by default).</span>
+          <button type="button" className="notch-button ml-auto font-semibold" onClick={() => setSubview("setup")}>
+            Set up AI
+          </button>
+          <button type="button" className="notch-button" aria-label="Dismiss setup banner" onClick={() => setBannerDismissed(true)}>
+            ✕
+          </button>
+        </div>
+      )}
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
-        {diag ? <DiagnosticsView onBack={() => setDiag(false)} /> : view}
+        {subview === "diagnostics" ? (
+          <DiagnosticsView onBack={() => setSubview("none")} />
+        ) : subview === "privacy" ? (
+          <PrivacyView onBack={() => setSubview("none")} onOpenSetup={() => setSubview("setup")} />
+        ) : subview === "setup" ? (
+          <SetupView onBack={() => setSubview("none")} />
+        ) : (
+          view
+        )}
       </div>
       {status && (
-        <div className="notch-muted border-t border-[var(--notch-line)] px-3 py-1 text-[11px]">
-          Model: {status.model.state.replace(/_/g, " ")}
-          {status.model.backend ? ` (${status.model.backend})` : ""} · queued {status.queue[1] + status.queue[2]}
-          <button type="button" className="ml-2 underline" onClick={() => setDiag(true)}>
-            Diagnostics
-          </button>
+        <div className="notch-muted flex items-center gap-2 border-t border-[var(--notch-line)] px-3 py-1 text-[11px]">
+          <span>
+            AI: {status.model.state.replace(/_/g, " ")}
+            {status.model.backend ? ` (${status.model.backend})` : ""} · queued {status.queue[1] + status.queue[2]}
+          </span>
+          <span className="ml-auto flex items-center gap-2.5">
+            <button type="button" className="underline" onClick={() => setSubview("setup")}>
+              AI Setup
+            </button>
+            <button type="button" className="underline" onClick={() => setSubview("privacy")}>
+              Privacy
+            </button>
+            <button type="button" className="underline" onClick={() => setSubview("diagnostics")}>
+              Diagnostics
+            </button>
+          </span>
         </div>
       )}
     </div>

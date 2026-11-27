@@ -20,12 +20,17 @@ The check evaluates:
 
 ---
 
-## 2. Model File Options
+## 2. In-App AI Setup & Model File Options
 
-Tessera requires the primary vision-language model weights:
-- **Language & Vision Core:** `Qwen3-VL-4B-Instruct-Q4_K_M.gguf` (2.33 GiB).
-- **Vision Projector:** `mmproj-Qwen3-VL-4B-Instruct-F16.gguf` (0.78 GiB).
-- **Embedding Model:** `multilingual-e5-small` ONNX format (0.46 GiB).
+End users configure inference directly inside the desktop **AI Setup** view:
+
+- **Option 1 — Local Sidecar (`Qwen3-VL-4B-Instruct`):** Fully offline inference on GPU (Vulkan) or CPU. Requires downloading the model weights (`2.33 GiB` LLM + `0.78 GiB` mmproj, or text-only embedder `0.46 GiB`):
+  - **Language & Vision Core:** `Qwen3VL-4B-Instruct-Q4_K_M.gguf` (2.33 GiB).
+  - **Vision Projector:** `mmproj-Qwen3VL-4B-Instruct-F16.gguf` (0.78 GiB).
+  - **Embedding Model:** `multilingual-e5-small` ONNX format (0.46 GiB) for semantic `VectorDb` search.
+- **Option 2 — Groq BYOK (`openai/gpt-oss-20b`):** Skip the 3.1 GiB local GGUF download by pasting your own Groq API key inside **AI Setup** (stored encrypted in Windows DPAPI `groq_key.bin`). Outbound prompts are scrubbed via `tsr-guard` PII masking before leaving your PC.
+
+Users can also inspect and pre-stage models via CLI:
 
 ### Option A: Use Files You Already Have
 If you have already downloaded these models, point Tessera to your directory:
@@ -60,4 +65,5 @@ Once model files are verified, Tessera executes a lightweight smoke-test prompt 
 The notch interface remains in a **Paused** state until you click **Start** or press `Alt + Shift + P`. Once unpaused:
 - The Gatekeeper monitors foreground window changes.
 - Sessions aggregate active typing and document reading.
-- Passwords and secrets are redacted before persistence in SQLCipher.
+- Passwords, PII, and secrets are masked (`tsr-guard`) before persistence in SQLCipher and AES-256-GCM `VectorDb` (`tessera_vectors.enc`).
+- Open **Privacy Controls** at any time to adjust retention pruning (`7`–`365` days), edit app blocklists, delete individual captured items, or run a token-confirmed wipe.

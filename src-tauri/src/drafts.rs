@@ -14,7 +14,7 @@
 //! Drafts are never stored; the audit log gets `draft_inserted` / `draft_copied` /
 //! `draft_discarded` with the length only.
 
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
 use std::time::{Duration, Instant};
 
 use rusqlite::Connection;
@@ -85,15 +85,17 @@ struct Job {
     instruction: String,
 }
 
+type DraftSubmitFn = Arc<dyn Fn(JobSpec) -> bool + Send + Sync>;
+
 pub struct Drafts {
     #[cfg(windows)]
     uia: Mutex<tsr_capture::uia::UiaReader>,
     session: Arc<Mutex<Option<Session>>>,
     pending: Arc<Mutex<Option<Job>>>,
     conn: Mutex<Connection>,
-    blocklist: Blocklist,
+    blocklist: Arc<RwLock<Blocklist>>,
     /// Queues a P0 job on the model runtime; unset when no model is set up.
-    submit: OnceLock<Box<dyn Fn(JobSpec) -> bool + Send + Sync>>,
+    submit: Mutex<Option<DraftSubmitFn>>,
     emit: Arc<OnceLock<Emit>>,
     seq: Mutex<u64>,
 }
@@ -114,20 +116,29 @@ impl Drafts {
             session: Arc::new(Mutex::new(None)),
             pending: Arc::new(Mutex::new(None)),
             conn: Mutex::new(conn),
-            blocklist,
-            submit: OnceLock::new(),
+            blocklist: Arc::new(RwLock::new(blocklist)),
+            submit: Mutex::new(None),
             emit: Arc::new(OnceLock::new()),
             seq: Mutex::new(0),
         })
+    }
+
+    pub fn with_shared_blocklist(mut self, blocklist: Arc<RwLock<Blocklist>>) -> Self {
+        self.blocklist = blocklist;
+        self
     }
 
     pub fn set_emitter(&self, e: Emit) {
         let _ = self.emit.set(e);
     }
 
-    /// Set once the model runtime is running.
+    /// Set once the model runtime is running (replaces previous submitter on hot-swap).
     pub fn set_submit(&self, f: Box<dyn Fn(JobSpec) -> bool + Send + Sync>) {
-        let _ = self.submit.set(f);
+        *self.submit.lock().unwrap_or_else(|p| p.into_inner()) = Some(Arc::from(f));
+    }
+
+    pub fn clear_submit(&self) {
+        *self.submit.lock().unwrap_or_else(|p| p.into_inner()) = None;
     }
 
     /// The runner for `draft` jobs (registered with the model runtime).
@@ -163,13 +174,17 @@ impl Drafts {
         } else {
             (None, PrivateState::NotPrivate)
         };
-        let decision = self.blocklist.check(&WindowFacts {
-            exe: &facts.exe,
-            exe_path: Some(&facts.exe_path),
-            title: &facts.title,
-            url: url.as_deref(),
-            private,
-        });
+        let decision = self
+            .blocklist
+            .read()
+            .unwrap_or_else(|p| p.into_inner())
+            .check(&WindowFacts {
+                exe: &facts.exe,
+                exe_path: Some(&facts.exe_path),
+                title: &facts.title,
+                url: url.as_deref(),
+                private,
+            });
         if decision.is_blocked() {
             return Err(E_BLOCKED);
         }
@@ -203,7 +218,12 @@ impl Drafts {
             let s = s.as_ref().ok_or(E_NO_SESSION)?;
             (s.app.clone(), s.thread.clone())
         };
-        let submit = self.submit.get().ok_or(E_MODEL)?;
+        let submit = self
+            .submit
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .clone()
+            .ok_or(E_MODEL)?;
         let memory = retrieve(
             &self.conn.lock().unwrap_or_else(|p| p.into_inner()),
             thread.expose(),

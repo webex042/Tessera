@@ -10,7 +10,7 @@ Tessera targets **Microsoft Windows 11 (x64)** as a standalone native desktop ap
 ```mermaid
 flowchart TD
     subgraph Frontend["Frontend Build"]
-        UI["ui/ (React 19 + Vite)"] -->|pnpm build:ui| DIST["ui/dist/ (Static Assets)"]
+        UI["ui/ (React 19 + Vite)"] -->|npm run build| DIST["ui/dist/ (Static Assets)"]
     end
 
     subgraph Sidecars["Sidecar Binaries"]
@@ -40,8 +40,8 @@ The packaging pipeline is defined in [`src-tauri/tauri.conf.json`](https://githu
   "build": {
     "frontendDist": "../ui/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": { "script": "pnpm dev", "cwd": "../ui" },
-    "beforeBuildCommand": { "script": "pnpm build", "cwd": "../ui" }
+    "beforeDevCommand": { "script": "npm run dev", "cwd": "../ui" },
+    "beforeBuildCommand": { "script": "npm run build", "cwd": "../ui" }
   },
   "bundle": {
     "active": false,
@@ -105,34 +105,32 @@ python tools/fetch_sidecar.py llama_cpp cpu-x64
 To build the release desktop installer locally:
 
 ```powershell
-# 1. Install frontend and root dependencies
-corepack enable
-pnpm install --frozen-lockfile
+# 1. Install frontend dependencies and build React 19 assets
+npm --prefix ui install
+npm --prefix ui run build
 
-# 2. Build the production React 19 frontend
-pnpm build:ui
-
-# 3. Ensure sidecars are populated
+# 2. Ensure sidecars are populated
 python tools/fetch_sidecar.py onnxruntime win-x64
 python tools/fetch_sidecar.py llama_cpp cpu-x64
+python tools/fetch_sidecar.py llama_cpp vulkan-x64
 
-# 4. Compile the native host with custom-protocol feature (local air-gapped default)
+# 3. Compile the native host with custom-protocol feature (local air-gapped default)
 cargo build -p tessara --release --features custom-protocol --locked
 # Optional Groq build (still defaults to TSR_LLM_PROVIDER=local at runtime):
 cargo build -p tessara --release --features "custom-protocol,groq" --locked
 
-# 5. Build NSIS bundle (when bundle.active is enabled in tauri.conf.json)
-pnpm tauri build
+# 4. Build NSIS bundle (bundle.active is true in tauri.conf.json)
+.\node_modules\.bin\tauri.cmd build --features groq --bundles nsis
 ```
 
 The resulting installer is generated at:
-`target/release/bundle/nsis/Tessera_0.0.1_x64-setup.exe`
+`target/release/bundle/nsis/Tessara_0.0.1_x64-setup.exe`
 
 ---
 
 ## Free Desktop & Documentation Distribution
 
-- **Windows Desktop Installer (GitHub Releases, `$0`):** Publish the signed or unsigned `Tessera_0.0.1_x64-setup.exe` NSIS installer on GitHub Releases at zero hosting cost.
+- **Windows Desktop Installer (GitHub Releases, `$0`):** Publish the signed or unsigned `Tessara_0.0.1_x64-setup.exe` NSIS installer (and `Tessara_0.0.1_x64-portable.zip`) on GitHub Releases at zero hosting cost.
   - **Strict Credential Rule (BYOK):** Never embed `GROQ_API_KEY` or `.env` files inside distributed binaries or installers. Users switching `TSR_LLM_PROVIDER=groq` supply their own key via environment variables, a local `.env` file, or DPAPI `%LOCALAPPDATA%\Tessara\groq_key.bin`.
 - **Documentation Website (Vercel Hobby, `$0`):** `docs-site/` builds as static HTML/JS/CSS/SVG via `vercel.json` and `docs-site/vercel.json` without any backend server or secrets.
 - **Optional Future Proxy Pattern:** If centralized shared-quota hosting is ever required instead of per-user keys, deploy a thin edge proxy (for example, **Cloudflare Workers** + **Cloudflare D1** free tier for per-user rate accounting) storing `GROQ_API_KEY` server-side as a Worker secret rather than distributing keys to desktop clients.

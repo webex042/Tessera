@@ -4,14 +4,56 @@ import { api } from "../../ipc/api";
 import type { ItemDetail, SearchHit } from "../../ipc/types";
 import { Status, time, useLoad, type Load } from "./common";
 
-export function ItemPane({ id, onBack }: { id: number; onBack: () => void }) {
+export function ItemPane({ id, onBack, onDeleted }: { id: number; onBack: () => void; onDeleted?: () => void }) {
   const load = useLoad<ItemDetail>(() => api.item(id), [id]);
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [delErr, setDelErr] = useState<string | null>(null);
   const d = load.data;
+  const doDelete = () => {
+    setBusy(true);
+    setDelErr(null);
+    api.deleteItem(id).then(
+      () => {
+        setBusy(false);
+        setConfirming(false);
+        onDeleted?.();
+        onBack();
+      },
+      () => {
+        setBusy(false);
+        setDelErr("Could not delete this memory item.");
+      },
+    );
+  };
   return (
     <div>
-      <button type="button" className="notch-button mb-2" onClick={onBack}>
-        ← Back
-      </button>
+      <div className="mb-2 flex items-center gap-2">
+        <button type="button" className="notch-button" onClick={onBack}>
+          ← Back
+        </button>
+        {d && !confirming && (
+          <button type="button" className="notch-button ml-auto" onClick={() => setConfirming(true)}>
+            Delete item
+          </button>
+        )}
+        {d && confirming && (
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="notch-muted text-[11px]">Delete from SQLCipher & VectorDb?</span>
+            <button type="button" className="notch-button" disabled={busy} onClick={doDelete}>
+              {busy ? "Deleting…" : "Confirm"}
+            </button>
+            <button type="button" className="notch-button" disabled={busy} onClick={() => setConfirming(false)}>
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
+      {delErr && (
+        <p role="alert" className="mb-2 text-[12px]">
+          {delErr}
+        </p>
+      )}
       <Status load={load} empty={false}>
         {d && (
           <article>
@@ -40,7 +82,7 @@ export function SearchView() {
     () => (submitted ? api.search(submitted) : Promise.resolve([] as SearchHit[])),
     [submitted],
   );
-  if (open !== null) return <ItemPane id={open} onBack={() => setOpen(null)} />;
+  if (open !== null) return <ItemPane id={open} onBack={() => setOpen(null)} onDeleted={load.reload} />;
   return (
     <div>
       <form

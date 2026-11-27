@@ -3,13 +3,20 @@
 // dimmed and labelled. If nothing verifies: "I couldn't find that in your memory" + top sources.
 import { useEffect, useRef, useState } from "react";
 import { api, on } from "../../ipc/api";
-import type { Answer, AnswerSentence, ApiError, AskSnippet } from "../../ipc/types";
+import type { Answer, AnswerSentence, ApiError, AskSnippet, Status } from "../../ipc/types";
 import { ItemPane } from "./SearchView";
 
-export function AskView() {
+const STARTERS = [
+  "What did I promise Ravi?",
+  "Any open deadlines today?",
+  "Summarize my recent vendor review",
+];
+
+export function AskView({ status, onOpenSetup }: { status?: Status | null; onOpenSetup?: () => void }) {
   const [q, setQ] = useState("");
   const [snips, setSnips] = useState<AskSnippet[] | null>(null);
   const [answering, setAnswering] = useState(false);
+  const [vectorUsed, setVectorUsed] = useState(false);
   const [sentences, setSentences] = useState<AnswerSentence[]>([]);
   const [done, setDone] = useState<Answer | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -34,20 +41,47 @@ export function AskView() {
     return () => subs.forEach((p) => p.then((u) => u()));
   }, []);
   if (open !== null) return <ItemPane id={open} onBack={() => setOpen(null)} />;
-  const submit = () => {
-    if (!q.trim()) return;
+  const submit = (override?: string) => {
+    const query = (override ?? q).trim();
+    if (!query) return;
+    if (override) setQ(query);
     setErr(null);
     setSentences([]);
     setDone(null);
-    api.ask(q.trim()).then(
-      (r) => (setSnips(r.snippets), setAnswering(r.answering), !r.answering && r.snippets.length > 0 && setErr("Set up the model to get answers. Here are the closest sources.")),
+    setVectorUsed(false);
+    api.ask(query).then(
+      (r) => (
+        setSnips(r.snippets),
+        setAnswering(r.answering),
+        setVectorUsed(!!r.vector_used),
+        !r.answering &&
+          r.snippets.length > 0 &&
+          setErr("Set up a local or Groq model to synthesize answers. Sources remain available below.")
+      ),
       (e: ApiError) => setErr(e.code === "invalid_input" ? "Ask a shorter question." : "Couldn't search right now."),
     );
   };
   const byN = (n: number) => snips?.find((s) => s.n === n);
   const notFound = done?.not_found;
+  const providerChip =
+    status?.model.state === "not_set_up"
+      ? "Model not set up"
+      : status?.model.backend === "groq"
+        ? "Cloud · Groq (PII masked)"
+        : status?.model.backend
+          ? `Local · ${status.model.backend}`
+          : `Local · ${status?.model.state ?? "ready"}`;
   return (
     <div>
+      <div className="mb-1.5 flex items-center gap-1.5 text-[11px]">
+        <span className="notch-chip">{providerChip}</span>
+        {vectorUsed && <span className="notch-chip">Vector + Keyword</span>}
+        {status?.model.state === "not_set_up" && onOpenSetup && (
+          <button type="button" className="ml-auto underline" onClick={onOpenSetup}>
+            Configure AI
+          </button>
+        )}
+      </div>
       <form
         role="search"
         onSubmit={(e) => {
@@ -68,10 +102,29 @@ export function AskView() {
           className="notch-input w-full rounded-lg px-3 py-1.5"
         />
       </form>
+      {!snips && !answering && (
+        <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+          {STARTERS.map((s) => (
+            <button key={s} type="button" className="notch-button" onClick={() => submit(s)}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
       {err && (
-        <p role="status" className="notch-muted mt-2 text-[12px]">
-          {err}
-        </p>
+        <div role="status" className="notch-muted mt-2 flex items-center gap-2 text-[12px]">
+          <span>{err}</span>
+          {q.trim() && (
+            <button type="button" className="notch-button text-[11px]" onClick={() => submit()}>
+              Retry
+            </button>
+          )}
+          {onOpenSetup && (
+            <button type="button" className="underline text-[11px]" onClick={onOpenSetup}>
+              AI Setup
+            </button>
+          )}
+        </div>
       )}
       {(sentences.length > 0 || answering) && !notFound && (
         <section aria-live="polite" className="mt-2">

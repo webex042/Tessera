@@ -137,6 +137,34 @@ impl<E: Embedder> Runner for EmbedRunner<E> {
     }
 }
 
+/// Embedding jobs backed directly by encrypted [`tsr_store::vectordb::VectorDb`].
+pub struct VectorEmbedRunner {
+    pub conn: Connection,
+    pub vector_db: std::sync::Arc<std::sync::Mutex<tsr_store::vectordb::VectorDb>>,
+    pub embedder: std::sync::Arc<dyn Embedder>,
+    pub clock: fn() -> i64,
+}
+
+impl Runner for VectorEmbedRunner {
+    fn run(&mut self, job: &Dispatch, _: Option<&dyn ChatModel>, cancel: &CancelToken) -> Outcome {
+        if cancel.is_cancelled() {
+            return Outcome::Cancelled;
+        }
+        let mut vdb = self.vector_db.lock().unwrap_or_else(|p| p.into_inner());
+        match tsr_retrieval::ingest::embed_item_to_vectordb(
+            &mut self.conn,
+            &mut vdb,
+            job.spec.payload,
+            &*self.embedder,
+            None,
+            (self.clock)(),
+        ) {
+            Ok(_) => Outcome::Done,
+            Err(_) => Outcome::Failed { retryable: true },
+        }
+    }
+}
+
 /// Route model jobs to the runner for their kind (extraction P1, rollups P2).
 pub struct ByKind(pub Vec<(&'static str, Box<dyn Runner>)>);
 

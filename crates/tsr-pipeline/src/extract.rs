@@ -37,7 +37,7 @@ use tsr_store::people::AliasKind;
 
 use crate::dates::{DateContext, DateOrder, resolve};
 use crate::evidence::{EvidenceError, locate, word_set_similarity};
-use crate::guard::{Class, classify, looks_injected, obligation, quoted_request};
+use crate::guard::{Class, classify, leaked_from_injected_title, looks_injected, obligation, quoted_request};
 use crate::normalize::{char_slice, is_word_char, normalize, words};
 use crate::people::{PersonRef, Resolver, Suppression, normalize_alias};
 use crate::schema::{self, RawFact, SCHEMA_VER};
@@ -340,6 +340,10 @@ pub fn run(
             people_out.push((p.name.clone(), p.handle.clone()));
         }
         for f in &out.facts {
+            if leaked_from_injected_title(&f.text, text, title) {
+                rep.reject("injection");
+                continue;
+            }
             match verify_fact(f, text, &norm_item, &self_names, &dctx, &sup, ctx.redact, &mut rep) {
                 Some(a) => accepted.push(a),
                 None => continue,

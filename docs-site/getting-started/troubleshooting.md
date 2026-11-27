@@ -20,7 +20,7 @@ where.exe perl
 - **Cause:** The desktop UI has not been compiled yet.
 - **Fix:** Run the frontend compilation script before invoking `cargo`:
 ```powershell
-pnpm build:ui
+npm --prefix ui run build
 ```
 
 ---

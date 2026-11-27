@@ -26,7 +26,7 @@ publish = false
 # privacy guarantees (network, crypto, runtime loading). See docs/stage0/dependency-verification.md.
 [workspace.dependencies]
 # Storage: SQLCipher compiled from source with a vendored OpenSSL (plan D5).
-rusqlite = { version = "=0.41.0", default-features = false, features = ["bundled-sqlcipher-vendored-openssl"] }
+rusqlite = { version = "=0.43.0", default-features = false, features = ["bundled-sqlcipher-vendored-openssl"] }
 
 # Embeddings: default features would add the Hugging Face hub client (TLS HTTP) and
 # a build-time ONNX Runtime download. `ort-load-dynamic` loads a local onnxruntime.dll instead (plan D7, §10.1).
@@ -44,6 +44,7 @@ windows = { version = "0.62.2" }
 
 # Common
 regex = "1.13.1"
+ring = "0.17.14"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["preserve_order"] }
 sha1 = "0.11.0"

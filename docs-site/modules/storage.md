@@ -32,7 +32,7 @@ The embedded vector database is intended to support local, in-process semantic r
 ```
 +----------------+---------------+----------------+----------------+--------------------------+
 | Magic (4 bytes)| Version (1 B) | Nonce (16 B)   | Tag (32 B)     | Ciphertext (N bytes)     |
-| "TSRV"         | 0x01          | Random Salt    | SHA-256 HMAC   | AES-CTR Keystream Stream |
+| "TSRV"         | 0x02          | 12B Nonce      | AES-256-GCM Ciphertext | GCM 16B Tag (AAD)        |
 +----------------+---------------+----------------+----------------+--------------------------+
 ```
 
@@ -110,7 +110,6 @@ Tessera tracks memories and derived intelligence across ten core tables:
 ```mermaid
 erDiagram
     sources ||--o{ items : produces
-    items ||--o{ chunks : indexed_as
     items ||--o{ evidence : substantiates
     facts ||--o{ evidence : evidenced_by
     people ||--o{ aliases : has
@@ -149,7 +148,7 @@ erDiagram
 
 - **`sources`:** Unique origins (application executable, web domain, or document path).
 - **`items`:** Raw captured sessions (redacted text, timestamps, SimHash).
-- **`chunks`:** 512-token segments paired with 384-dimensional int8 embedding BLOBs.
+- **`VectorDb` (`tessera_vectors.enc`):** Off-SQLite AES-256-GCM (v2) embedded store holding 512-token PII-masked spans and 384-dimensional int8/f32 embeddings.
 - **`facts`:** Atomic intelligence (action, decision, event, question, note).
 - **`evidence`:** Character spans (`start_ch..end_ch`) in `items` proving a fact.
 - **`audit_events`:** Content-free tracking of system transitions, deletions, and model calls.

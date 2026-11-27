@@ -5,9 +5,9 @@
 | channels | recall@5 | recall@10 | precision@5 | MRR | nDCG@10 |
 |---|---|---|---|---|---|
 | keyword | 0.942 | 0.962 | 0.212 | 0.828 | 0.856 |
-| keyword + vector (RRF) | 0.904 | 0.981 | 0.200 | 0.847 | 0.870 |
-| keyword + vector + facts (RRF) | 0.942 | 1.000 | 0.212 | 0.845 | 0.876 |
-| vector (SIMULATED embedder) | 0.788 | 0.846 | 0.177 | 0.664 | 0.697 |
+| keyword + vector (RRF) | 0.913 | 0.981 | 0.204 | 0.838 | 0.864 |
+| keyword + vector + facts (RRF) | 0.942 | 1.000 | 0.212 | 0.845 | 0.877 |
+| vector (SIMULATED embedder) | 0.750 | 0.846 | 0.169 | 0.649 | 0.687 |
 
 Unanswerable questions with at least one hit (hybrid+facts): 8 of 8 — retrieval always returns something; answering "not in memory" is the Ask step's job (Stage 6).
 

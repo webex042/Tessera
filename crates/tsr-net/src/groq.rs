@@ -4,8 +4,9 @@
 //! - Reuses `ureq` with Windows OS SChannel TLS (`NativeTls` + `PlatformVerifier`), proxies disabled,
 //!   and zero redirects so Bearer credentials are never forwarded off-host.
 //! - `GROQ_API_KEY` stays inside [`Zeroizing`] and is redacted from [`Debug`] / logs / errors.
-//! - Defense-in-depth secret redaction (`tsr_guard::redact`) runs on system/user messages prior
-//!   to serialization.
+//! - Defense-in-depth PII & secret masking (`tsr_guard::redact::mask_pii`) runs on system/user
+//!   messages prior to serialization so names, emails, phones, addresses, DOBs, and credentials
+//!   never leave the device.
 //! - Free-tier rate limits (`20 RPM`, `700 RPD`, `6,000 TPM`, `150,000 TPD`) are tracked and
 //!   enforced via [`tsr_store::quota::QuotaTracker`], reserving capacity for interactive `P0` calls.
 
@@ -17,7 +18,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 use tsr_core::Sensitive;
-use tsr_guard::redact::{Options as RedactOptions, redact};
+use tsr_guard::redact::mask_pii;
 use tsr_infer::cancel::CancelToken;
 use tsr_infer::client::{CallPriority, ChatModel, ChatRequest, ChatResponse, ClientError};
 use tsr_infer::http::HttpError;
@@ -388,10 +389,11 @@ impl GroqClient {
     }
 
     fn sanitize_and_build_body(&self, req: &ChatRequest) -> (String, String, u32, Zeroizing<Vec<u8>>, [u8; 32]) {
-        // Guarantee secrets (passwords, cards, API keys, JWTs, Aadhaar, PAN, OTPs) are masked
-        // before leaving the machine, even for prompts constructed outside capture.
-        let sys_clean = redact(req.system.expose(), RedactOptions::default()).text;
-        let usr_clean = redact(req.user.expose(), RedactOptions::default()).text;
+        // Guarantee full PII (names, emails, phones, addresses, DOBs) and secrets (passwords, cards,
+        // API keys, JWTs, Aadhaar, PAN, OTPs) are masked before leaving the device across all
+        // cloud workflows (ask, draft, extract, rollup).
+        let sys_clean = mask_pii(req.system.expose()).text;
+        let usr_clean = mask_pii(req.user.expose()).text;
         let max_completion = self.effective_max_completion_tokens(req);
 
         let mut body = json!({

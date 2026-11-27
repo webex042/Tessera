@@ -36,11 +36,13 @@ Install the Visual Studio C++ Build Tools workload to provide MSVC linker tools 
   - MSVC v143 - VS 2022 C++ x64/x86 build tools
   - Windows 11 SDK (10.0.22621.0 or newer)
 
-### 3. Node.js & pnpm
+### 3. Node.js & Package Managers (npm / pnpm)
 The frontend UI is built using React 19, TypeScript, and Vite 8:
 - **Node.js:** v24.x LTS recommended (minimum v20.x).
-- **pnpm:** v12.15.0 (managed via `corepack` or standalone).
+- **npm / pnpm:** Works directly with `npm --prefix ui install` and `npm --prefix ui run build` (matching `src-tauri/tauri.conf.json`), or optional workspace `pnpm` v12.15.0:
 ```powershell
+npm --version
+# Optional workspace pnpm setup:
 corepack enable
 corepack prepare pnpm@12.15.0 --activate
 pnpm --version
@@ -53,8 +55,8 @@ python --version
 # Expected: Python 3.11.x or newer
 ```
 
-### 5. Strawberry Perl (Critical for SQLCipher)
-`rusqlite` compiles SQLCipher 4 from source with a vendored OpenSSL bundle (`bundled-sqlcipher-vendored-openssl`). OpenSSL's build configuration scripts require Perl on the system `PATH`:
+### 5. Strawberry Perl (Optional when Prebuilt OpenSSL Is Cached)
+`rusqlite` compiles SQLCipher 4 from source with a vendored OpenSSL bundle (`bundled-sqlcipher-vendored-openssl`). OpenSSL's source build configuration requires Perl on `PATH` unless prebuilt MSVC static libs (`OPENSSL_NO_VENDOR=1`, `OPENSSL_STATIC=1`, `OPENSSL_DIR=...`) are reused:
 - Download [Strawberry Perl (Portable Edition)](https://strawberryperl.com/)
 - Extract and add `C:\strawberry-perl\perl\bin` to your system `PATH`.
 - Verify in terminal:

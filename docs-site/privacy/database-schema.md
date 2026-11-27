@@ -9,7 +9,6 @@ Tessera stores persistent state in a single SQLCipher database managed by the `t
 ```mermaid
 erDiagram
     sources ||--o{ items : produces
-    items ||--o{ chunks : indexed_into
     items ||--o{ evidence : references
     facts ||--o{ evidence : validated_by
     people ||--o{ aliases : has
@@ -31,13 +30,6 @@ erDiagram
         INTEGER start_time
         INTEGER end_time
         INTEGER created_at
-    }
-    chunks {
-        INTEGER id PK
-        INTEGER item_id FK
-        INTEGER chunk_index
-        INTEGER token_count
-        BLOB embedding
     }
     facts {
         INTEGER id PK
@@ -130,8 +122,8 @@ In addition to relational tables, semantic retrieval persistence is managed by `
 
 > [!NOTE] Architectural Separation of Concerns
 > Tessera maintains a strict dual-database architecture:
-> - **SQLCipher (`tessara.db`):** Persists relational tables (`sources`, `items`, `facts`, `evidence`, `people`, `aliases`, `jobs`, `audit_events`) and FTS5 keyword index.
-> - **`VectorDb` (`tessera_vectors.enc`):** Persists 384-dimensional embeddings and text chunks for encrypted semantic vector similarity search.
+> - **SQLCipher (`tessara.db`):** Persists relational tables (`sources`, `items`, `facts`, `evidence`, `people`, `aliases`, `jobs`, `audit_events`, `settings`) and the FTS5 keyword index.
+> - **`VectorDb` (`tessera_vectors.enc`):** Persists 384-dimensional embeddings and PII-masked text spans using **AES-256-GCM** (`ring::aead::AES_256_GCM`, format v2) with 96-bit CSPRNG nonces, header/nonce AAD authentication, and automatic `.v1.bak` migration from legacy v1 files.
 
 ### `VectorRecord` Schema
 ```rust

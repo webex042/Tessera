@@ -278,3 +278,116 @@ fn week_and_month_views_drill_down_to_items() {
     assert!(!b.opener.is_empty());
     assert_eq!(b.due_today.len(), 1);
 }
+
+#[test]
+fn vectordb_semantic_search_single_delete_and_full_wipe() {
+    use std::sync::{Arc, Mutex, RwLock};
+    use tsr_guard::blocklist::{Blocklist, builtin_rules};
+    use tsr_retrieval::embed::{Embedder, HashEmbedder};
+    use tsr_retrieval::ingest::embed_item_to_vectordb;
+    use tsr_store::blocklist::{add_user_rule, load_rules, sync_builtin_rules};
+    use tsr_store::privacy::{PrivacySettings, load_privacy_settings, save_privacy_settings};
+    use tsr_store::vectordb::VectorDb;
+
+    let (d, _unused_core, _, item_id) = setup();
+    let vdb_path = d.path().join("tessera_vectors.enc");
+    let emb: Arc<dyn Embedder> = Arc::new(HashEmbedder::default());
+
+    {
+        let mut w = open_encrypted(&d.path().join("t.db"), &[5u8; KEY_LEN]).unwrap();
+        let mut vdb = VectorDb::open_or_create(&vdb_path, &[5u8; KEY_LEN]).unwrap();
+        embed_item_to_vectordb(&mut w, &mut vdb, item_id, &*emb, None, NOW).unwrap();
+        // Also embed second item (`design review`)
+        let second_id: i64 = w.query_row("SELECT max(id) FROM items", [], |r| r.get(0)).unwrap();
+        assert_ne!(second_id, item_id);
+        embed_item_to_vectordb(&mut w, &mut vdb, second_id, &*emb, None, NOW).unwrap();
+        sync_builtin_rules(&mut w, &builtin_rules()).unwrap();
+        add_user_rule(
+            &mut w,
+            tsr_guard::blocklist::RuleKind::Process,
+            tsr_guard::blocklist::Scope::All,
+            "TempBlocked.exe",
+            false,
+        )
+        .unwrap();
+        save_privacy_settings(
+            &w,
+            &PrivacySettings {
+                retention_days: 45,
+                ai_provider: "local".into(),
+                groq_model: "openai/gpt-oss-20b".into(),
+                cloud_consent: false,
+                last_pruned_at: None,
+            },
+        )
+        .unwrap();
+    }
+
+    // Reopen VectorDb from encrypted AES-256-GCM disk file and wire into Core.
+    let vdb_reopened = VectorDb::open_or_create(&vdb_path, &[5u8; KEY_LEN]).unwrap();
+    assert_eq!(vdb_reopened.len(), 2);
+    let vdb_arc = Arc::new(Mutex::new(vdb_reopened));
+    let emb_arc = Arc::new(Mutex::new(Some(emb)));
+
+    let conn_r = open_encrypted(&d.path().join("t.db"), &[5u8; KEY_LEN]).unwrap();
+    let rules = load_rules(&conn_r).unwrap();
+    let bl = Arc::new(RwLock::new(Blocklist::compile(&rules).0));
+
+    let core = Core::new(conn_r)
+        .with_vector_db(vdb_arc.clone())
+        .with_embedder(emb_arc)
+        .with_shared_blocklist(bl);
+
+    let hits = core.search("budget sheet", None, 10).unwrap();
+    assert!(hits.iter().any(|h| h.item.item_id == item_id));
+
+    // Single-item delete cascades into VectorDb and removes the item from search.
+    core.delete_item(item_id, NOW + 100).unwrap();
+    assert!(
+        !core
+            .search("budget sheet", None, 10)
+            .unwrap()
+            .iter()
+            .any(|h| h.item.item_id == item_id),
+        "deleted item must never reappear via FTS or VectorDb"
+    );
+    assert_eq!(core.item(item_id).unwrap_err(), E_NOT_FOUND);
+    assert_eq!(vdb_arc.lock().unwrap().len(), 1);
+
+    // Clear token validation + atomic memory wipe preserving settings and blocklist.
+    let t0 = Instant::now();
+    let tok = core.propose_clear_memories(t0);
+    assert_eq!(
+        core.clear_memories("badtoken000000000000000000000000", t0, NOW)
+            .unwrap_err(),
+        E_TOKEN
+    );
+    assert_eq!(
+        core.clear_memories(&tok, t0 + Duration::from_secs(121), NOW)
+            .unwrap_err(),
+        E_TOKEN
+    );
+
+    let tok2 = core.propose_clear_memories(t0);
+    let report = core.clear_memories(&tok2, t0, NOW + 200).unwrap();
+    assert_eq!(report.items_deleted, 1);
+    assert_eq!(report.vectors_deleted, 1);
+    assert_eq!(
+        core.clear_memories(&tok2, t0, NOW + 201).unwrap_err(),
+        E_TOKEN,
+        "single use"
+    );
+    assert!(vdb_arc.lock().unwrap().is_empty());
+
+    let reopened_after_clear = VectorDb::open_or_create(&vdb_path, &[5u8; KEY_LEN]).unwrap();
+    assert!(reopened_after_clear.is_empty());
+
+    let verify_c = open_encrypted(&d.path().join("t.db"), &[5u8; KEY_LEN]).unwrap();
+    assert_eq!(load_privacy_settings(&verify_c).unwrap().retention_days, 45);
+    assert!(
+        load_rules(&verify_c)
+            .unwrap()
+            .iter()
+            .any(|r| r.pattern == "TempBlocked.exe")
+    );
+}

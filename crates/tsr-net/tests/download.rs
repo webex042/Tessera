@@ -93,14 +93,18 @@ fn serve(body: Vec<u8>, mode: Mode) -> Server {
                 Mode::RedirectOffsite => {
                     let _ = write!(
                         c,
-                        "HTTP/1.1 302 Found\r\nLocation: https://evil.example/f\r\nContent-Length: 0\r\n\r\n"
+                        "HTTP/1.1 302 Found\r\nLocation: https://evil.example/f\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
                     );
+                    let _ = c.flush();
+                    let _ = c.shutdown(std::net::Shutdown::Write);
                 }
                 Mode::RedirectLocal if !path.starts_with("/real") => {
                     let _ = write!(
                         c,
-                        "HTTP/1.1 302 Found\r\nLocation: /real{path}\r\nContent-Length: 0\r\n\r\n"
+                        "HTTP/1.1 302 Found\r\nLocation: /real{path}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
                     );
+                    let _ = c.flush();
+                    let _ = c.shutdown(std::net::Shutdown::Write);
                 }
                 Mode::IgnoreRange => send(&mut c, "200 OK", "", &body),
                 Mode::WrongRange if start > 0 => {

@@ -12,6 +12,7 @@ pub mod ask;
 pub mod diagnostics;
 pub mod drafts;
 pub mod services;
+pub mod setup;
 pub mod views;
 pub mod webview_policy;
 pub mod window;
@@ -174,6 +175,142 @@ fn save_diagnostics(state: State<'_, AppState>) -> Result<String, ApiError> {
     let name = format!("diagnostics-{}.json", now_ms());
     std::fs::write(dir.join(&name), serde_json::to_vec_pretty(&v).unwrap_or_default()).map_err(|_| views::E_STORE)?;
     Ok(name)
+}
+
+#[tauri::command]
+fn delete_item(app: AppHandle, state: State<'_, AppState>, item_id: i64) -> Result<(), ApiError> {
+    let s = svc(&state)?;
+    s.delete_item(item_id)?;
+    let _ = app.emit("status_changed", s.status());
+    Ok(())
+}
+
+#[tauri::command]
+fn propose_clear_memories(state: State<'_, AppState>) -> Result<String, ApiError> {
+    Ok(svc(&state)?.views.propose_clear_memories(Instant::now()))
+}
+
+#[tauri::command]
+fn clear_memories(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    token: String,
+) -> Result<tsr_store::privacy::ClearReport, ApiError> {
+    if token.len() != 32 {
+        return Err(views::E_TOKEN);
+    }
+    let s = svc(&state)?;
+    let report = s.clear_memories(&token)?;
+    let _ = app.emit("status_changed", s.status());
+    Ok(report)
+}
+
+#[tauri::command]
+fn get_privacy_settings(state: State<'_, AppState>) -> Result<setup::PrivacyInfo, ApiError> {
+    svc(&state)?.privacy_info()
+}
+
+#[tauri::command]
+fn set_retention_days(app: AppHandle, state: State<'_, AppState>, days: u32) -> Result<setup::PrivacyInfo, ApiError> {
+    let s = svc(&state)?;
+    let info = s.set_retention_days(days)?;
+    let _ = app.emit("status_changed", s.status());
+    Ok(info)
+}
+
+#[tauri::command]
+fn list_blocklist_rules(state: State<'_, AppState>) -> Result<Vec<setup::BlocklistRuleDto>, ApiError> {
+    svc(&state)?.list_blocklist_rules()
+}
+
+#[tauri::command]
+fn set_blocklist_rule_enabled(
+    state: State<'_, AppState>,
+    key: String,
+    enabled: bool,
+) -> Result<Vec<setup::BlocklistRuleDto>, ApiError> {
+    svc(&state)?.set_blocklist_rule_enabled(&key, enabled)
+}
+
+#[tauri::command]
+fn add_blocklist_rule(
+    state: State<'_, AppState>,
+    kind: String,
+    scope: String,
+    pattern: String,
+    is_regex: bool,
+) -> Result<Vec<setup::BlocklistRuleDto>, ApiError> {
+    svc(&state)?.add_blocklist_rule(&kind, &scope, &pattern, is_regex)
+}
+
+#[tauri::command]
+fn remove_blocklist_rule(state: State<'_, AppState>, key: String) -> Result<Vec<setup::BlocklistRuleDto>, ApiError> {
+    svc(&state)?.remove_blocklist_rule(&key)
+}
+
+#[tauri::command]
+fn get_ai_setup(state: State<'_, AppState>) -> Result<setup::AiSetupState, ApiError> {
+    svc(&state)?.ai_setup_state()
+}
+
+#[tauri::command]
+fn set_ai_provider(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    provider: String,
+    groq_model: Option<String>,
+    cloud_consent: Option<bool>,
+) -> Result<setup::AiSetupState, ApiError> {
+    let s = svc(&state)?;
+    let info = s.set_ai_provider(&provider, groq_model, cloud_consent)?;
+    let _ = app.emit("status_changed", s.status());
+    Ok(info)
+}
+
+#[tauri::command]
+fn save_groq_config(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    api_key: Option<String>,
+    model: String,
+    cloud_consent: bool,
+) -> Result<setup::AiSetupState, ApiError> {
+    let s = svc(&state)?;
+    let info = s.save_groq_config(api_key, &model, cloud_consent)?;
+    let _ = app.emit("status_changed", s.status());
+    Ok(info)
+}
+
+#[tauri::command]
+fn remove_groq_config(app: AppHandle, state: State<'_, AppState>) -> Result<setup::AiSetupState, ApiError> {
+    let s = svc(&state)?;
+    let info = s.remove_groq_config()?;
+    let _ = app.emit("status_changed", s.status());
+    Ok(info)
+}
+
+#[tauri::command]
+fn test_groq_connection(
+    state: State<'_, AppState>,
+    api_key: Option<String>,
+    model: Option<String>,
+) -> Result<setup::ConnectivityResult, ApiError> {
+    svc(&state)?.test_groq_connection(api_key, model)
+}
+
+#[tauri::command]
+fn start_model_download(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    target: String,
+    approved: bool,
+) -> Result<setup::AiSetupState, ApiError> {
+    svc(&state)?.start_model_download(&target, approved, app)
+}
+
+#[tauri::command]
+fn cancel_model_download(state: State<'_, AppState>) -> Result<setup::AiSetupState, ApiError> {
+    svc(&state)?.cancel_model_download()
 }
 
 /// Draft step 2: generate with the user's optional instruction (streams `draft_chunk`, then
@@ -549,7 +686,17 @@ pub fn run(cleared_env_vars: Vec<String>) {
             .and_then(|p| p.parent().map(|p| p.to_path_buf()));
         let third_party = std::env::var_os("TSR_THIRD_PARTY")
             .map(std::path::PathBuf::from)
-            .or_else(|| exe_dir.map(|d| d.join("third_party")))
+            .or_else(|| {
+                exe_dir.as_ref().and_then(|d| {
+                    let direct = d.join("third_party");
+                    if direct.exists() {
+                        Some(direct)
+                    } else {
+                        let res = d.join("resources").join("third_party");
+                        res.exists().then_some(res)
+                    }
+                })
+            })
             .unwrap_or_else(|| "third_party".into());
         match Services::start(&services::data_dir(), &third_party) {
             Ok(s) => (Some(Arc::new(s)), None),
@@ -576,6 +723,22 @@ pub fn run(cleared_env_vars: Vec<String>) {
             ask,
             get_diagnostics,
             save_diagnostics,
+            delete_item,
+            propose_clear_memories,
+            clear_memories,
+            get_privacy_settings,
+            set_retention_days,
+            list_blocklist_rules,
+            set_blocklist_rule_enabled,
+            add_blocklist_rule,
+            remove_blocklist_rule,
+            get_ai_setup,
+            set_ai_provider,
+            save_groq_config,
+            remove_groq_config,
+            test_groq_connection,
+            start_model_download,
+            cancel_model_download,
             draft_generate,
             draft_insert,
             draft_copy,

@@ -1,67 +1,67 @@
 {
-  "f1": 1.0,
-  "failed_item_diagnostics": [],
-  "failed_items": 0,
-  "fn": 0,
-  "fp": 0,
-  "hallucinated": 0,
-  "hallucination_rate": 0.0,
-  "injection_failures": 0,
-  "invalid_rows": 0,
-  "items": 58,
   "label": "oracle",
-  "needs_review": 5,
-  "pass_thresholds": true,
-  "per_kind": {
-    "action": {
-      "f1": 1.0,
-      "fn": 0,
-      "fp": 0,
-      "p": 1.0,
-      "r": 1.0,
-      "tp": 36
-    },
-    "decision": {
-      "f1": 1.0,
-      "fn": 0,
-      "fp": 0,
-      "p": 1.0,
-      "r": 1.0,
-      "tp": 8
-    },
-    "event": {
-      "f1": 1.0,
-      "fn": 0,
-      "fp": 0,
-      "p": 1.0,
-      "r": 1.0,
-      "tp": 12
-    },
-    "note": {
-      "f1": 1.0,
-      "fn": 0,
-      "fp": 0,
-      "p": 1.0,
-      "r": 1.0,
-      "tp": 18
-    },
-    "question": {
-      "f1": 1.0,
-      "fn": 0,
-      "fp": 0,
-      "p": 1.0,
-      "r": 1.0,
-      "tp": 9
-    }
-  },
+  "split": "heldout",
+  "simulated": true,
+  "items": 58,
   "precision": 1.0,
   "recall": 1.0,
+  "f1": 1.0,
+  "tp": 83,
+  "fp": 0,
+  "fn": 0,
+  "stored": 83,
+  "needs_review": 5,
+  "hallucinated": 0,
+  "hallucination_rate": 0.0,
+  "invalid_rows": 0,
+  "failed_items": 0,
+  "injection_failures": 0,
+  "per_kind": {
+    "action": {
+      "p": 1.0,
+      "r": 1.0,
+      "f1": 1.0,
+      "tp": 36,
+      "fp": 0,
+      "fn": 0
+    },
+    "decision": {
+      "p": 1.0,
+      "r": 1.0,
+      "f1": 1.0,
+      "tp": 8,
+      "fp": 0,
+      "fn": 0
+    },
+    "event": {
+      "p": 1.0,
+      "r": 1.0,
+      "f1": 1.0,
+      "tp": 12,
+      "fp": 0,
+      "fn": 0
+    },
+    "note": {
+      "p": 1.0,
+      "r": 1.0,
+      "f1": 1.0,
+      "tp": 18,
+      "fp": 0,
+      "fn": 0
+    },
+    "question": {
+      "p": 1.0,
+      "r": 1.0,
+      "f1": 1.0,
+      "tp": 9,
+      "fp": 0,
+      "fn": 0
+    }
+  },
   "rejected": {
     "person_not_in_source": 1
   },
-  "simulated": true,
-  "split": "heldout",
-  "stored": 83,
+  "pass_thresholds": true,
   "subset": false,
-  "tp": 83
+  "failed_item_diagnostics": []
 }

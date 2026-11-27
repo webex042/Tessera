@@ -93,3 +93,4 @@ By default, Tessera runs strictly offline against the local `llama-server` sidec
 In `groq` mode, `tsr-store::quota::QuotaTracker` persists usage counters in SQLCipher (`settings` key `groq_quota_v1`) and stays under conservative free-tier ceilings (`20 RPM`, `700 RPD`, `6,000 TPM`, `150,000 TPD`):
 - Background `extract` and `rollup` jobs yield when daily usage reaches `70%` or minute usage reaches `65%`, falling back to extractive summaries and preserving remaining tokens for interactive `ask` and `draft` calls.
 - Image/VLM requests return `UnsupportedModality` on text-only `openai/gpt-oss-20b`.
+- End users can store or remove their Groq API key (`groq_key.bin`, Windows DPAPI), toggle Local vs. Groq BYOK, and download local ONNX/GGUF files interactively inside **AI Setup**, plus configure retention windows (`7`–`365` days), capture blocklist rules, and full memory wipes inside **Privacy Controls** (`privacy_settings_v1`).

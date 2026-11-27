@@ -19,10 +19,10 @@ flowchart LR
         SCREEN1["Your Screen Text &\nPrivate Passwords"] --> |Internet Streaming| CLOUD_SERVER["Remote Cloud Servers\n(Third-Party Logs)"]
     end
 
-    subgraph TESSERA ["Tessera Architecture (Zero-Cloud)"]
+    subgraph TESSERA ["Tessera Architecture (Local Default + Opt-In Groq BYOK)"]
         SCREEN2["Your Screen Text"] --> REDACT["tsr-guard\n(PII Masking & Typed Placeholders)"]
         REDACT --> VAULT[("Encrypted Local VectorDb & Store\n(Protected by DPAPI)")]
-        VAULT --> LOCAL_MODEL["Local 4B Model\n(On Your Own PC)"]
+        VAULT --> LOCAL_MODEL["Local 4B Model (Default)\nor PII-Masked Groq BYOK"]
     end
 ```
 
@@ -30,12 +30,15 @@ flowchart LR
 
 ## 2. The Four Pillars of Tessera's Privacy Guarantee
 
-### Pillar 1: Zero Outbound Network Requests
-Tessera's Rust backend code contains no networking libraries for cloud telemetry or analytics. When network auditing tools (`tools/netmon.ps1`) monitor Tessera for 10 minutes of continuous operation, application code produces **0 outbound network connections**. The only network socket initialized is a private local loopback (`127.0.0.1`) connecting the host to the sidecar.
+### Pillar 1: Local-First Default & Explicit Network Boundaries
+Tessera's Rust backend runs locally by default (`TSR_LLM_PROVIDER=local`) against a private loopback (`127.0.0.1`) sidecar. Optional network connections occur strictly under explicit user configuration or third-party WebView2 startup:
+* **Model & Embedder Downloads:** Strictly user-initiated in **AI Setup** with Hugging Face LFS/SHA-256 verification against `tools/models.lock`.
+* **Optional Groq BYOK:** When enabled with your own DPAPI-protected `GROQ_API_KEY`, only PII-masked prompts are sent to `api.groq.com`.
+* **Microsoft WebView2 Runtime:** Initiates one upstream HTTPS request on startup ([ADR-0002](/developer/faq)).
 
 ### Pillar 2: Redaction & PII Masking *Before* Embedding & Storage
 Think of `tsr-guard` as an automated security inspector standing with a typed privacy marker:
-* Before any text captured from your screen is embedded or written to disk, it is scanned against deterministic detection patterns and checksum validation.
+* Before any text captured from your screen is embedded, stored on disk, or sent to an optional Groq endpoint, it is scanned against deterministic detection patterns and checksum validation.
 * Supported categories and typed placeholders include:
   - Personal names: `[PERSON_01]`, `[PERSON_02]` (deterministic document-scoped pseudonyms)
   - Contact information: `[EMAIL]`, `[PHONE]`
@@ -47,8 +50,8 @@ Think of `tsr-guard` as an automated security inspector standing with a typed pr
 * *Note on Limits:* Tessera does not claim universal PII detection or complete anonymity; detection relies on deterministic heuristics and checksums, with known boundaries around uncontextualized names and unstructured text.
 
 ### Pillar 3: Encryption at Rest via Windows DPAPI & Local VectorDb
-All indexed text, window titles, session histories, chunks, and vector embeddings are stored in local databases protected with **AES-256** and DPAPI-derived keys:
-* Vector embeddings, redacted chunk payloads, and retrieval metadata persist in `tessera_vectors.enc`, encrypted with an authenticated SHA-256 CTR stream keystream and HMAC tag.
+All indexed text, window titles, session histories, and vector embeddings are stored in local databases protected with **AES-256** and DPAPI-derived keys:
+* Vector embeddings, redacted chunk payloads, and retrieval metadata persist in `tessera_vectors.enc`, encrypted with **`ring::aead::AES_256_GCM`** (format v2), 96-bit CSPRNG nonces, header/nonce AAD authentication, and automatic `.v1.bak` migration from legacy v1 files.
 * Relational facts, sources, and audit logs persist in an encrypted SQLite store.
 * The master keys are protected using Windows `CryptProtectData` tied directly to your Windows user credentials and TPM chip.
 * If someone steals your laptop's hard drive or copies the database files without knowing your Windows login, the persistent files appear as unreadable cryptographic noise.

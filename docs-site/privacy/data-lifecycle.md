@@ -22,7 +22,7 @@ When a session flushes (focus shifts for $> 30\text{s}$, continuous usage reache
 1. **Redaction:** Pre-storage regex and algorithmic checksum matchers scrub sensitive credentials.
 2. **Item Creation:** Writes an atomic row to the `items` table in SQLCipher.
 3. **FTS5 Indexing:** A SQLite database trigger inserts tokenized words into the `items_fts` full-text search table.
-4. **Embedding Chunking:** Segments the text into 512-token chunks and schedules asynchronous int8 vector embedding generation via local ONNX Runtime.
+4. **VectorDb Ingestion:** Segments PII-masked text into chunks and schedules local 384-dimensional vector embedding generation via ONNX Runtime into encrypted `VectorDb` (`tessera_vectors.enc`, AES-256-GCM AEAD v2).
 
 ---
 
@@ -32,24 +32,25 @@ Tessera respects user privacy through strict data retention and cascading deleti
 
 ```mermaid
 flowchart TD
-    DEL_ITEM["Delete Item (User Action / Retention Expiry)"]
+    DEL_ITEM["Delete Item (User Action / Retention Expiry / Full Wipe)"]
     DEL_FTS["items_fts Triggers: Evict Lexical Index"]
-    DEL_CHUNKS["chunks Table: Cascade Delete Vector BLOBs"]
+    DEL_VEC["VectorDb (tessera_vectors.enc): delete_by_items / clear"]
     DEL_EVID["evidence Table: Cascade Delete Evidence Rows"]
     CHECK_FACTS{"Does Fact Have Remaining Evidence Rows?"}
     DEL_FACT["Delete Fact from facts Table"]
     KEEP_FACT["Retain Fact (Supported by other items)"]
 
     DEL_ITEM --> DEL_FTS
-    DEL_ITEM --> DEL_CHUNKS
+    DEL_ITEM --> DEL_VEC
     DEL_ITEM --> DEL_EVID
     DEL_EVID --> CHECK_FACTS
     CHECK_FACTS -- "No Evidence Remaining" --> DEL_FACT
     CHECK_FACTS -- "Has Other Evidence" --> KEEP_FACT
 ```
 
-### The Evidence Cascade Trigger
-In SQLite, when an item is deleted (either via user command or automatic 90-day retention pruning):
+### The Evidence & VectorDb Deletion Cascade
+In SQLite and `VectorDb`, when an item is deleted (either via single-item deletion in Search, configurable automatic retention pruning, or a token-confirmed Clear All Memories wipe):
+- Associated embeddings in `tessera_vectors.enc` are removed via `VectorDb::delete_by_items` (or `VectorDb::clear`) and flushed back under AES-256-GCM.
 - All associated `evidence` rows pointing to that `item_id` are deleted via foreign-key cascade (`ON DELETE CASCADE`).
 - A database trigger detects if a `facts` row has zero remaining `evidence` rows.
 - If a fact has no surviving evidence in any captured item, it is **automatically deleted**. A fact cannot exist without verified source evidence.

@@ -3,9 +3,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
+  AiSetupState,
   ApiError,
   AskStart,
+  BlocklistRuleDto,
   Brief,
+  ClearReport,
+  ConnectivityResult,
   FactDto,
   HotkeyInfo,
   HourBucket,
@@ -13,6 +17,7 @@ import type {
   ItemDetail,
   LoopGroups,
   Panel,
+  PrivacyInfo,
   RollupView,
   SearchHit,
   Status,
@@ -56,6 +61,32 @@ export const api = {
     call<number>("set_bulk_status", { factIds, status, token }),
   diagnostics: () => call<unknown>("get_diagnostics"),
   saveDiagnostics: () => call<string>("save_diagnostics"),
+  deleteItem: (itemId: number) => call<void>("delete_item", { itemId }),
+  proposeClearMemories: () => call<string>("propose_clear_memories"),
+  clearMemories: (token: string) => call<ClearReport>("clear_memories", { token }),
+  privacySettings: () => call<PrivacyInfo>("get_privacy_settings"),
+  setRetentionDays: (days: number) => call<PrivacyInfo>("set_retention_days", { days }),
+  blocklistRules: () => call<BlocklistRuleDto[]>("list_blocklist_rules"),
+  setBlocklistRuleEnabled: (key: string, enabled: boolean) =>
+    call<BlocklistRuleDto[]>("set_blocklist_rule_enabled", { key, enabled }),
+  addBlocklistRule: (kind: "process" | "title" | "url", scope: "all" | "browser", pattern: string, isRegex: boolean) =>
+    call<BlocklistRuleDto[]>("add_blocklist_rule", { kind, scope, pattern, isRegex }),
+  removeBlocklistRule: (key: string) => call<BlocklistRuleDto[]>("remove_blocklist_rule", { key }),
+  aiSetup: () => call<AiSetupState>("get_ai_setup"),
+  setAiProvider: (provider: "local" | "groq", groqModel?: string, cloudConsent?: boolean) =>
+    call<AiSetupState>("set_ai_provider", {
+      provider,
+      groqModel: groqModel ?? null,
+      cloudConsent: cloudConsent ?? null,
+    }),
+  saveGroqConfig: (apiKey: string | null, model: string, cloudConsent: boolean) =>
+    call<AiSetupState>("save_groq_config", { apiKey, model, cloudConsent }),
+  removeGroqConfig: () => call<AiSetupState>("remove_groq_config"),
+  testGroqConnection: (apiKey: string | null, model: string | null) =>
+    call<ConnectivityResult>("test_groq_connection", { apiKey, model }),
+  startModelDownload: (target: "local_llm" | "embedder", approved: boolean) =>
+    call<AiSetupState>("start_model_download", { target, approved }),
+  cancelModelDownload: () => call<AiSetupState>("cancel_model_download"),
   ask: (question: string) => call<AskStart>("ask", { question }),
   draftGenerate: (instruction: string) => call<void>("draft_generate", { instruction }),
   draftInsert: (token: string, edited: string | null) => call<void>("draft_insert", { token, edited }),

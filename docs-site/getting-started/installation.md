@@ -16,10 +16,13 @@ cd Tessera
 
 ## 2. Install Frontend Dependencies
 
-Tessera utilizes a pnpm monorepo workspace for frontend packages:
+> [!TIP] Prebuilt Windows Binaries
+> End users do not need Rust or Node.js. Download the Windows x64 NSIS installer or portable ZIP on the [Download & Installers](/download) page.
+
+Build the React 19 UI assets using `npm` (or `pnpm`):
 ```powershell
-pnpm install
-pnpm build:ui
+npm --prefix ui install
+npm --prefix ui run build
 ```
 This compiles the React 19 desktop notch application inside `ui/` to static distribution assets (`ui/dist/`), which Tauri packages into the binary.
 

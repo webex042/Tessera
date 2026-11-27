@@ -6,13 +6,11 @@ Tessera investigates how local artificial intelligence inference can be made por
 
 ---
 
-## Current Status: Stages 0–7 (Prototype to Hardened Pipeline)
+## Current Status: Public Unsigned Beta (Windows x64)
 
-Tessera is currently in active systems development and validation (Stages 0–7). Major infrastructure components—hardware detection, sidecar supervisor, loopback communication, encrypted storage, redaction, desktop capture rungs, and deterministic pipeline guards—are implemented and tested.
+Tessera is packaged as a downloadable Windows 11/10 (x64) desktop application (**per-user NSIS installer and portable ZIP**, currently unsigned beta with SHA-256 checksums) alongside its full Rust + Tauri 2 + React 19 workspace. Core subsystems—hardware detection, sidecar supervisor, loopback communication, AES-256-GCM `VectorDb` (`tessera_vectors.enc`) + SQLCipher storage, deterministic PII masking (`tsr-guard`), desktop capture rungs, privacy deletion/retention controls, and local/Groq BYOK runtime switching—are implemented and tested.
 
-Evaluation against a real model (`Qwen3-VL-4B-Instruct` quantized to Q4_K_M on an AMD Radeon integrated GPU via Vulkan) demonstrates 100% citation verification, 0% hallucinated stored facts, and robust prompt-injection defense. However, extraction F1 (0.507 vs 0.70 target) and inference latency on integrated graphics do not yet meet MVP release criteria. Furthermore, while Tessera's own Rust code makes zero network connections, an open upstream finding ([ADR-0002](docs/adr/0002-webview2-outbound-connection.md)) notes one outbound HTTPS telemetry request initiated by the Microsoft WebView2 runtime per run.
-
-*Tessera is an active research and engineering project; it is not yet packaged as a general-purpose end-user application.*
+Evaluation against a real model (`Qwen3-VL-4B-Instruct` quantized to Q4_K_M on an AMD Radeon integrated GPU via Vulkan) demonstrates 100% citation verification, 0% hallucinated stored facts, and robust prompt-injection defense. Extraction F1 (`0.507` vs `0.70` target) and iGPU latency remain lower than discrete GPUs; users without dedicated GPU VRAM can optionally opt into **Groq BYOK** (`openai/gpt-oss-20b`) inside in-app **AI Setup** while keeping their API key stored locally in Windows DPAPI and PII scrubbed locally before requests. Microsoft's WebView2 runtime also initiates one upstream HTTPS connection per run ([ADR-0002](docs/adr/0002-webview2-outbound-connection.md)).
 
 ---
 
@@ -84,7 +82,7 @@ Tessera applies this infrastructure to personal computer memory: reading visible
 | **Loopback HTTP Client** | Implemented | Minimal `std::net` HTTP/1.1 client (zero external HTTP crates) in `http.rs` |
 | **Priority Preemptive Scheduler** | Implemented | P0/P1/P2 priority queues, stream-drop preemption in `crates/tsr-infer/src/sched.rs` |
 | **Supervisor Lifecycle Management** | Implemented | Stopped/Starting/Ready/Backoff/Failed state machine, restart budgets in `supervisor.rs` |
-| **Encrypted Storage (VectorDb & Store)** | Implemented | Embedded encrypted VectorDb (AES-CTR authenticated stream) + SQLCipher WAL in `crates/tsr-store` |
+| **Encrypted Storage (VectorDb & Store)** | Implemented | Embedded encrypted VectorDb (AES-256-GCM AEAD v2 w/ `.v1.bak` migration) + SQLCipher WAL in `crates/tsr-store` |
 | **Desktop Capture Ladder** | Implemented | Rung 1 (UIA 285ms deadline), Rung 2 (WGC + OCR), Rung 3 (VLM crop) in `tsr-capture` |
 | **Privacy Redaction & PII Masking** | Implemented | Full PII masking with typed placeholders & pseudonyms: Aadhaar, PAN, Cards, Names, Passwords, Keys in `tsr-guard` |
 | **Network Isolation Boundary** | Implemented | Pinned single-crate network access (`tsr-net`), verified via `check_network_deps.py` |
@@ -588,7 +586,7 @@ Extracted items are categorized under a unified schema:
 Semantic retrieval, chunk embeddings, and retrieval metadata are persisted in an embedded, local encrypted vector database (`tsr_store::vectordb::VectorDb`):
 - **Core Architecture & Types:** Implemented via `VectorDb`, `VectorRecord`, `VectorMetadata`, `VectorFilter`, and `VectorHit`. Persists 384-dimensional vectors generated with `multilingual-e5-small`.
 - **Engine & Isolation:** Pure Rust embedded vector store persisting to `%LOCALAPPDATA%\Tessara\tessera_vectors.enc`. Operates entirely offline with zero background daemons, zero external cloud dependencies, and zero outbound network sockets.
-- **Encryption at Rest:** Protected with 256-bit symmetric keys derived from the Windows Data Protection API (`CryptUnprotectData`). Uses an authenticated SHA-256 CTR stream keystream with a random 16-byte nonce and HMAC integrity verification (`TSRV` file header).
+- **Encryption at Rest:** Protected with 256-bit symmetric keys derived from the Windows Data Protection API (`CryptUnprotectData`). Format v2 encrypts vector blocks using **`ring::aead::AES_256_GCM`** with 96-bit CSPRNG nonces (`SystemRandom`) and header/nonce AAD (`TSRV\x02`), automatically backing up legacy v1 stores to `.v1.bak` during transparent re-encryption.
 - **Native Cosine Search & Pre-Filtering:** Computes high-precision cosine similarity across 384-dimensional normalized float vectors and scaled int8 quantized vectors, supporting zero-leakage metadata pre-filtering (`VectorFilter`) by application name, timestamp range, item ID, and memory type.
 - **Privacy Enforcement:** Vector embeddings and chunk text are generated exclusively from PII-masked content (`mask_pii`). Raw sensitive identifiers never enter vector payloads.
 
@@ -704,7 +702,7 @@ The desktop UI is rendered as a hardware-accelerated, transparent desktop overla
 ├──────────────────────────┼─────────────────────────────────────────────┤
 │ Rust Host vs Sidecar     │ Loopback 127.0.0.1, authenticated PID owner │
 ├──────────────────────────┼─────────────────────────────────────────────┤
-│ Application vs Storage   │ Local VectorDb (AES-CTR authenticated), SQLCipher AES-256, DPAPI key │
+│ Application vs Storage   │ Local VectorDb (AES-256-GCM AEAD), SQLCipher AES-256, DPAPI key   │
 ├──────────────────────────┼─────────────────────────────────────────────┤
 │ Application vs Network   │ Confined exclusively to approved tsr-net    │
 ├──────────────────────────┼─────────────────────────────────────────────┤
@@ -775,9 +773,9 @@ Tessera maintains strict dependency integrity to uphold its security guarantees:
 git clone https://github.com/your-org/tessera.git
 cd Tessera
 
-# 2. Install frontend dependencies and build desktop UI
-pnpm install
-pnpm build:ui
+# 2. Install frontend dependencies and build desktop UI (via npm workspace script or pnpm)
+npm --prefix ui install
+npm --prefix ui run build
 
 # 3. Fetch pinned sidecar runtimes (hash-checked)
 python tools/fetch_sidecar.py llama_cpp cpu-x64
@@ -787,23 +785,26 @@ python tools/fetch_sidecar.py llama_cpp vulkan-x64
 ./tools/fetch-sidecar.ps1 -Component onnxruntime -Variant win-x64
 
 # 5. Run full workspace test suite
-cargo test --workspace -- --include-ignored
+cargo test --workspace --locked
 
 # 6. Build desktop binary with custom protocol support (local air-gapped default)
-cargo build -p tessara --features custom-protocol
+cargo build --locked -p tessara --features custom-protocol
 
-# 6b. Optional build with Groq cloud inference support
-cargo build -p tessara --features "custom-protocol,groq"
+# 6b. Optional build with Groq cloud inference support (still defaults to local at runtime)
+cargo build --locked -p tessara --features "custom-protocol,groq"
 
-# 7. Validate dependency boundaries and evaluation fixtures
+# 7. Package NSIS installer (uses npm run build in src-tauri/tauri.conf.json)
+.\node_modules\.bin\tauri.cmd build --features groq --bundles nsis
+
+# 8. Validate dependency boundaries and evaluation fixtures
 python tools/check_network_deps.py --locked
 python tools/check_network_deps.py --locked --features tessara/groq
 python evals/validate.py
 ```
 
 ### 18.3 Running with Groq Free Tier & Zero-Cost Distribution
-- **Using Groq without Downloading Local GGUF Weights:** When built with `--features groq` and started with `TSR_LLM_PROVIDER=groq` plus `GROQ_API_KEY` (via `.env`, environment variables, or DPAPI `%LOCALAPPDATA%\Tessara\groq_key.bin`), Tessera routes `ask`, `draft`, `extract`, and `rollup` completions to `openai/gpt-oss-20b` without requiring the ~2.5 GB local GGUF model download.
-- **Free Desktop Distribution:** Package the per-user Windows NSIS installer via `pnpm tauri build --features groq` (with `"bundle": { "active": true }` enabled in `tauri.conf.json`) and distribute installers at `$0` using **GitHub Releases**. **Never bake `GROQ_API_KEY` into release artifacts** — end users supply their own key via `.env` or DPAPI on first setup (BYOK).
+- **Using Groq without Downloading Local GGUF Weights:** When built with `--features groq` and started with `TSR_LLM_PROVIDER=groq` (or configured via the in-app **AI Setup** panel with your own key saved to DPAPI `%LOCALAPPDATA%\Tessara\groq_key.bin`), Tessera routes `ask`, `draft`, `extract`, and `rollup` completions to `openai/gpt-oss-20b` after deterministic PII masking (`mask_pii`) without requiring the ~3.1 GiB local GGUF download.
+- **Free Desktop Distribution:** Package the per-user Windows NSIS installer and portable archive via `.\node_modules\.bin\tauri.cmd build --features groq --bundles nsis` (with `"bundle": { "active": true }` enabled in `tauri.conf.json`) and distribute installers + SHA-256 manifests at `$0` using **GitHub Releases**. **Never bake `GROQ_API_KEY` into release artifacts** — end users supply their own key via **AI Setup**, environment variables, or `.env` (BYOK).
 - **Free Documentation Hosting:** The static VitePress site (`docs-site/`) deploys on **Vercel**'s free Hobby tier using [`vercel.json`](vercel.json) and [`docs-site/vercel.json`](docs-site/vercel.json). *(If centralized key brokerage is ever needed beyond desktop BYOK, an optional future Cloudflare Workers + D1 proxy can hold shared rate-limited credentials off-device.)*
 
 ---

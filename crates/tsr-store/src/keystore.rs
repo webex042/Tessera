@@ -153,6 +153,21 @@ pub fn load_groq_api_key(data_dir: &Path) -> Result<Option<Zeroizing<String>>, S
     Ok(Some(z))
 }
 
+/// Return true if a DPAPI-protected Groq API key file is present in `data_dir`.
+pub fn has_groq_api_key(data_dir: &Path) -> bool {
+    data_dir.join(GROQ_KEY_FILE).is_file()
+}
+
+/// Delete a stored Groq API key file from `data_dir`. Returns `true` if a file was removed.
+pub fn remove_groq_api_key(data_dir: &Path) -> Result<bool, StoreError> {
+    let path = data_dir.join(GROQ_KEY_FILE);
+    match fs::remove_file(&path) {
+        Ok(()) => Ok(true),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(e) => Err(StoreError::KeyFile(format!("remove groq key: {:?}", e.kind()))),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -160,10 +175,12 @@ mod tests {
     #[test]
     fn dpapi_groq_key_round_trip() {
         let dir = tempfile::tempdir().unwrap();
+        assert!(!has_groq_api_key(dir.path()));
         assert!(load_groq_api_key(dir.path()).unwrap().is_none());
 
         let fake_key = "gsk_test_example_not_real_0123456789";
         save_groq_api_key(dir.path(), fake_key).unwrap();
+        assert!(has_groq_api_key(dir.path()));
 
         let disk = fs::read(dir.path().join(GROQ_KEY_FILE)).unwrap();
         assert!(&disk[..4] == GROQ_MAGIC);
@@ -174,5 +191,14 @@ mod tests {
 
         let loaded = load_groq_api_key(dir.path()).unwrap().unwrap();
         assert_eq!(&*loaded, fake_key);
+
+        let replacement = "gsk_test_replacement_9876543210";
+        save_groq_api_key(dir.path(), replacement).unwrap();
+        assert_eq!(&*load_groq_api_key(dir.path()).unwrap().unwrap(), replacement);
+
+        assert!(remove_groq_api_key(dir.path()).unwrap());
+        assert!(!has_groq_api_key(dir.path()));
+        assert!(load_groq_api_key(dir.path()).unwrap().is_none());
+        assert!(!remove_groq_api_key(dir.path()).unwrap());
     }
 }

@@ -5,20 +5,16 @@ need owner actions below).
 
 ## Installer (NSIS)
 
-`src-tauri/tauri.conf.json` → `bundle`: NSIS, per-user install (no admin), WebView2 bootstrapper
-embedded, LZMA. `bundle.active` stays **false** until the owner approves the first `tauri build`,
-because the Tauri CLI downloads the NSIS toolchain on first use (an external download).
+`src-tauri/tauri.conf.json` → `bundle`: NSIS (`active: true`), per-user install (no admin), WebView2 bootstrapper, LZMA, plus bundled `llama.cpp` (`cpu-x64`, `vulkan-x64`) and `onnxruntime.dll` resources (hash-checked at runtime). Note that Tauri CLI downloads the NSIS toolchain (`makensis.exe`) on first use when not already cached.
 
-To build once approved:
+To build with `--locked` (`cargo build --locked --release -p tessara --features "custom-protocol,groq"`):
 
-```
-pnpm --dir ui build
-pnpm tauri build --bundles nsis
+```powershell
+npm --prefix ui run build
+.\node_modules\.bin\tauri.cmd build --features groq --bundles nsis
 ```
 
-Still to add before a public build: the pinned llama.cpp builds and `onnxruntime.dll` as bundle
-resources (hash-checked at start by `tsr-infer`), and an uninstaller option to keep or delete
-`%LOCALAPPDATA%\Tessara` (the encrypted memory).
+End-user local data in `%LOCALAPPDATA%\Tessara` (encrypted memory, `VectorDb`, and DPAPI keys) is preserved across upgrades and uninstalls unless removed manually.
 
 ## Code signing (owner action)
 

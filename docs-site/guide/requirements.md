@@ -47,7 +47,6 @@ On machines lacking a compatible GPU driver, Tessera automatically falls back to
 |---|---|---|
 | **Rust & Cargo** | Stable (MSVC) `1.99+` / Edition 2024 | Core application and crates. |
 | **Visual Studio Build Tools** | 2022 (with C++ Workload) | MSVC linker and Windows SDK headers. |
-| **Node.js** | v24.x | Frontend build environment. |
-| **pnpm** | v12.15.0 | Workspace package management. |
+| **Node.js** | v24.x | Frontend build environment (`npm --prefix ui run build` or `pnpm`). |
 | **Python** | v3.11+ | Evals runners, benchmarks, and dependency checkers. |
-| **Strawberry Perl** | Portable or installed | Required to compile SQLCipher's vendored OpenSSL. |
+| **Strawberry Perl** | Optional (vendoring OpenSSL) | Only required when building SQLCipher's vendored OpenSSL from source; prebuilt MSVC static libs (`OPENSSL_NO_VENDOR=1`) bypass Perl. |

@@ -52,6 +52,9 @@ pub const ALLOWED_MESSAGES: &[&str] = &[
     "store opened",
     "store key created",
     "store write failed",
+    "vector store opened",
+    "database backed up prior to vector migration",
+    "migration to vector database completed successfully",
 ];
 
 /// Field names that may be written. Values must still be numbers, bools or short ASCII.
@@ -94,6 +97,9 @@ pub const ALLOWED_FIELDS: &[&str] = &[
     "merged",
     "rejected",
     "needs_review",
+    "records",
+    "chunks",
+    "pii_masked",
 ];
 
 const MAX_STR: usize = 160;

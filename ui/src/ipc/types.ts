@@ -162,4 +162,76 @@ export type Answer = {
   first_sentence_ms: number | null;
   total_ms: number;
 };
-export type AskStart = { snippets: AskSnippet[]; answering: boolean };
+export type AskStart = { snippets: AskSnippet[]; answering: boolean; vector_used?: boolean };
+
+export type ClearReport = {
+  items_deleted: number;
+  sources_deleted: number;
+  facts_deleted: number;
+  vectors_deleted: number;
+};
+
+export type PrivacyInfo = {
+  retention_days: number;
+  ai_provider: string;
+  groq_model: string;
+  cloud_consent: boolean;
+  has_groq_key: boolean;
+  has_local_model: boolean;
+  vector_records: number;
+  last_pruned_at: number | null;
+};
+
+export type BlocklistRuleDto = {
+  key: string;
+  kind: "process" | "title" | "url";
+  scope: "all" | "browser";
+  pattern: string;
+  is_regex: boolean;
+  builtin: boolean;
+  enabled: boolean;
+  blocked_count: number;
+};
+
+export type HardwareSummary = {
+  verdict: string;
+  gpu_name: string | null;
+  cpu_cores: number;
+  ram_total_mib: number | null;
+  ram_available_mib: number | null;
+  disk_free_mib: number | null;
+  local_model_bytes: number;
+  embedder_bytes: number;
+  warnings: string[];
+};
+
+export type DownloadStatus = {
+  active: boolean;
+  target: string | null;
+  phase: string;
+  done_bytes: number;
+  total_bytes: number;
+  file: string | null;
+  error: string | null;
+};
+
+export type AiSetupState = {
+  provider: "local" | "groq" | string;
+  runtime_state: string;
+  backend: string | null;
+  cloud_consent: boolean;
+  groq_model: string;
+  has_groq_key: boolean;
+  groq_key_source: "dpapi" | "env" | "none" | string;
+  has_local_model: boolean;
+  has_embedder: boolean;
+  groq_feature_supported: boolean;
+  hardware: HardwareSummary;
+  download: DownloadStatus;
+};
+
+export type ConnectivityResult = {
+  ok: boolean;
+  latency_ms: number;
+  code: string | null;
+};

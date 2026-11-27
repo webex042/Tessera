@@ -120,8 +120,8 @@ To understand how Tessera functions as an integrated system, let us examine the 
 
 ### D. Where Data is Processed, Stored, and Transmitted
 * **Processing:** Screen parsing and PII masking occur in host CPU memory (`tsr-guard`). Neural network tensor math occurs in GPU VRAM (or CPU cache via AVX2).
-* **Storage:** Data resides exclusively on the local drive in an encrypted `VectorDb` (`tessera_vectors.enc`) and an encrypted SQLite database located at `%LOCALAPPDATA%\Tessara\tessara.db`.
-* **Transmission:** **Zero data is transmitted across the internet.** All network calls from application code are strictly forbidden. The only network socket used is a local loopback (`127.0.0.1`) connecting the host to the sidecar.
+* **Storage:** Data resides exclusively on the local drive in an AES-256-GCM encrypted `VectorDb` (`tessera_vectors.enc`) and a SQLCipher database located at `%LOCALAPPDATA%\Tessara\tessara.db`.
+* **Transmission:** By default (`TSR_LLM_PROVIDER=local`), Tessera's application inference runs strictly against the local loopback (`127.0.0.1`) sidecar. The Microsoft WebView2 runtime initiates one upstream connection ([ADR-0002](/developer/faq)), user-initiated setup downloads connect only to pinned Hugging Face hashes (`tools/models.lock`), and optional Groq BYOK inference transmits only PII-masked prompts over HTTPS to `api.groq.com`.
 
 ### E. What Happens When a Component Fails (Fault Tolerance)
 * **If the UI Tier Crashes:** WebView2 reloads automatically; the host process and database remain unharmed.

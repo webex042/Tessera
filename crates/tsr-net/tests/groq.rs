@@ -630,5 +630,54 @@ fn pii_secret_redaction_and_ttl_cache_dedup() {
 
     let sent_body = &srv.captured.lock().unwrap()[0].body;
     assert!(!sent_body.contains(&fake_gh), "secret leaked to outbound Groq payload");
-    assert!(sent_body.contains("[REDACTED:api_key]"));
+    assert!(sent_body.contains("[API_KEY]"));
+}
+
+#[test]
+fn full_pii_masking_across_all_groq_workflows() {
+    let srv = spawn_mock(|_, _| MockReply::ok_json("{\"status\":\"ok\"}", 24, 8));
+    let quota = Arc::new(QuotaTracker::in_memory(QuotaLimits::default()));
+    let mut cfg = test_cfg(srv.port, "gsk_pii");
+    cfg.cache_ttl_ms = 0;
+    let client = GroqClient::new(cfg, quota).unwrap();
+
+    let sensitive_input = concat!(
+        "contact Sarah Jenkins (alice.miller@acme-corp.example) from +1-415-555-0192. ",
+        "address: 742 Evergreen Terrace Street, DOB 1991-04-12, PAN ABCPK1234F, Aadhaar 2345 6789 0124."
+    );
+
+    for (prompt, tag) in [
+        (&*ASK_V2, "ask"),
+        (&*DRAFT_V1, "draft"),
+        (&*EXTRACTION_V1, "extract"),
+        (&*ROLLUP_V1, "rollup"),
+    ] {
+        let mut req = sample_req(&format!("[{tag}] {sensitive_input}"));
+        req.system = Sensitive::new(prompt.system.to_string());
+        req.temperature = 0.0;
+        client.chat(&req, &CancelToken::new()).unwrap();
+    }
+
+    let captured = srv.captured.lock().unwrap();
+    assert_eq!(captured.len(), 4);
+    for (idx, req) in captured.iter().enumerate() {
+        let body = &req.body;
+        assert!(!body.contains("Sarah Jenkins"), "person name leaked in call {idx}");
+        assert!(
+            !body.contains("alice.miller@acme-corp.example"),
+            "email leaked in call {idx}"
+        );
+        assert!(!body.contains("415-555-0192"), "phone leaked in call {idx}");
+        assert!(!body.contains("742 Evergreen Terrace"), "address leaked in call {idx}");
+        assert!(!body.contains("1991-04-12"), "DOB leaked in call {idx}");
+        assert!(!body.contains("ABCPK1234F"), "PAN leaked in call {idx}");
+        assert!(!body.contains("2345 6789 0124"), "Aadhaar leaked in call {idx}");
+        assert!(body.contains("[PERSON_01]"), "person mask token missing in call {idx}");
+        assert!(body.contains("[EMAIL]"), "email mask token missing in call {idx}");
+        assert!(body.contains("[PHONE]"), "phone mask token missing in call {idx}");
+        assert!(body.contains("[ADDRESS]"), "address mask token missing in call {idx}");
+        assert!(body.contains("[DATE_OF_BIRTH]"), "DOB mask token missing in call {idx}");
+        assert!(body.contains("[PAN]"), "PAN mask token missing in call {idx}");
+        assert!(body.contains("[AADHAAR]"), "Aadhaar mask token missing in call {idx}");
+    }
 }

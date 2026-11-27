@@ -18,7 +18,7 @@ This document provides a transparent, empirical breakdown of Tessera's implement
 | **Stage 7** | Security Hardening | Threat model, canary scans, network isolation | <StatusBadge status="partial" text="In Progress" /> | Redaction & canary scans pass; `check_network_deps.py` passes; S1 fails on WebView2 outbound connection. |
 | **Stage 8** | Audio & Translation | Whisper.cpp STT, local translation | <StatusBadge status="planned" text="Blocked" /> | Blocked pending MVP exit criteria and model download approvals. |
 | **Stage 9** | Closed Beta | Content-free diagnostics bundle, telemetry audit | <StatusBadge status="partial" text="Post-MVP" /> | Diagnostics bundle built and inspected; beta testing pending. |
-| **Stage 10**| Release Engineering | Signed NSIS installer, SBOM generator | <StatusBadge status="partial" text="Post-MVP" /> | CycloneDX SBOM generator built; NSIS config ready; updater gated ([ADR-0003](https://github.com/webex042/Tessera/blob/main/docs/adr/0003-updater-blocked-by-zip-advisories.md)). |
+| **Stage 10**| Release Engineering | Unsigned beta NSIS installer & portable ZIP (SHA-256) | <StatusBadge status="partial" text="Unsigned Beta" /> | CycloneDX SBOM generator built; NSIS config ready; updater gated ([ADR-0003](https://github.com/webex042/Tessera/blob/main/docs/adr/0003-updater-blocked-by-zip-advisories.md)). |
 
 ---
 

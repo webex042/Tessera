@@ -13,6 +13,7 @@
 //! shutdown flush it. Blocked windows produce one content-free audit event per transition.
 
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 use tsr_core::Sensitive;
 use tsr_guard::blocklist::{Blocklist, Decision, PrivateState, WindowFacts, is_browser};
@@ -128,7 +129,7 @@ pub struct Stats {
 pub struct CaptureCore<P: Platform, S: Sink> {
     pub platform: P,
     pub sink: S,
-    blocklist: Blocklist,
+    blocklist: Arc<RwLock<Blocklist>>,
     redact_opts: Options,
     sessions: SessionBook,
     fallback: UiaFallback<isize>,
@@ -152,7 +153,7 @@ impl<P: Platform, S: Sink> CaptureCore<P, S> {
         CaptureCore {
             platform,
             sink,
-            blocklist,
+            blocklist: Arc::new(RwLock::new(blocklist)),
             redact_opts,
             sessions: SessionBook::new(SessionConfig::default()),
             fallback: UiaFallback::default(),
@@ -173,6 +174,11 @@ impl<P: Platform, S: Sink> CaptureCore<P, S> {
 
     pub fn with_session_config(mut self, cfg: SessionConfig) -> Self {
         self.sessions = SessionBook::new(cfg);
+        self
+    }
+
+    pub fn with_shared_blocklist(mut self, blocklist: Arc<RwLock<Blocklist>>) -> Self {
+        self.blocklist = blocklist;
         self
     }
 
@@ -292,13 +298,17 @@ impl<P: Platform, S: Sink> CaptureCore<P, S> {
             .as_ref()
             .and_then(|b| b.url.as_ref())
             .map(|u| u.expose().as_str());
-        let decision = self.blocklist.check(&WindowFacts {
-            exe: &fg.exe,
-            exe_path: Some(&fg.exe_path),
-            title: fg.title.expose(),
-            url: url_raw,
-            private: browser.as_ref().map_or(PrivateState::NotPrivate, |b| b.private),
-        });
+        let decision = self
+            .blocklist
+            .read()
+            .unwrap_or_else(|p| p.into_inner())
+            .check(&WindowFacts {
+                exe: &fg.exe,
+                exe_path: Some(&fg.exe_path),
+                title: fg.title.expose(),
+                url: url_raw,
+                private: browser.as_ref().map_or(PrivateState::NotPrivate, |b| b.private),
+            });
         if let Decision::Block { rule_key, .. } = &decision {
             let this = (fg.hwnd, rule_key.clone());
             if self.last_blocked.as_ref() != Some(&this) {

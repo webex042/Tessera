@@ -35,18 +35,18 @@ const index = computed(() => {
 // The path a piece of screen text takes through the system (see /architecture/data-flow).
 const path = [
   { crate: 'tsr-capture', step: 'Read the screen', note: 'UI Automation text first, OCR or the vision model only when needed' },
-  { crate: 'tsr-guard', step: 'Redact secrets', note: 'passwords, keys, card and ID numbers removed before anything is stored' },
-  { crate: 'tsr-store', step: 'Store encrypted', note: 'SQLCipher database; key protected by Windows DPAPI' },
+  { crate: 'tsr-guard', step: 'Mask PII & secrets', note: 'names ([PERSON_01]), emails, Aadhaar, PAN, cards & keys masked before indexing' },
+  { crate: 'tsr-store', step: 'Store encrypted', note: 'AES-256-GCM VectorDb + SQLCipher under Windows DPAPI with retention pruning' },
   { crate: 'tsr-pipeline', step: 'Extract facts', note: 'model proposes; code validates evidence and blocks injected instructions' },
-  { crate: 'tsr-infer', step: 'Run the model', note: 'llama.cpp server as a supervised local sidecar on 127.0.0.1' },
-  { crate: 'tsr-retrieval', step: 'Answer with sources', note: 'every shown sentence must cite a snippet that supports it' },
+  { crate: 'tsr-infer', step: 'Run the model', note: 'local llama.cpp sidecar on 127.0.0.1 (default) or PII-masked Groq BYOK' },
+  { crate: 'tsr-retrieval', step: 'Answer with sources', note: 'hybrid VectorDb + FTS5 RRF search; every sentence cites verified snippets' },
 ]
 
 const steps = [
-  { label: 'Install front-end dependencies and build the UI', cmd: 'pnpm install\npnpm build:ui' },
-  { label: 'Fetch a pinned, hash-checked llama.cpp runtime', cmd: 'python tools/fetch_sidecar.py llama_cpp vulkan-x64' },
-  { label: 'Run the test suite', cmd: 'cargo test --workspace' },
-  { label: 'Build and start the desktop app', cmd: 'cargo run -p tessara --features custom-protocol' },
+  { label: 'Download or install UI dependencies', cmd: 'npm --prefix ui install\nnpm --prefix ui run build' },
+  { label: 'Fetch pinned, hash-checked sidecar runtimes', cmd: 'python tools/fetch_sidecar.py llama_cpp vulkan-x64' },
+  { label: 'Run the locked workspace tests', cmd: 'cargo test --workspace --locked' },
+  { label: 'Package Windows installer (NSIS)', cmd: '.\\node_modules\\.bin\\tauri.cmd build --features groq --bundles nsis' },
 ]
 
 const status = [
@@ -95,38 +95,53 @@ async function copy(i: number, text: string) {
 
       <div class="h-body h-intro">
         <div class="h-intro__main">
-          <p class="h-eyebrow">TECHNICAL DOCUMENTATION ARCHIVE // RESEARCH PROTOTYPE v{{ version }}</p>
+          <p class="h-eyebrow">WINDOWS DESKTOP BETA v{{ version }} // TECHNICAL ARCHIVE</p>
           <h1 id="h-title" class="h-title">Tessera</h1>
-          <p class="h-subtitle">A local-first, screen-aware memory assistant for Windows&nbsp;11, with model inference that runs entirely on the PC.</p>
+          <p class="h-subtitle">A local-first, screen-aware memory assistant for Windows, running Qwen3-VL-4B locally by default with optional PII-masked Groq BYOK.</p>
           <p>
-            Tessera reads the text on your screen, removes secrets such as passwords and keys, and keeps what is
-            left in an encrypted database on your own machine. A small language model, run locally through a
-            <code>llama.cpp</code> sidecar, turns that history into searchable facts, daily summaries, open loops
-            and reply drafts. Answers are only shown when every sentence can be traced back to a stored source.
+            Tessera reads visible screen text, masks sensitive identifiers (names, emails, Aadhaar, PAN, payment cards,
+            and API keys) via <code>tsr-guard</code>, and stores indexed vectors inside an <strong>AES-256-GCM VectorDb</strong>
+            paired with <strong>SQLCipher</strong> under Windows DPAPI. Questions, daily briefs, and reply drafts cite
+            deterministically verified local evidence—with full item deletion, retention windows, and wipe controls.
           </p>
           <p>
-            It is a research prototype: the infrastructure is built and tested, but the measured quality and speed
-            on integrated graphics do not yet meet the project's own release criteria (see the status table below).
+            End users can install the Windows x64 desktop build directly via the NSIS setup executable or portable ZIP
+            without building from source. This website hosts only static docs and the synthetic UI preview below.
           </p>
-          <nav class="h-actions" aria-label="Start reading">
-            <a class="h-btn h-btn--solid" :href="withBase('/guide/')">Read the overview →</a>
-            <a class="h-btn" :href="withBase('/architecture/')">System architecture →</a>
+          <nav class="h-actions" aria-label="Primary links">
+            <a class="h-btn h-btn--solid" :href="withBase('/download')">Download Windows Beta →</a>
+            <a class="h-btn" :href="withBase('/guide/')">Overview →</a>
+            <a class="h-btn" :href="withBase('/architecture/')">Architecture →</a>
           </nav>
         </div>
 
         <aside class="h-record" aria-label="Project record">
           <p class="h-record__head">PROJECT RECORD</p>
           <dl>
-            <div><dt>Platform</dt><dd>Windows 11, x64</dd></div>
+            <div><dt>Platform</dt><dd>Windows 10/11, x64 (NSIS + ZIP)</dd></div>
             <div><dt>Desktop shell</dt><dd>Tauri 2 (Rust 2024) + React 19</dd></div>
-            <div><dt>Storage</dt><dd>SQLCipher, key under Windows DPAPI</dd></div>
-            <div><dt>Inference</dt><dd>llama.cpp sidecar, loopback only</dd></div>
-            <div><dt>Evaluated model</dt><dd>Qwen3-VL-4B-Instruct Q4_K_M</dd></div>
-            <div><dt>Test hardware</dt><dd>AMD Radeon integrated GPU (Vulkan)</dd></div>
+            <div><dt>Storage</dt><dd>AES-256-GCM VectorDb + SQLCipher (DPAPI)</dd></div>
+            <div><dt>Inference</dt><dd>Local llama.cpp (default) / Groq BYOK</dd></div>
+            <div><dt>Models</dt><dd>Qwen3-VL-4B Q4_K_M / openai/gpt-oss-20b</dd></div>
+            <div><dt>Privacy</dt><dd>Full PII masking, item delete &amp; wipe</dd></div>
             <div><dt>App version</dt><dd>{{ version }}</dd></div>
-            <div><dt>Licence</dt><dd>to be determined</dd></div>
+            <div><dt>Unsigned beta</dt><dd>SHA-256 manifest (SmartScreen expected)</dd></div>
           </dl>
         </aside>
+      </div>
+    </section>
+
+    <!-- Synthetic interactive browser preview -->
+    <section class="h-window" aria-labelledby="h-preview">
+      <div class="h-bar">
+        <span class="h-bar__icon" aria-hidden="true"></span>
+        <span class="h-bar__name">NOTCH_PREVIEW.EXE // SYNTHETIC_DEMO</span>
+        <span class="h-bar__controls" aria-hidden="true"><span>_</span><span>□</span><span>×</span></span>
+      </div>
+      <div class="h-body">
+        <p class="h-num">00</p>
+        <h2 id="h-preview" class="h-h2">Interactive notch UI preview (synthetic data)</h2>
+        <HomeNotchPreview />
       </div>
     </section>
 
@@ -188,7 +203,7 @@ async function copy(i: number, text: string) {
           <p class="h-num">03</p>
           <h2 id="h-start" class="h-h2">Build from source</h2>
           <p class="h-small">
-            Windows 11 with the Rust MSVC toolchain, Visual Studio C++ build tools, Node.js and pnpm, Python and
+            Windows 10/11 (x64) with the Rust MSVC toolchain, Visual Studio C++ build tools, Node.js (npm / optional pnpm), Python and
             Strawberry Perl. Run in PowerShell from the repository root.
           </p>
           <ol class="h-steps">

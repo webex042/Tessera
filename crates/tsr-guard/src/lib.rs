@@ -6,4 +6,5 @@
 pub mod blocklist;
 pub mod claims;
 mod glob;
+pub mod injection;
 pub mod redact;

@@ -1,0 +1,20 @@
+{
+  "active_hours": 11,
+  "bad_highlight_ids": 0,
+  "by_model": 15,
+  "exact_hours": true,
+  "fallback": 0,
+  "fallback_rate": 0.0,
+  "finish_length": 0,
+  "highlights": 41,
+  "hour_summaries": 11,
+  "items": 22,
+  "label": "qwen3-vl-4b-instruct-q4_k_m on vulkan on Vulkan0 (AMD Radeon (TM) Graphics)",
+  "mean_call_ms": 31552.933333333334,
+  "model_calls": 15,
+  "non_stop_examples": [],
+  "other": 0,
+  "pass": true,
+  "periods": 15,
+  "seconds": 473.588165
+}

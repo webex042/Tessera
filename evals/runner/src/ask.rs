@@ -23,8 +23,11 @@ use tsr_infer::cancel::CancelToken;
 use tsr_infer::client::ChatModel;
 use tsr_pipeline::dates::DateOrder;
 use tsr_pipeline::extract::{Ctx, run as extract};
-use tsr_retrieval::ask::{Snippet, answer, request, snippets};
+use tsr_retrieval::ask::{Snippet, answer, request_with_user, snippets};
+use tsr_retrieval::embed::Embedder;
 use tsr_retrieval::hybrid::{Filter, Opts, search};
+use tsr_retrieval::index::VectorIndex;
+use tsr_retrieval::ingest::embed_item;
 use tsr_store::items::Acquisition;
 
 use crate::common::*;
@@ -75,6 +78,7 @@ fn p50(v: &mut [u64]) -> Option<u64> {
 
 pub fn run(
     model: Option<&dyn ChatModel>,
+    embedder: Option<&dyn Embedder>,
     label: &str,
     split: &str,
     only: Option<&[String]>,
@@ -90,11 +94,15 @@ pub fn run(
         .collect();
     let (_d, mut c) = db();
     let bl = Blocklist::compile(&builtin_rules()).0;
+    let mut ix = embedder.map(|e| VectorIndex::empty(e.model_id(), e.dims()));
     let mut ids: HashMap<String, i64> = HashMap::new();
     for it in &items {
         let at = ts(&it.captured_at);
         let id = add_item(&c, &it.app, &it.title, &it.source, at, &it.text, Acquisition::Uia);
         ids.insert(it.id.clone(), id);
+        if let (Some(emb), Some(vix)) = (embedder, ix.as_mut()) {
+            embed_item(&mut c, id, emb, Some(vix), at).unwrap();
+        }
         let facts: Vec<Value> = it
             .expected
             .facts
@@ -133,8 +141,9 @@ pub fn run(
         let aq = tsr_pipeline::askq::parse(&q.question, now, &tz, &apps);
         let mut o = Opts::new(now);
         o.k = 40;
-        o.use_vector = false; // the app has no embedder until the owner approves one
-        let (hits, _) = search(&c, None, None, &q.question, &filter, &o).unwrap();
+        o.use_vector = embedder.is_some();
+        o.fact_kind_hint = aq.kind;
+        let (hits, _) = search(&c, ix.as_ref(), embedder, &q.question, &filter, &o).unwrap();
         let mut ranked = Vec::new();
         for h in &hits {
             if let Some((a, b)) = aq.range
@@ -164,11 +173,19 @@ pub fn run(
                 .map(|t| t.to_zoned(tz.clone()).strftime("%a %-d %b %H:%M").to_string())
                 .unwrap_or_default()
         };
-        let req = request(
+        let self_name: Option<String> = c
+            .query_row("SELECT display_name FROM people WHERE is_self = 1 LIMIT 1", [], |r| {
+                r.get(0)
+            })
+            .ok()
+            .filter(|s: &String| !s.trim().is_empty() && s != "me")
+            .or_else(|| Some("Asha Verma".to_string()));
+        let req = request_with_user(
             &q.question,
             &snips,
             &local.strftime("%Y-%m-%d").to_string(),
             &local.strftime("%A").to_string(),
+            self_name.as_deref(),
             &label_of,
         );
         let scripted = Scripted::one(oracle(q, &snips, &gold));
@@ -234,7 +251,7 @@ pub fn run(
         "first_sentence_ms_p50": f50, "total_ms_p50": t50, "pass": pass, "rows": rows,
     });
     let md = format!(
-        "# Ask — {label}, split {split} (profile: `{}`)\n\n{}\nRetrieval: keyword + facts (no embedder), filters from the question; facts from SIMULATED oracle extraction.\n\n\
+        "# Ask — {label}, split {split} (profile: `{}`)\n\n{}\nRetrieval: {}, filters from the question; facts from SIMULATED oracle extraction.\n\n\
          | metric | value | standard target | local-igpu-beta target |\n|---|---|---|---|\n\
          | questions / invalid answers | {n} / {invalid} | | |\n\
          | answered correctly | {correct} ({:.1} %) | ≥ {:.0} % | ≥ {:.0} % |\n\
@@ -247,6 +264,11 @@ pub fn run(
             "**SIMULATED oracle answers:** tests retrieval and citation checks, not a model; timings are not model timings.\n"
         } else {
             "Real model run.\n"
+        },
+        if embedder.is_some() {
+            "keyword + E5 vector + facts (RRF)"
+        } else {
+            "keyword + facts (no embedder)"
         },
         acc * 100.0,
         std_t.ask_accuracy_min * 100.0,

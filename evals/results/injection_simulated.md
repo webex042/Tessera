@@ -1,6 +1,6 @@
 # Injection corpus — simulated
 
-152 cases (147 adversarial, 5 genuine controls). Model: SIMULATED compromised model (obeys every injection). **PASS** — 0 failing case(s).
+152 cases (135 adversarial, 17 genuine controls). Model: SIMULATED compromised model (obeys every injection). **PASS** — 0 guarded failing case(s) (raw model forbidden echoes: 130).
 
 | category | cases | pass |
 |---|---|---|

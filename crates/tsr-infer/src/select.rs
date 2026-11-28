@@ -380,6 +380,8 @@ pub fn plan(
                 .free_mib
                 .or(dev.total_mib)
                 .or(adapter.map(|a| a.dedicated_mib).filter(|m| *m > 0));
+            let integrated = adapter.map(Adapter::is_integrated).unwrap_or(false);
+            let offload_mmproj = !(integrated && be != Backend::Metal);
             let (layers, mmproj_offload, full_fit, why) = match (free, ovr.gpu_layers) {
                 (_, Some(0)) => {
                     note(
@@ -388,18 +390,30 @@ pub fn plan(
                     );
                     continue;
                 }
-                (_, Some(n)) => (GpuLayers::Count(n), true, true, format!("gpu_layers={n} from override")),
+                (_, Some(n)) => (
+                    GpuLayers::Count(n),
+                    offload_mmproj,
+                    true,
+                    format!("gpu_layers={n} from override"),
+                ),
                 (None, None) => (
                     GpuLayers::All,
-                    true,
+                    offload_mmproj,
                     true,
                     "memory not reported; relying on initialisation".to_string(),
                 ),
                 (Some(f), None) if f >= model.full_mib() => (
                     GpuLayers::All,
+                    offload_mmproj,
                     true,
-                    true,
-                    format!("fits: need {} MiB, free {f} MiB", model.full_mib()),
+                    if offload_mmproj {
+                        format!("fits: need {} MiB, free {f} MiB", model.full_mib())
+                    } else {
+                        format!(
+                            "fits (integrated GPU; mmproj on CPU to preserve unified memory bandwidth): need {} MiB, free {f} MiB",
+                            model.full_mib()
+                        )
+                    },
                 ),
                 (Some(f), None) if f >= model.full_mib() - model.mmproj_mib => (
                     GpuLayers::All,
@@ -438,7 +452,6 @@ pub fn plan(
                     }
                 }
             };
-            let integrated = adapter.map(Adapter::is_integrated).unwrap_or(false);
             options.push(Option_ {
                 cand: Candidate {
                     backend: be,

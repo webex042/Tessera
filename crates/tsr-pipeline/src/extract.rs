@@ -206,7 +206,10 @@ fn build_request(ctx: &Ctx<'_>, item: &ItemRow, src: &items::SourceRow, slice: &
             ("local_datetime", &at.strftime("%Y-%m-%d %H:%M").to_string()),
             ("weekday", &at.strftime("%A").to_string()),
             ("tz", ctx.tz),
-            ("redacted_text", &escape_content(slice)),
+            (
+                "redacted_text",
+                &escape_content(&tsr_guard::injection::scrub_untrusted_segments(slice)),
+            ),
         ],
     )
     .expect("template");
@@ -273,7 +276,7 @@ pub fn run(
     let mut outputs = Vec::new();
     for slice in slices(text, MAX_SLICE_CHARS) {
         let mut parsed = None;
-        for temperature in [0.1f32, 0.0] {
+        for temperature in [0.0f32, 0.0] {
             jobs::set_stage(conn, job, "model", now)?;
             rep.model_calls += 1;
             let r = model.chat(&build_request(ctx, &item, &src, &slice, temperature), cancel);
@@ -350,6 +353,25 @@ pub fn run(
             }
         }
     }
+    // Drop redundant `note` facts on the same item when they merely restate an action/decision/event.
+    let non_note_spans: Vec<(String, String)> = accepted
+        .iter()
+        .filter(|a| a.kind != "note")
+        .map(|a| (a.text_norm.clone(), normalize(&a.evidence.0).text))
+        .collect();
+    accepted.retain(|a| {
+        if a.kind != "note" {
+            return true;
+        }
+        let ev_norm = normalize(&a.evidence.0).text;
+        let redundant = non_note_spans
+            .iter()
+            .any(|(tn, en)| word_set_similarity(tn, &a.text_norm) >= 0.68 || word_set_similarity(en, &ev_norm) >= 0.70);
+        if redundant {
+            rep.reject("redundant_note");
+        }
+        !redundant
+    });
 
     jobs::set_stage(conn, job, "redact", now)?;
     let item_injected = text.lines().any(looks_injected);
@@ -450,17 +472,35 @@ pub fn run(
                 continue;
             }
         }
-        // De-duplicate against open facts of the same kind and owner.
-        let cands = facts::dedupe_candidates(&tx, &a.kind, owner_id, item.started_at - DEDUPE_WINDOW_MS)?;
-        let best = cands
-            .iter()
-            .filter(|c| a.due.is_none() || c.due_at.is_none() || c.due_at == a.due.map(|d| d.0))
-            .filter(|c| {
-                owner_id.is_some() || c.owner_text.as_ref().map(|t| t.expose().as_str()) == owner_text.as_deref()
-            })
-            .map(|c| (word_set_similarity(c.text_norm.expose(), &a.text_norm), c.id))
-            .filter(|(s, _)| *s >= DEDUPE_MIN_SIMILARITY)
-            .max_by(|x, y| x.0.total_cmp(&y.0).then(y.1.cmp(&x.1)));
+        // De-duplicate against open facts of the same owner (also merging equivalent task/commitment).
+        let single = [a.kind.as_str()];
+        let kinds: &[&str] = match a.kind.as_str() {
+            "task" => &["task", "commitment"],
+            "commitment" => &["commitment", "task"],
+            _ => &single,
+        };
+        let mut best: Option<(f32, i64)> = None;
+        for &cand_kind in kinds {
+            let min_sim = if cand_kind == a.kind {
+                DEDUPE_MIN_SIMILARITY
+            } else {
+                0.70
+            };
+            let cands = facts::dedupe_candidates(&tx, cand_kind, owner_id, item.started_at - DEDUPE_WINDOW_MS)?;
+            if let Some(m) = cands
+                .iter()
+                .filter(|c| a.due.is_none() || c.due_at.is_none() || c.due_at == a.due.map(|d| d.0))
+                .filter(|c| {
+                    owner_id.is_some() || c.owner_text.as_ref().map(|t| t.expose().as_str()) == owner_text.as_deref()
+                })
+                .map(|c| (word_set_similarity(c.text_norm.expose(), &a.text_norm), c.id))
+                .filter(|(s, _)| *s >= min_sim)
+                .max_by(|x, y| x.0.total_cmp(&y.0).then(y.1.cmp(&x.1)))
+                && best.is_none_or(|b| m.0 > b.0)
+            {
+                best = Some(m);
+            }
+        }
         if let Some((_, id)) = best {
             let due = a.due.map(|(at, p, amb)| (a.due_text.as_deref(), at, p, amb));
             if facts::merge_into(&tx, id, &[ev], due, item.started_at)? {

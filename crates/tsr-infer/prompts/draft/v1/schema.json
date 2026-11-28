@@ -4,7 +4,11 @@
   "required": ["draft", "used", "placeholders"],
   "properties": {
     "draft": { "type": "string", "maxLength": 2000 },
-    "used": { "type": "array", "items": { "type": "integer" } },
-    "placeholders": { "type": "array", "items": { "type": "string" } }
+    "used": { "type": "array", "maxItems": 10, "items": { "type": "integer" } },
+    "placeholders": {
+      "type": "array",
+      "maxItems": 6,
+      "items": { "type": "string", "maxLength": 40 }
+    }
   }
 }

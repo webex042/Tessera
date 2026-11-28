@@ -1,0 +1,64 @@
+{
+  "results": {
+    "keyword": {
+      "n": 52,
+      "r5": 0.9423076923076923,
+      "r10": 0.9615384615384616,
+      "p5": 0.21153846153846143,
+      "mrr": 0.8280677655677656,
+      "ndcg10": 0.8564682573047355
+    },
+    "keyword + vector (RRF)": {
+      "n": 52,
+      "r5": 0.9134615384615384,
+      "r10": 0.9807692307692307,
+      "p5": 0.20384615384615373,
+      "mrr": 0.8377060439560439,
+      "ndcg10": 0.8640209125866387
+    },
+    "keyword + vector + facts (RRF)": {
+      "n": 52,
+      "r5": 0.9423076923076923,
+      "r10": 1.0,
+      "p5": 0.21153846153846143,
+      "mrr": 0.8452686202686205,
+      "ndcg10": 0.8768535912954784
+    },
+    "vector (SIMULATED embedder)": {
+      "n": 52,
+      "r5": 0.75,
+      "r10": 0.8461538461538461,
+      "p5": 0.16923076923076924,
+      "mrr": 0.6494581807081806,
+      "ndcg10": 0.6866363277826006
+    }
+  },
+  "checks": [
+    {
+      "check": "suppressed person: 0 items with the forgotten name returned (filtered 7; 6 first-name-only mentions returned, known limitation)",
+      "pass": true
+    },
+    {
+      "check": "blocklist rule added later: no Slack item returned (filtered 8)",
+      "pass": true
+    },
+    {
+      "check": "redacted OTP value: no keyword match, no returned text contains it",
+      "pass": true
+    },
+    {
+      "check": "duplicate document: both copies ranked (2/2), each with its own item id",
+      "pass": true
+    },
+    {
+      "check": "no vector index: keyword results returned and diagnostics say vector unavailable",
+      "pass": true
+    },
+    {
+      "check": "same query, same ranking",
+      "pass": true
+    }
+  ],
+  "unanswerable_with_hits": 8,
+  "vector_embedder": "sim-hash-v1 (SIMULATED)"
+}

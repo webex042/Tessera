@@ -119,6 +119,13 @@ const NOT_NAMES: &[&str] = &[
     "let",
     "we",
     "you",
+    "your",
+    "my",
+    "our",
+    "their",
+    "his",
+    "her",
+    "its",
     "it",
     "this",
     "that",
@@ -194,10 +201,34 @@ fn sentence_start(draft: &str, byte: usize) -> bool {
     before.is_empty() || before.ends_with(['.', '!', '?', '\n'])
 }
 
+/// Expand Hinglish time/day idioms in `ctx` so translated answers ("tomorrow", "10 AM")
+/// still verify against Hinglish source snippets ("kal", "10 baje") without relaxing checks.
+fn expand_hinglish_ctx(ctx: &str) -> String {
+    static KAL: LazyLock<Regex> = LazyLock::new(|| re(r"\bkal\b"));
+    static AAJ: LazyLock<Regex> = LazyLock::new(|| re(r"\baaj\b"));
+    static BAJE: LazyLock<Regex> = LazyLock::new(|| re(r"\b(\d{1,2})\s*baje\b"));
+    let mut extra = String::new();
+    if KAL.is_match(ctx) {
+        extra.push_str(" tomorrow yesterday");
+    }
+    if AAJ.is_match(ctx) {
+        extra.push_str(" today");
+    }
+    for c in BAJE.captures_iter(ctx) {
+        let h = &c[1];
+        extra.push_str(&format!(" {h}am {h}pm {h}:00"));
+    }
+    if extra.is_empty() {
+        ctx.to_owned()
+    } else {
+        format!("{ctx}{extra}")
+    }
+}
+
 /// Check `draft` against `context` (thread + memory + instruction, joined).
 /// Claims in `text` that `context` does not support.
 pub fn unsupported(text: &str, context: &str) -> Vec<Claim> {
-    let ctx = normalise(context);
+    let ctx = expand_hinglish_ctx(&normalise(context));
     let ctx_words: std::collections::HashSet<String> = ctx
         .split(|c: char| !c.is_alphanumeric() && c != '\'')
         .map(str::to_string)
@@ -231,31 +262,85 @@ pub fn unsupported(text: &str, context: &str) -> Vec<Claim> {
         if overlaps(&taken, m.start(), m.end()) {
             continue;
         }
-        // Skip leading non-names ("Thanks Ravi" → check "Ravi"); contractions count by their
-        // stem ("I've" → "i").
+        // Skip NOT_NAMES tokens ("Thanks Ravi" → "Ravi", "Ravi I'd" → "Ravi"); contractions
+        // count by their stem ("I've" → "i", "I'd" → "i").
         let words: Vec<&str> = m.as_str().split_whitespace().collect();
         let stem = |w: &str| w.split(['\'', '’']).next().unwrap_or(w).to_lowercase();
-        let Some(k) = words.iter().position(|w| !NOT_NAMES.contains(&stem(w).as_str())) else {
-            continue;
-        };
-        if k == 0 && sentence_start(text, m.start()) && words.len() == 1 {
-            continue; // a capitalised sentence opener, not a name
-        }
-        let name = words[k..].join(" ");
-        let known = words[k..].iter().all(|w| {
-            let w = normalise(w.trim_end_matches(['\'', '’', 's']));
-            ctx_words.contains(&w) || ctx.contains(&w)
-        });
-        if !known {
-            let off = m.as_str().find(&name).unwrap_or(0);
-            out.push(Claim {
-                kind: ClaimKind::Name,
-                start: m.start() + off,
-                end: m.start() + off + name.len(),
-                text: name,
+        let mut i = 0;
+        while i < words.len() {
+            if NOT_NAMES.contains(&stem(words[i]).as_str()) {
+                i += 1;
+                continue;
+            }
+            let mut j = i;
+            while j < words.len() && !NOT_NAMES.contains(&stem(words[j]).as_str()) {
+                j += 1;
+            }
+            if i == 0 && j == 1 && words.len() == 1 && sentence_start(text, m.start()) {
+                break; // a capitalised sentence opener, not a name
+            }
+            let name = words[i..j].join(" ");
+            let known = words[i..j].iter().all(|w| {
+                let w = normalise(w.trim_end_matches(['\'', '’', 's']));
+                ctx_words.contains(&w) || ctx.contains(&w)
             });
+            if !known {
+                let search_from: usize = words[..i].iter().map(|w| w.len() + 1).sum();
+                let start_at = search_from.min(m.as_str().len());
+                let off = m.as_str()[start_at..].find(&name).map(|p| start_at + p).unwrap_or(0);
+                out.push(Claim {
+                    kind: ClaimKind::Name,
+                    start: m.start() + off,
+                    end: m.start() + off + name.len(),
+                    text: name,
+                });
+            }
+            i = j;
         }
     }
     out.sort_by_key(|c| (c.start, c.end));
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pronoun_contractions_do_not_glue_onto_names() {
+        let ctx = "Sure Ravi, I'll send the revised sheet by Friday.";
+        assert!(unsupported("I promised Ravi I'd send the revised sheet by Friday.", ctx).is_empty());
+    }
+
+    #[test]
+    fn hinglish_time_and_day_verify_against_english_answers() {
+        let ctx =
+            "Meera: Asha kal ki client call ke slides ready hain? You: haan almost, kal subah 10 baje tak bhej dungi";
+        assert!(
+            unsupported(
+                "You will send Meera the client call slides by tomorrow morning at 10 AM.",
+                ctx
+            )
+            .is_empty()
+        );
+        assert!(
+            !unsupported(
+                "You will send Meera the client call slides by tomorrow morning at 11 AM.",
+                ctx
+            )
+            .is_empty()
+        );
+    }
+
+    #[test]
+    fn possessive_openers_do_not_glue_onto_names() {
+        let ctx = "[1] Fri 23 Oct 09:00 Microsoft Edge \"Sprint 45 board - Jira\" — Sprint 45\nNW-1440 Onboarding checklist v3 AV\nNW-1441 Empty states copy AV";
+        assert!(
+            unsupported(
+                "Your Jira tickets in Sprint 45 are NW-1440 Onboarding checklist v3 and NW-1441 Empty states copy.",
+                ctx
+            )
+            .is_empty()
+        );
+    }
 }

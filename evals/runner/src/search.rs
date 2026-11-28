@@ -69,20 +69,21 @@ fn score(ranked: &[i64], gold: &[i64]) -> (f64, f64, f64, f64, f64) {
     (r5, r10, p5, mrr, if idcg > 0.0 { dcg / idcg } else { 0.0 })
 }
 
-pub fn run() -> (bool, Value, String) {
+pub fn run(embedder: Option<&dyn tsr_retrieval::embed::Embedder>) -> (bool, Value, String) {
     let items = load_items();
     let qs: Vec<Q> =
         serde_json::from_str(&std::fs::read_to_string(root().join("evals/ask/ask.json")).unwrap()).unwrap();
     let (_d, mut c) = db();
     let bl = Blocklist::compile(&builtin_rules()).0;
-    let emb = HashEmbedder::default();
-    let mut ix = VectorIndex::empty("sim-hash-v1", 384);
+    let hash = HashEmbedder::default();
+    let emb: &dyn tsr_retrieval::embed::Embedder = embedder.unwrap_or(&hash);
+    let mut ix = VectorIndex::empty(emb.model_id(), emb.dims());
     let mut ids: HashMap<String, i64> = HashMap::new();
     for it in &items {
         let at = ts(&it.captured_at);
         let id = add_item(&c, &it.app, &it.title, &it.source, at, &it.text, Acquisition::Uia);
         ids.insert(it.id.clone(), id);
-        embed_item(&mut c, id, &emb, Some(&mut ix), at).unwrap();
+        embed_item(&mut c, id, emb, Some(&mut ix), at).unwrap();
         let facts: Vec<Value> = it
             .expected
             .facts
@@ -104,9 +105,14 @@ pub fn run() -> (bool, Value, String) {
     }
     assert!(ix.consistent_with(&c).unwrap(), "index matches the chunks table");
 
+    let vec_label = if embedder.is_some() {
+        "vector (multilingual-e5-small)"
+    } else {
+        "vector (SIMULATED embedder)"
+    };
     let configs: [(&str, bool, bool, bool); 4] = [
         ("keyword", true, false, false),
-        ("vector (SIMULATED embedder)", false, true, false),
+        (vec_label, false, true, false),
         ("keyword + vector (RRF)", true, true, false),
         ("keyword + vector + facts (RRF)", true, true, true),
     ];
@@ -125,7 +131,7 @@ pub fn run() -> (bool, Value, String) {
             o.use_lexical = lex;
             o.use_vector = vec;
             o.use_facts = facts;
-            let (hits, _) = search(&c, Some(&ix), Some(&emb), &q.question, &no_filter, &o).unwrap();
+            let (hits, _) = search(&c, Some(&ix), Some(emb), &q.question, &no_filter, &o).unwrap();
             let ranked: Vec<i64> = hits.iter().map(|h| h.item_id).collect();
             if !q.answerable {
                 if name.starts_with("keyword + vector + facts") {
@@ -172,7 +178,7 @@ pub fn run() -> (bool, Value, String) {
     let (hits, diag) = search(
         &c,
         Some(&ix),
-        Some(&emb),
+        Some(emb),
         "Kenji Watanabe export fix",
         &filt,
         &Opts::new(now),
@@ -220,7 +226,7 @@ pub fn run() -> (bool, Value, String) {
     let (hits, diag) = search(
         &c,
         Some(&ix),
-        Some(&emb),
+        Some(emb),
         "design empty states copy Figma",
         &f2,
         &Opts::new(now),
@@ -251,11 +257,11 @@ pub fn run() -> (bool, Value, String) {
         "Your OTP is 739104. Do not share it.",
         Acquisition::Uia,
     );
-    embed_item(&mut c, otp, &emb, Some(&mut ix), now).unwrap();
+    embed_item(&mut c, otp, emb, Some(&mut ix), now).unwrap();
     let (hits, diag) = search(
         &c,
         Some(&ix),
-        Some(&emb),
+        Some(emb),
         "739104",
         &Filter {
             blocklist: None,
@@ -286,11 +292,11 @@ pub fn run() -> (bool, Value, String) {
     // step's job, plan §10.3 step 5) and both carry provenance.
     let src = &items[0];
     let dup = add_item(&c, &src.app, &src.title, &src.source, now, &src.text, Acquisition::Uia);
-    embed_item(&mut c, dup, &emb, Some(&mut ix), now).unwrap();
+    embed_item(&mut c, dup, emb, Some(&mut ix), now).unwrap();
     let (hits, _) = search(
         &c,
         Some(&ix),
-        Some(&emb),
+        Some(emb),
         "empty-state illustrations Figma Onboarding",
         &no_filter,
         &Opts::new(now),
@@ -314,7 +320,7 @@ pub fn run() -> (bool, Value, String) {
     let a = search(
         &c,
         Some(&ix),
-        Some(&emb),
+        Some(emb),
         "budget sheet travel",
         &no_filter,
         &Opts::new(now),
@@ -324,7 +330,7 @@ pub fn run() -> (bool, Value, String) {
     let b = search(
         &c,
         Some(&ix),
-        Some(&emb),
+        Some(emb),
         "budget sheet travel",
         &no_filter,
         &Opts::new(now),
@@ -334,10 +340,14 @@ pub fn run() -> (bool, Value, String) {
     checks.push(("same query, same ranking".into(), a == b));
 
     let checks_ok = checks.iter().all(|(_, ok)| *ok);
-    let mut md = String::from(
-        "# Search evaluation\n\n54 answerable questions (Ask set), 80 indexed items. **Vector numbers use the SIMULATED \
-         hashing embedder** (spelling overlap, not meaning); real E5 numbers are not measured on this machine.\n\n\
+    let mut md = format!(
+        "# Search evaluation\n\n54 answerable questions (Ask set), 80 indexed items. {}\n\n\
          | channels | recall@5 | recall@10 | precision@5 | MRR | nDCG@10 |\n|---|---|---|---|---|---|\n",
+        if embedder.is_some() {
+            "Real `multilingual-e5-small` ONNX embeddings on pinned ONNX Runtime."
+        } else {
+            "**Vector numbers use the SIMULATED hashing embedder** (spelling overlap, not meaning); pass `--model DIR` with `multilingual-e5-small-onnx` for real E5 numbers."
+        }
     );
     for (k, m) in &results {
         md.push_str(&format!(
@@ -347,13 +357,12 @@ pub fn run() -> (bool, Value, String) {
     }
     md.push_str(&format!(
         "\nUnanswerable questions with at least one hit (hybrid+facts): {unanswerable_hits} of {unanswerable} — retrieval always returns \
-         something; answering \"not in memory\" is the Ask step's job (Stage 6).\n\nNo claim is made that hybrid beats keyword \
-         in general: the table above is the only evidence, on this set, with a simulated embedder.\n\n## Behaviour checks\n\n"
+         something; answering \"not in memory\" is the Ask step's job (Stage 6).\n\n\n## Behaviour checks\n\n"
     ));
     for (k, ok) in &checks {
         md.push_str(&format!("- {} {k}\n", if *ok { "PASS" } else { "FAIL" }));
     }
     let j = json!({"results": results, "checks": checks.iter().map(|(k, ok)| json!({"check": k, "pass": ok})).collect::<Vec<_>>(),
-                   "unanswerable_with_hits": unanswerable_hits, "vector_embedder": "sim-hash-v1 (SIMULATED)"});
+                   "unanswerable_with_hits": unanswerable_hits, "vector_embedder": if embedder.is_some() { emb.model_id().to_string() } else { "sim-hash-v1 (SIMULATED)".to_string() }});
     (checks_ok, j, md)
 }

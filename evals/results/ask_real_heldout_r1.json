@@ -1,0 +1,1641 @@
+{
+  "label": "qwen3-vl-4b-instruct-q4_k_m on vulkan on Vulkan0 (AMD Radeon (TM) Graphics)",
+  "profile": "local-igpu-beta",
+  "split": "heldout",
+  "simulated": false,
+  "questions": 48,
+  "invalid": 0,
+  "correct": 37,
+  "accuracy": 0.7708333333333334,
+  "shown_sentences": 39,
+  "verified_sentences": 36,
+  "verified_share": 0.9230769230769231,
+  "fabricated_citations": 0,
+  "first_sentence_ms_p50": 13787,
+  "total_ms_p50": 15127,
+  "pass": true,
+  "rows": [
+    {
+      "id": "ask-002",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Yes, you sent Ravi the revised budget sheet on Fri 23 Oct 15:06.",
+          "cites": [
+            2
+          ],
+          "item_ids": [
+            29
+          ],
+          "verified": false,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 19026,
+      "total_ms": 20481,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 20481,
+          "first_delta_ms": 11205,
+          "output": "{ \"sentences\": [ { \"text\": \"Yes, you sent Ravi the revised budget sheet on Fri 23 Oct 15:06.\",\"cites\": [ 2 ] } ],\"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-003",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Thursday 3pm IST",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            22
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13656,
+      "total_ms": 15279,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 15279,
+          "first_delta_ms": 8594,
+          "output": "{ \"sentences\": [ { \"text\": \"Thursday 3pm IST\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-004",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 9332,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 9332,
+          "first_delta_ms": 7372,
+          "output": "{\"sentences\": [], \"insufficient\": false}"
+        }
+      ]
+    },
+    {
+      "id": "ask-006",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "600 requests/min",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            26
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 10869,
+      "total_ms": 12446,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 12446,
+          "first_delta_ms": 6269,
+          "output": "{ \"sentences\": [ { \"text\": \"600 requests/min\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-007",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Confirm final headcount by next Wednesday",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            28
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 11281,
+      "total_ms": 12911,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 12911,
+          "first_delta_ms": 6267,
+          "output": "{ \"sentences\": [ { \"text\": \"Confirm final headcount by next Wednesday\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-008",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Lena's partner webinar is on 11/03 at 9am PT.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            30
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 14290,
+      "total_ms": 16251,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 16251,
+          "first_delta_ms": 6214,
+          "output": "{ \"sentences\": [ { \"text\": \"Lena's partner webinar is on 11/03 at 9am PT.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-009",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Sections 3 and 4",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            31
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13406,
+      "total_ms": 15123,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 15123,
+          "first_delta_ms": 8147,
+          "output": "{ \"sentences\": [ { \"text\": \"Sections 3 and 4\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-010",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Launch date is 28 Oct 2026",
+          "cites": [
+            2
+          ],
+          "item_ids": [
+            33
+          ],
+          "verified": false,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 15790,
+      "total_ms": 17607,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 17607,
+          "first_delta_ms": 9052,
+          "output": "{ \"sentences\": [ { \"text\": \"Launch date is 28 Oct 2026\", \"cites\": [ 2 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-012",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Priya is writing the on-call handover template by Wednesday.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            35
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 14232,
+      "total_ms": 15965,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 15964,
+          "first_delta_ms": 7659,
+          "output": "{ \"sentences\": [ { \"text\": \"Priya is writing the on-call handover template by Wednesday.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-013",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 7303,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 7303,
+          "first_delta_ms": 5266,
+          "output": "{\"sentences\": [], \"insufficient\": false}"
+        }
+      ]
+    },
+    {
+      "id": "ask-014",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": false,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "You said the empty-state copy would be ready on Thu 22 Oct 11:52 AM.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            6
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 14803,
+      "total_ms": 16339,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 16339,
+          "first_delta_ms": 6605,
+          "output": "{ \"sentences\": [ { \"text\": \"You said the empty-state copy would be ready on Thu 22 Oct 11:52 AM.\",\"cites\": [ 1 ] } ],\"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-015",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "The new empty-state illustrations are in Figma, page 'Onboarding v3'.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            1
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 15151,
+      "total_ms": 16865,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 16865,
+          "first_delta_ms": 7780,
+          "output": "{ \"sentences\": [ { \"text\": \"The new empty-state illustrations are in Figma, page 'Onboarding v3'.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-017",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": "decision"
+      },
+      "sentences": [
+        {
+          "text": "We decided to drop the referral banner from the dashboard and keep it only in settings.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            3
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 15799,
+      "total_ms": 17492,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 17492,
+          "first_delta_ms": 8555,
+          "output": "{ \"sentences\": [ { \"text\": \"We decided to drop the referral banner from the dashboard and keep it only in settings.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-018",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Due EOD Wednesday",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            5
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 12575,
+      "total_ms": 14271,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 14271,
+          "first_delta_ms": 7718,
+          "output": "{ \"sentences\": [ { \"text\": \"Due EOD Wednesday\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-019",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "INC-778",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            5
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 11825,
+      "total_ms": 13530,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 13530,
+          "first_delta_ms": 6465,
+          "output": "{ \"sentences\": [ { \"text\": \"INC-778\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-020",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Thursday 22 Oct",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            7
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 12616,
+      "total_ms": 14292,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 14292,
+          "first_delta_ms": 7480,
+          "output": "{ \"sentences\": [ { \"text\": \"Thursday 22 Oct\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-022",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": "Microsoft Teams",
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Lena asked for a customer reference in retail who uses the export API for the webinar quote.",
+          "cites": [
+            2
+          ],
+          "item_ids": [
+            9
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 11246,
+      "total_ms": 12757,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 12757,
+          "first_delta_ms": 4896,
+          "output": "{\"sentences\": [ {\"text\": \"Lena asked for a customer reference in retail who uses the export API for the webinar quote.\",\"cites\": [2]} ],\"insufficient\": false}"
+        }
+      ]
+    },
+    {
+      "id": "ask-023",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": false,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": "task"
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 9001,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 9001,
+          "first_delta_ms": 6709,
+          "output": "{\"sentences\": [], \"insufficient\": false}"
+        }
+      ]
+    },
+    {
+      "id": "ask-024",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "The 3.14 release notes are in SharePoint > Product > Releases > 3.14-notes.docx.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            12
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13433,
+      "total_ms": 15175,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 15174,
+          "first_delta_ms": 4835,
+          "output": "{ \"sentences\": [ { \"text\": \"The 3.14 release notes are in SharePoint > Product > Releases > 3.14-notes.docx.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-025",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "The plumber is coming Saturday 11am.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            13
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 10296,
+      "total_ms": 11933,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 11933,
+          "first_delta_ms": 4538,
+          "output": "{ \"sentences\": [ { \"text\": \"The plumber is coming Saturday 11am.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-027",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Reunion dinner is fixed - Sunday 1 Nov, 8pm at Toit Indiranagar",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            14
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13787,
+      "total_ms": 15451,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 15450,
+          "first_delta_ms": 5960,
+          "output": "{ \"sentences\": [ { \"text\": \"Reunion dinner is fixed - Sunday 1 Nov, 8pm at Toit Indiranagar\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-028",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "SSO with Okta is planned for Q1, not committed",
+          "cites": [
+            2
+          ],
+          "item_ids": [
+            68
+          ],
+          "verified": false,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13141,
+      "total_ms": 14786,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 14785,
+          "first_delta_ms": 6887,
+          "output": "{ \"sentences\": [ { \"text\": \"SSO with Okta is planned for Q1, not committed\", \"cites\": [ 2 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-029",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "The launch checklist review is Tuesday 27 Oct 11am.",
+          "cites": [
+            1,
+            2
+          ],
+          "item_ids": [
+            18,
+            61
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 15557,
+      "total_ms": 17252,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 17252,
+          "first_delta_ms": 8299,
+          "output": "{ \"sentences\": [ { \"text\": \"The launch checklist review is Tuesday 27 Oct 11am.\", \"cites\": [ 1, 2 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-030",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Fatima asked Asha to confirm with BigRetail whether a 24h emailed export is acceptable as a workaround.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            51
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 17134,
+      "total_ms": 18871,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 18870,
+          "first_delta_ms": 8719,
+          "output": "{ \"sentences\": [ { \"text\": \"Fatima asked Asha to confirm with BigRetail whether a 24h emailed export is acceptable as a workaround.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-032",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "PR #815 adds streaming CSV export.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            54
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13064,
+      "total_ms": 14745,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 14744,
+          "first_delta_ms": 7453,
+          "output": "{ \"sentences\": [ { \"text\": \"PR #815 adds streaming CSV export.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-033",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Until 31 Jan",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            56
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13251,
+      "total_ms": 16095,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 16094,
+          "first_delta_ms": 6052,
+          "output": "{ \"sentences\": [ { \"text\": \"Until 31 Jan\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-034",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": "decision"
+      },
+      "sentences": [
+        {
+          "text": "Decision: bottom tab bar with 4 tabs (Home, Search, Inbox, Profile). Hamburger menu removed.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            58
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 20477,
+      "total_ms": 22324,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 22324,
+          "first_delta_ms": 11335,
+          "output": "{ \"sentences\": [ { \"text\": \"Decision: bottom tab bar with 4 tabs (Home, Search, Inbox, Profile). Hamburger menu removed.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-035",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Exports are capped at 1,000,000 rows.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            59
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 15391,
+      "total_ms": 17114,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 17113,
+          "first_delta_ms": 8078,
+          "output": "{ \"sentences\": [ { \"text\": \"Exports are capped at 1,000,000 rows.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-037",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "The BigRetail QBR is on Wednesday, 4 November 2026, from 14:00 to 15:30 (UTC+05:30).",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            62
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 19528,
+      "total_ms": 21051,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 21051,
+          "first_delta_ms": 7927,
+          "output": "{ \"sentences\": [ { \"text\": \"The BigRetail QBR is on Wednesday, 4 November 2026, from 14:00 to 15:30 (UTC+05:30).\",\"cites\": [ 1 ] } ],\"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-038",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Help center articles due 28-10-26",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            64
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13207,
+      "total_ms": 14740,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 14740,
+          "first_delta_ms": 7839,
+          "output": "{\"sentences\": [{\"text\": \"Help center articles due 28-10-26\", \"cites\": [1]}], \"insufficient\": false}"
+        }
+      ]
+    },
+    {
+      "id": "ask-039",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "call CA about advance tax before 15 Dec",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            66
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 12240,
+      "total_ms": 13918,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 13917,
+          "first_delta_ms": 6313,
+          "output": "{ \"sentences\": [ { \"text\": \"call CA about advance tax before 15 Dec\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-040",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "BigRetail asked for a written SSO commitment before renewal.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            68
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 14340,
+      "total_ms": 16027,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 16026,
+          "first_delta_ms": 7995,
+          "output": "{ \"sentences\": [ { \"text\": \"BigRetail asked for a written SSO commitment before renewal.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-042",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Build #88240 failed in the integration-tests (export) step with 12 failed tests.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            70
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 15565,
+      "total_ms": 17265,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 17265,
+          "first_delta_ms": 7586,
+          "output": "{ \"sentences\": [ { \"text\": \"Build #88240 failed in the integration-tests (export) step with 12 failed tests.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-043",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "onboarding completion 38% -> 50%",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            71
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 15045,
+      "total_ms": 16743,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 16742,
+          "first_delta_ms": 8964,
+          "output": "{ \"sentences\": [ { \"text\": \"onboarding completion 38% -> 50%\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-044",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": "question"
+      },
+      "sentences": [
+        {
+          "text": "Yes, it is a launch blocker as per Fatima Khan's question to Asha Verma.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            73
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13313,
+      "total_ms": 14978,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 14977,
+          "first_delta_ms": 6029,
+          "output": "{ \"sentences\": [ { \"text\": \"Yes, it is a launch blocker as per Fatima Khan's question to Asha Verma.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-045",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Your dentist appointment is on Saturday, 31 October 09:00 - 10:00.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            75
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 17113,
+      "total_ms": 18829,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 18828,
+          "first_delta_ms": 7923,
+          "output": "{ \"sentences\": [ { \"text\": \"Your dentist appointment is on Saturday, 31 October 09:00 - 10:00.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-047",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "4.7%",
+          "cites": [
+            3
+          ],
+          "item_ids": [
+            78
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13176,
+      "total_ms": 14793,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 14792,
+          "first_delta_ms": 8744,
+          "output": "{ \"sentences\": [ { \"text\": \"4.7%\", \"cites\": [ 3 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-048",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "You will send Meera the client call slides by tomorrow morning at 10 am.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            37
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 15846,
+      "total_ms": 17824,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 17824,
+          "first_delta_ms": 7931,
+          "output": "{ \"sentences\": [ { \"text\": \"You will send Meera the client call slides by tomorrow morning at 10 am.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-049",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Sana asked Asha to get a quote from the caterer by Thursday.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            38
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 16951,
+      "total_ms": 18907,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 18907,
+          "first_delta_ms": 5872,
+          "output": "{ \"sentences\": [ { \"text\": \"Sana asked Asha to get a quote from the caterer by Thursday.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-050",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "BigRetail and two other pilots",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            40
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13380,
+      "total_ms": 15127,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 15127,
+          "first_delta_ms": 7608,
+          "output": "{ \"sentences\": [ { \"text\": \"BigRetail and two other pilots\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-052",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Daniel wants you to review the v3 deck before Friday.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            50
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 17394,
+      "total_ms": 19680,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 19679,
+          "first_delta_ms": 9628,
+          "output": "{ \"sentences\": [ { \"text\": \"Daniel wants you to review the v3 deck before Friday.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-053",
+      "correct": true,
+      "insufficient": true,
+      "gold_retrieved": false,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 11802,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 11802,
+          "first_delta_ms": 9017,
+          "output": "{\"sentences\": [], \"insufficient\": true}"
+        }
+      ]
+    },
+    {
+      "id": "ask-054",
+      "correct": true,
+      "insufficient": true,
+      "gold_retrieved": false,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 11016,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 11016,
+          "first_delta_ms": 8428,
+          "output": "{ \"sentences\": [], \"insufficient\": true }"
+        }
+      ]
+    },
+    {
+      "id": "ask-055",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": "question"
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 10625,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 10625,
+          "first_delta_ms": 8222,
+          "output": "{\"sentences\": [], \"insufficient\": false}"
+        }
+      ]
+    },
+    {
+      "id": "ask-057",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": false,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 9105,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 9105,
+          "first_delta_ms": 6939,
+          "output": "{\"sentences\": [], \"insufficient\": false}"
+        }
+      ]
+    },
+    {
+      "id": "ask-058",
+      "correct": true,
+      "insufficient": true,
+      "gold_retrieved": false,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": "decision"
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 11995,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 11995,
+          "first_delta_ms": 9464,
+          "output": "{\"sentences\": [], \"insufficient\": true}"
+        }
+      ]
+    },
+    {
+      "id": "ask-059",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 8613,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 8612,
+          "first_delta_ms": 6538,
+          "output": "{\"sentences\": [], \"insufficient\": false}"
+        }
+      ]
+    },
+    {
+      "id": "ask-060",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": false,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Asha Verma is attending the Diwali party.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            38
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 13380,
+      "total_ms": 15077,
+      "calls": [
+        {
+          "finish": "stop",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "ms": 15077,
+          "first_delta_ms": 7007,
+          "output": "{ \"sentences\": [ { \"text\": \"Asha Verma is attending the Diwali party.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    }
+  ]
+}

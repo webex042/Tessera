@@ -31,6 +31,7 @@ pub struct Opts {
     pub use_lexical: bool,
     pub use_vector: bool,
     pub use_facts: bool,
+    pub fact_kind_hint: Option<&'static str>,
 }
 
 impl Opts {
@@ -45,6 +46,7 @@ impl Opts {
             use_lexical: true,
             use_vector: true,
             use_facts: true,
+            fact_kind_hint: None,
         }
     }
 }
@@ -151,16 +153,25 @@ pub fn search(
     }
     d.lexical = lexical.len();
 
-    // Facts channel: rank of the best fact per evidence item.
+    // Facts channel: rank of the best fact per evidence item, plus kind-hint matching.
     let mut fact_items: Vec<i64> = Vec::new();
+    let mut kind_boost: std::collections::HashSet<i64> = std::collections::HashSet::new();
     if o.use_facts {
         for (fid, _) in tsr_store::facts::search(conn, q_ref, (o.per_channel * 2) as u32)? {
+            let kind_hit = o.fact_kind_hint.is_some_and(|want| {
+                tsr_store::facts::get(conn, fid).ok().flatten().is_some_and(|f| {
+                    f.kind == want
+                        || (matches!(want, "commitment" | "task") && matches!(f.kind.as_str(), "commitment" | "task"))
+                })
+            });
             for e in tsr_store::facts::evidence(conn, fid)? {
-                if fact_items.len() < o.per_channel
-                    && !fact_items.contains(&e.item_id)
-                    && allowed(conn, e.item_id, &mut d)?
-                {
-                    fact_items.push(e.item_id);
+                if allowed(conn, e.item_id, &mut d)? {
+                    if kind_hit {
+                        kind_boost.insert(e.item_id);
+                    }
+                    if fact_items.len() < o.per_channel && !fact_items.contains(&e.item_id) {
+                        fact_items.push(e.item_id);
+                    }
                 }
             }
         }
@@ -217,6 +228,11 @@ pub fn search(
     }
     for (i, id) in fact_items.iter().enumerate() {
         add(*id, i + 1, 2, None);
+    }
+    for id in &kind_boost {
+        if let Some(h) = fused.get_mut(id) {
+            h.score += 4.0 / (o.rrf_k + 1.0);
+        }
     }
     let mut hits: Vec<Hit> = fused
         .into_values()
@@ -276,16 +292,25 @@ pub fn search_vectordb(
     }
     d.lexical = lexical.len();
 
-    // Facts channel: rank of the best fact per evidence item.
+    // Facts channel: rank of the best fact per evidence item, plus kind-hint matching.
     let mut fact_items: Vec<i64> = Vec::new();
+    let mut kind_boost: std::collections::HashSet<i64> = std::collections::HashSet::new();
     if o.use_facts {
         for (fid, _) in tsr_store::facts::search(conn, q_ref, (o.per_channel * 2) as u32)? {
+            let kind_hit = o.fact_kind_hint.is_some_and(|want| {
+                tsr_store::facts::get(conn, fid).ok().flatten().is_some_and(|f| {
+                    f.kind == want
+                        || (matches!(want, "commitment" | "task") && matches!(f.kind.as_str(), "commitment" | "task"))
+                })
+            });
             for e in tsr_store::facts::evidence(conn, fid)? {
-                if fact_items.len() < o.per_channel
-                    && !fact_items.contains(&e.item_id)
-                    && allowed(conn, e.item_id, &mut d)?
-                {
-                    fact_items.push(e.item_id);
+                if allowed(conn, e.item_id, &mut d)? {
+                    if kind_hit {
+                        kind_boost.insert(e.item_id);
+                    }
+                    if fact_items.len() < o.per_channel && !fact_items.contains(&e.item_id) {
+                        fact_items.push(e.item_id);
+                    }
                 }
             }
         }
@@ -344,6 +369,11 @@ pub fn search_vectordb(
     }
     for (i, id) in fact_items.into_iter().enumerate() {
         add(id, i + 1, 2, None);
+    }
+    for id in &kind_boost {
+        if let Some(h) = fused.get_mut(id) {
+            h.score += 4.0 / (o.rrf_k + 1.0);
+        }
     }
 
     let mut hits: Vec<Hit> = fused

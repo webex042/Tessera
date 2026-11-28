@@ -1,0 +1,60 @@
+﻿{
+    "pass":  true,
+    "windows":  [
+                    {
+                        "affinity":  "0x11",
+                        "affinity_is_exclude_from_capture":  true,
+                        "class":  "Tauri Window",
+                        "methods":  {
+                                        "gdi":  {
+                                                    "control_a_decoy_visible_fraction":  1.0,
+                                                    "control_b_excluded_decoy_hidden_fraction":  1.0,
+                                                    "notch_backdrop_fraction":  1.0,
+                                                    "pass":  true
+                                                },
+                                        "wgc":  {
+                                                    "control_a_decoy_visible_fraction":  1.0,
+                                                    "control_b_excluded_decoy_hidden_fraction":  1.0,
+                                                    "notch_backdrop_fraction":  1.0,
+                                                    "pass":  true
+                                                }
+                                    },
+                        "rect":  [
+                                     390,
+                                     12,
+                                     1140,
+                                     780
+                                 ],
+                        "topmost":  true
+                    },
+                    {
+                        "affinity":  "0x11",
+                        "affinity_is_exclude_from_capture":  true,
+                        "class":  "Tao Thread Event Target",
+                        "methods":  {
+                                        "gdi":  {
+                                                    "control_a_decoy_visible_fraction":  1.0,
+                                                    "control_b_excluded_decoy_hidden_fraction":  1.0,
+                                                    "notch_backdrop_fraction":  1.0,
+                                                    "pass":  true
+                                                },
+                                        "wgc":  {
+                                                    "control_a_decoy_visible_fraction":  1.0,
+                                                    "control_b_excluded_decoy_hidden_fraction":  1.0,
+                                                    "notch_backdrop_fraction":  1.0,
+                                                    "pass":  true
+                                                }
+                                    },
+                        "rect":  [
+                                     0,
+                                     0,
+                                     22,
+                                     22
+                                 ],
+                        "topmost":  false
+                    }
+                ],
+    "panel":  "pill",
+    "measured_at":  "2026-10-27T19:53:16",
+    "os":  "Microsoft Windows NT 10.0.26300.0"
+}

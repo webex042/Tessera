@@ -102,6 +102,7 @@ pub fn run(
         .filter(|i| only.is_none_or(|o| o.contains(&i.id)))
         .collect();
     let mut diagnostics: Vec<Value> = Vec::new();
+    let mut rows: Vec<Value> = Vec::new();
     let bl = Blocklist::compile(&builtin_rules()).0;
     let mut micro = Prf::default();
     let mut per_kind: BTreeMap<String, Prf> = BTreeMap::new();
@@ -205,22 +206,36 @@ pub fn run(
                 ug[j] = true;
             }
         }
+        let mut row_tp = 0u32;
+        let mut row_fp = 0u32;
+        let mut row_fn = 0u32;
+        let mut fp_facts: Vec<Value> = Vec::new();
+        let mut fn_facts: Vec<Value> = Vec::new();
         for (i, p) in pred.iter().enumerate() {
             let k = per_kind.entry(group(&p.0).to_string()).or_default();
             if up[i] {
                 micro.tp += 1;
                 k.tp += 1;
+                row_tp += 1;
             } else {
                 micro.fp += 1;
                 k.fp += 1;
+                row_fp += 1;
+                fp_facts.push(json!({"kind": p.0, "text": p.1, "evidence": p.2}));
             }
         }
         for (j, g) in gold.iter().enumerate() {
             if !ug[j] {
                 micro.r#fn += 1;
                 per_kind.entry(group(&g.kind).to_string()).or_default().r#fn += 1;
+                row_fn += 1;
+                fn_facts.push(json!({"kind": g.kind, "text": g.text, "evidence": g.evidence}));
             }
         }
+        rows.push(json!({
+            "id": it.id, "split": it.split, "tp": row_tp, "fp": row_fp, "fn": row_fn,
+            "fp_facts": fp_facts, "fn_facts": fn_facts,
+        }));
     }
     let hall_rate = if stored_total == 0 {
         0.0
@@ -282,7 +297,7 @@ pub fn run(
         "invalid_rows": invalid_rows, "failed_items": failed_items, "injection_failures": injection_failures,
         "per_kind": per_kind.iter().map(|(k, p)| (k.clone(), json!({"p": p.p(), "r": p.r(), "f1": p.f1(), "tp": p.tp, "fp": p.fp, "fn": p.r#fn}))).collect::<serde_json::Map<_, _>>(),
         "rejected": rejected, "pass_thresholds": pass, "subset": only.is_some(),
-        "failed_item_diagnostics": diagnostics,
+        "failed_item_diagnostics": diagnostics, "rows": rows,
     });
     (pass, j, md)
 }

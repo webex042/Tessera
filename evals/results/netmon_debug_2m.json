@@ -1,0 +1,8 @@
+﻿"time","proto","pid","process","local","remote","state","loopback","dns"
+"2026-11-28T14:14:26","tcp","34516","msedgewebview2.exe",":53106","0.0.0.0:0","","True",""
+"2026-11-28T14:14:26","tcp","34516","msedgewebview2.exe",":53105","0.0.0.0:0","FinWait1","True",""
+"2026-11-28T14:14:26","tcp","34516","msedgewebview2.exe",":53106","52.110.14.167:443","SynSent","False",""
+"2026-11-28T14:14:27","tcp","34516","msedgewebview2.exe",":53107","0.0.0.0:0","Bound","True",""
+"2026-11-28T14:14:27","tcp","34516","msedgewebview2.exe",":53108","40.104.66.66:443","Established","False",""
+"2026-11-28T14:14:28","tcp","34516","msedgewebview2.exe",":53106","52.110.14.167:443","Established","False",""
+"2026-11-28T14:14:49","tcp","34516","msedgewebview2.exe",":53108","0.0.0.0:0","Closed","True",""

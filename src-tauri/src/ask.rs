@@ -16,7 +16,7 @@ use tsr_infer::cancel::CancelToken;
 use tsr_infer::client::{ChatModel, ChatRequest};
 use tsr_infer::runtime::Runner;
 use tsr_infer::sched::{Dispatch, JobSpec, Outcome, Priority, Resource};
-use tsr_retrieval::ask::{Snippet, answer, request, snippets};
+use tsr_retrieval::ask::{Snippet, answer, request_with_user, snippets};
 use tsr_retrieval::embed::Embedder;
 use tsr_retrieval::hybrid::{Filter, Opts, search, search_vectordb};
 use tsr_store::vectordb::VectorDb;
@@ -117,6 +117,7 @@ impl Asks {
         let mut o = Opts::new(now);
         o.k = 40;
         o.use_vector = false;
+        o.fact_kind_hint = aq.kind;
         let bl_guard = self.blocklist.read().unwrap_or_else(|p| p.into_inner());
         let filter = Filter {
             blocklist: Some(&*bl_guard),
@@ -163,6 +164,12 @@ impl Asks {
             ranked.push(h.item_id);
         }
         let snips = snippets(&c, &ranked, q)?;
+        let self_name: Option<String> = c
+            .query_row("SELECT display_name FROM people WHERE is_self = 1 LIMIT 1", [], |r| {
+                r.get(0)
+            })
+            .ok()
+            .filter(|s: &String| !s.trim().is_empty() && s != "me");
         drop(c);
         let local = jiff::Timestamp::from_millisecond(now)
             .map_err(|_| E_INVALID)?
@@ -173,11 +180,12 @@ impl Asks {
                 .map(|t| t.to_zoned(tz2.clone()).strftime("%a %-d %b %H:%M").to_string())
                 .unwrap_or_default()
         };
-        let req = request(
+        let req = request_with_user(
             q,
             &snips,
             &local.strftime("%Y-%m-%d").to_string(),
             &local.strftime("%A").to_string(),
+            self_name.as_deref(),
             &label,
         );
         let submit_fn = self.submit.lock().unwrap_or_else(|p| p.into_inner()).clone();

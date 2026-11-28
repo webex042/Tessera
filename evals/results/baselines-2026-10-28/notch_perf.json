@@ -1,0 +1,164 @@
+﻿{
+    "measured_at":  "2026-10-27T20:03:29",
+    "os":  "Microsoft Windows NT 10.0.26300.0",
+    "build":  "debug Rust, production UI bundle (ui/dist)",
+    "cycles":  20,
+    "toggle_hotkey":  "Ctrl+Alt+N (fallback: Ctrl+Alt+Space owned by another app)",
+    "panel_focused_after_open":  20,
+    "per_cycle_focused_then_returned":  [
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ],
+                                            [
+                                                true,
+                                                true
+                                            ]
+                                        ],
+    "no_focus_steal_at_start":  true,
+    "panel_during_start_check":  "peek",
+    "focus_returned_after_close":  20,
+    "animation_frame_ms":  {
+                               "n":  1229,
+                               "p50":  16.7,
+                               "p95":  16.8,
+                               "max":  33.3
+                           },
+    "expand_frame_ms":  {
+                            "n":  729,
+                            "p50":  16.7,
+                            "p95":  16.8,
+                            "max":  33.3
+                        },
+    "collapse_frame_ms":  {
+                              "n":  500,
+                              "p50":  16.7,
+                              "p95":  16.8,
+                              "max":  17.1
+                          },
+    "late_frames":  2,
+    "late_frame_share":  0.0016,
+    "input_to_visual_ms":  {
+                               "n":  20,
+                               "p50":  33,
+                               "p95":  64,
+                               "max":  64
+                           },
+    "input_to_visual_samples_ms":  [
+                                       64,
+                                       32,
+                                       30,
+                                       27,
+                                       24,
+                                       25,
+                                       31,
+                                       30,
+                                       34,
+                                       30,
+                                       32,
+                                       28,
+                                       34,
+                                       36,
+                                       33,
+                                       36,
+                                       39,
+                                       38,
+                                       38,
+                                       33
+                                   ],
+    "frame_after_input_ms":  {
+                                 "n":  20,
+                                 "p50":  33,
+                                 "p95":  64,
+                                 "max":  64
+                             },
+    "region_after_input_ms":  {
+                                  "n":  20,
+                                  "p50":  16,
+                                  "p95":  24,
+                                  "max":  24
+                              },
+    "event_after_input_ms":  {
+                                 "n":  20,
+                                 "p50":  8,
+                                 "p95":  14,
+                                 "max":  14
+                             },
+    "thresholds":  {
+                       "late_frame_share_max":  0.05,
+                       "input_to_visual_p95_max_ms":  100
+                   },
+    "pass":  true
+}

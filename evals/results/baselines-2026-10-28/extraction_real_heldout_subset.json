@@ -1,0 +1,60 @@
+{
+  "label": "qwen3-vl-4b-instruct-q4_k_m on vulkan on Vulkan0 (AMD Radeon (TM) Graphics)",
+  "split": "heldout",
+  "simulated": false,
+  "items": 12,
+  "precision": 0.5,
+  "recall": 0.625,
+  "f1": 0.5555555555555556,
+  "tp": 10,
+  "fp": 10,
+  "fn": 6,
+  "stored": 20,
+  "needs_review": 1,
+  "hallucinated": 0,
+  "hallucination_rate": 0.0,
+  "invalid_rows": 0,
+  "failed_items": 0,
+  "injection_failures": 0,
+  "per_kind": {
+    "action": {
+      "p": 0.4,
+      "r": 0.4,
+      "f1": 0.4000000000000001,
+      "tp": 2,
+      "fp": 3,
+      "fn": 3
+    },
+    "event": {
+      "p": 0.625,
+      "r": 1.0,
+      "f1": 0.7692307692307693,
+      "tp": 5,
+      "fp": 3,
+      "fn": 0
+    },
+    "note": {
+      "p": 0.0,
+      "r": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 3,
+      "fn": 1
+    },
+    "question": {
+      "p": 0.75,
+      "r": 0.6,
+      "f1": 0.6666666666666665,
+      "tp": 3,
+      "fp": 1,
+      "fn": 2
+    }
+  },
+  "rejected": {
+    "evidence_too_short": 1,
+    "summary_injection": 1
+  },
+  "pass_thresholds": false,
+  "subset": true,
+  "failed_item_diagnostics": []
+}

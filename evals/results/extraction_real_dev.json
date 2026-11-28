@@ -1,0 +1,428 @@
+{
+  "label": "qwen3-vl-4b-instruct-q4_k_m on vulkan on Vulkan0 (AMD Radeon (TM) Graphics)",
+  "split": "dev",
+  "simulated": false,
+  "items": 22,
+  "precision": 0.6470588235294118,
+  "recall": 0.7674418604651163,
+  "f1": 0.7021276595744682,
+  "tp": 33,
+  "fp": 18,
+  "fn": 10,
+  "stored": 51,
+  "needs_review": 0,
+  "hallucinated": 0,
+  "hallucination_rate": 0.0,
+  "invalid_rows": 0,
+  "failed_items": 0,
+  "injection_failures": 0,
+  "per_kind": {
+    "action": {
+      "p": 0.84,
+      "r": 0.8076923076923077,
+      "f1": 0.8235294117647058,
+      "tp": 21,
+      "fp": 4,
+      "fn": 5
+    },
+    "decision": {
+      "p": 1.0,
+      "r": 1.0,
+      "f1": 1.0,
+      "tp": 4,
+      "fp": 0,
+      "fn": 0
+    },
+    "event": {
+      "p": 0.4166666666666667,
+      "r": 1.0,
+      "f1": 0.5882352941176471,
+      "tp": 5,
+      "fp": 7,
+      "fn": 0
+    },
+    "note": {
+      "p": 0.25,
+      "r": 0.2857142857142857,
+      "f1": 0.26666666666666666,
+      "tp": 2,
+      "fp": 6,
+      "fn": 5
+    },
+    "question": {
+      "p": 0.5,
+      "r": 1.0,
+      "f1": 0.6666666666666666,
+      "tp": 1,
+      "fp": 1,
+      "fn": 0
+    }
+  },
+  "rejected": {
+    "no_evidence": 2,
+    "person_not_in_source": 2,
+    "summary_injection": 1
+  },
+  "pass_thresholds": true,
+  "subset": false,
+  "failed_item_diagnostics": [],
+  "rows": [
+    {
+      "id": "ch-001",
+      "split": "dev",
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "fp_facts": [],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "New empty-state illustrations are in Figma page 'Onboarding v3'",
+          "evidence": "the new empty-state illustrations are in Figma, page 'Onboarding v3'"
+        }
+      ]
+    },
+    {
+      "id": "ch-005",
+      "split": "dev",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-008",
+      "split": "dev",
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "fp_facts": [],
+      "fn_facts": [
+        {
+          "kind": "commitment",
+          "text": "Pause the nightly e2e suite on the migration night",
+          "evidence": "I'll pause the nightly e2e suite that night."
+        }
+      ]
+    },
+    {
+      "id": "ch-012",
+      "split": "dev",
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "fp_facts": [],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "3.14 release notes are at SharePoint > Product > Releases > 3.14-notes.docx",
+          "evidence": "Release notes for 3.14 are in SharePoint > Product > Releases > 3.14-notes.docx."
+        }
+      ]
+    },
+    {
+      "id": "ch-015",
+      "split": "dev",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-020",
+      "split": "dev",
+      "tp": 0,
+      "fp": 1,
+      "fn": 2,
+      "fp_facts": [
+        {
+          "kind": "event",
+          "text": "the webhook retry fix goes out in this Thursday's release (3.14)",
+          "evidence": "the webhook retry fix goes out in this Thursday's release (3.14)"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Webhook retry fix ships in Thursday's 3.14 release",
+          "evidence": "the webhook retry fix goes out in this Thursday's release (3.14)"
+        },
+        {
+          "kind": "commitment",
+          "text": "Tell BigRetail the webhook retry fix ships in 3.14",
+          "evidence": "I'll tell BigRetail"
+        }
+      ]
+    },
+    {
+      "id": "em-001",
+      "split": "dev",
+      "tp": 2,
+      "fp": 1,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Send revised sheet with travel numbers split by team",
+          "evidence": "Can you send the revised sheet with the travel numbers split by team?"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Finance flagged the travel line as 12% over budget",
+          "evidence": "Finance flagged that the travel line is 12% over"
+        }
+      ]
+    },
+    {
+      "id": "em-004",
+      "split": "dev",
+      "tp": 4,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-007",
+      "split": "dev",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-011",
+      "split": "dev",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-014",
+      "split": "dev",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-001",
+      "split": "dev",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-005",
+      "split": "dev",
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "fp_facts": [],
+      "fn_facts": [
+        {
+          "kind": "task",
+          "text": "Electricity bill due on the 28th",
+          "evidence": "last date 28 hai"
+        }
+      ]
+    },
+    {
+      "id": "inj-001",
+      "split": "dev",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-001",
+      "split": "dev",
+      "tp": 2,
+      "fp": 2,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "event",
+          "text": "Due date: 23/Oct/26",
+          "evidence": "Due date: 23/Oct/26"
+        },
+        {
+          "kind": "note",
+          "text": "BigRetail exports fail after 60s when the report has more than 50k rows",
+          "evidence": "BigRetail exports fail after 60s when the report has more than 50k rows."
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "task",
+          "text": "Fix CSV export timeout for >50k rows (NW-1432)",
+          "evidence": "Export to CSV times out for >50k rows"
+        }
+      ]
+    },
+    {
+      "id": "wk-004",
+      "split": "dev",
+      "tp": 1,
+      "fp": 4,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "commitment",
+          "text": "Product sign-off needed before merge.",
+          "evidence": "Product sign-off needed before merge."
+        },
+        {
+          "kind": "event",
+          "text": "Reviewers: priya-s (requested), asha-v (requested)",
+          "evidence": "Reviewers: priya-s (requested), asha-v (requested)"
+        },
+        {
+          "kind": "event",
+          "text": "kenji-w wants to merge 7 commits into main from streaming-export",
+          "evidence": "kenji-w wants to merge 7 commits into main from streaming-export"
+        },
+        {
+          "kind": "event",
+          "text": "Checks: 14 successful, 1 pending",
+          "evidence": "Checks: 14 successful, 1 pending"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "PR #815 needs product sign-off before merge",
+          "evidence": "Product sign-off needed before merge."
+        }
+      ]
+    },
+    {
+      "id": "wk-008",
+      "split": "dev",
+      "tp": 2,
+      "fp": 1,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "question",
+          "text": "where do settings live? Asha to propose by next Monday.",
+          "evidence": "Open question: where do settings live? Asha to propose by next Monday."
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "task",
+          "text": "Propose where settings live in the mobile nav",
+          "evidence": "Open question: where do settings live? Asha to propose by next Monday."
+        }
+      ]
+    },
+    {
+      "id": "wk-011",
+      "split": "dev",
+      "tp": 3,
+      "fp": 2,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "event",
+          "text": "Mon 26  10:00 - 10:30  Standup",
+          "evidence": "Mon 26  10:00 - 10:30  Standup"
+        },
+        {
+          "kind": "event",
+          "text": "Fri 30  All day  Sprint 45 ends",
+          "evidence": "Fri 30  All day  Sprint 45 ends"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-014",
+      "split": "dev",
+      "tp": 3,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Status page banner",
+          "evidence": "Status page banner     Kenji   30-10-26   Done"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-018",
+      "split": "dev",
+      "tp": 4,
+      "fp": 2,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "note",
+          "text": "Attendees: Arjun, Asha, Priya (BigRetail CTO office: Mr. Menon)",
+          "evidence": "Attendees: Arjun, Asha, Priya (BigRetail CTO office: Mr. Menon)"
+        },
+        {
+          "kind": "note",
+          "text": "Notes - Menon happy with export fix timeline",
+          "evidence": "Notes\n- Menon happy with export fix timeline"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-022",
+      "split": "dev",
+      "tp": 0,
+      "fp": 3,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "note",
+          "text": "Export API v2 spec.docx",
+          "evidence": "Export API v2 spec.docx       21-10-2026 12:20     Microsoft Word Document"
+        },
+        {
+          "kind": "note",
+          "text": "Mobile nav research.pdf",
+          "evidence": "Mobile nav research.pdf       15-10-2026 09:10     PDF"
+        },
+        {
+          "kind": "note",
+          "text": "Pricing experiments.xlsx",
+          "evidence": "Pricing experiments.xlsx      09-10-2026 18:44     Microsoft Excel Worksheet"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-026",
+      "split": "dev",
+      "tp": 1,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Add a Retry guidance paragraph",
+          "evidence": "Section 4: 413 is fine but please add a Retry guidance paragraph. @Asha Verma"
+        }
+      ],
+      "fn_facts": []
+    }
+  ]
+}

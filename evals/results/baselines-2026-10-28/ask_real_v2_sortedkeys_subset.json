@@ -1,0 +1,133 @@
+{
+  "accuracy": 0.0,
+  "correct": 0,
+  "fabricated_citations": 0,
+  "first_sentence_ms_p50": null,
+  "invalid": 0,
+  "label": "qwen3-vl-4b-instruct-q4_k_m on vulkan on Vulkan0 (AMD Radeon (TM) Graphics)",
+  "pass": false,
+  "questions": 5,
+  "rows": [
+    {
+      "calls": [
+        {
+          "completion_tokens": null,
+          "finish": "stop",
+          "first_delta_ms": 14502,
+          "ms": 18720,
+          "output": "{ \"insufficient\": false, \"sentences\": [ \n  \t] }"
+        }
+      ],
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": "commitment",
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-001",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 18721
+    },
+    {
+      "calls": [
+        {
+          "completion_tokens": null,
+          "finish": "stop",
+          "first_delta_ms": 18522,
+          "ms": 22623,
+          "output": "{\"insufficient\": false, \"sentences\": [\n    \n    ]}"
+        }
+      ],
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-002",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 22623
+    },
+    {
+      "calls": [
+        {
+          "completion_tokens": null,
+          "finish": "stop",
+          "first_delta_ms": 20088,
+          "ms": 24382,
+          "output": "{ \"insufficient\": false, \"sentences\": [ \n  \t] }"
+        }
+      ],
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-003",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 24382
+    },
+    {
+      "calls": [
+        {
+          "completion_tokens": null,
+          "finish": "stop",
+          "first_delta_ms": 20835,
+          "ms": 25338,
+          "output": "{ \"insufficient\": false, \"sentences\": [ \n  \t] }"
+        }
+      ],
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-004",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 25338
+    },
+    {
+      "calls": [
+        {
+          "completion_tokens": null,
+          "finish": "stop",
+          "first_delta_ms": 18383,
+          "ms": 22745,
+          "output": "{ \"insufficient\": false, \"sentences\": [ \n  \t] }"
+        }
+      ],
+      "correct": false,
+      "filters": {
+        "app": null,
+        "kind": null,
+        "range": false
+      },
+      "first_sentence_ms": null,
+      "gold_retrieved": true,
+      "id": "ask-005",
+      "insufficient": false,
+      "sentences": [],
+      "total_ms": 22745
+    }
+  ],
+  "shown_sentences": 0,
+  "simulated": false,
+  "split": "all",
+  "total_ms_p50": 22745,
+  "verified_sentences": 0,
+  "verified_share": 1.0
+}

@@ -1,0 +1,796 @@
+{
+  "label": "oracle",
+  "split": "all",
+  "simulated": true,
+  "items": 80,
+  "precision": 1.0,
+  "recall": 0.9920634920634921,
+  "f1": 0.9960159362549801,
+  "tp": 125,
+  "fp": 0,
+  "fn": 1,
+  "stored": 125,
+  "needs_review": 6,
+  "hallucinated": 0,
+  "hallucination_rate": 0.0,
+  "invalid_rows": 0,
+  "failed_items": 0,
+  "injection_failures": 0,
+  "per_kind": {
+    "action": {
+      "p": 1.0,
+      "r": 1.0,
+      "f1": 1.0,
+      "tp": 62,
+      "fp": 0,
+      "fn": 0
+    },
+    "decision": {
+      "p": 1.0,
+      "r": 1.0,
+      "f1": 1.0,
+      "tp": 12,
+      "fp": 0,
+      "fn": 0
+    },
+    "event": {
+      "p": 1.0,
+      "r": 1.0,
+      "f1": 1.0,
+      "tp": 17,
+      "fp": 0,
+      "fn": 0
+    },
+    "note": {
+      "p": 1.0,
+      "r": 0.96,
+      "f1": 0.9795918367346939,
+      "tp": 24,
+      "fp": 0,
+      "fn": 1
+    },
+    "question": {
+      "p": 1.0,
+      "r": 1.0,
+      "f1": 1.0,
+      "tp": 10,
+      "fp": 0,
+      "fn": 0
+    }
+  },
+  "rejected": {
+    "person_not_in_source": 1,
+    "redundant_note": 1
+  },
+  "pass_thresholds": true,
+  "subset": false,
+  "failed_item_diagnostics": [],
+  "rows": [
+    {
+      "id": "ch-001",
+      "split": "dev",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-002",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-003",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-004",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-005",
+      "split": "dev",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-006",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-007",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-008",
+      "split": "dev",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-009",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-010",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-011",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-012",
+      "split": "dev",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-013",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-014",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-015",
+      "split": "dev",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-016",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-017",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-018",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-019",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-020",
+      "split": "dev",
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "fp_facts": [],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Webhook retry fix ships in Thursday's 3.14 release",
+          "evidence": "the webhook retry fix goes out in this Thursday's release (3.14)"
+        }
+      ]
+    },
+    {
+      "id": "em-001",
+      "split": "dev",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-002",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-003",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-004",
+      "split": "dev",
+      "tp": 4,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-005",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-006",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-007",
+      "split": "dev",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-008",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-009",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-010",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-011",
+      "split": "dev",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-012",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-013",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-014",
+      "split": "dev",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-015",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-016",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-001",
+      "split": "dev",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-002",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-003",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-004",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-005",
+      "split": "dev",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-006",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-007",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-008",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "inj-001",
+      "split": "dev",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "inj-002",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "inj-003",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "inj-004",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "inj-005",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "inj-006",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-001",
+      "split": "dev",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-002",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-003",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-004",
+      "split": "dev",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-005",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-006",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-007",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-008",
+      "split": "dev",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-009",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-010",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-011",
+      "split": "dev",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-012",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-013",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-014",
+      "split": "dev",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-015",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-016",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-017",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-018",
+      "split": "dev",
+      "tp": 4,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-019",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-020",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-021",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-022",
+      "split": "dev",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-023",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-024",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-025",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-026",
+      "split": "dev",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-027",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-028",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-029",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-030",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    }
+  ]
+}

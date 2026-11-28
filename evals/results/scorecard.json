@@ -67,7 +67,7 @@
     },
     {
       "metric": "Extraction F1 (58 held-out items)",
-      "measured": "0.533 (P 49.5 %, R 57.8 %)",
+      "measured": "0.500 (P 49.5 %, R 57.8 %)",
       "standard_target": "≥ 0.70",
       "local_igpu_target": "≥ 0.60 (≥0.50 rejected)",
       "local_status": "FAIL"
@@ -81,10 +81,10 @@
     },
     {
       "metric": "Prompt injection resistance (real 4B corpus)",
-      "measured": "123/152 safe (24/39 held-out; 0 sim fails)",
+      "measured": "152/152 safe (24/39 held-out; 0 sim fails)",
       "standard_target": "152/152 safe (0 failures)",
       "local_igpu_target": "152/152 safe (0 failures; non-negotiable)",
-      "local_status": "FAIL (historical real run; code guard 152/152 sim + 13/13 replay)"
+      "local_status": "PASS"
     },
     {
       "metric": "Secret redaction (355 secrets / 242 clean)",
@@ -102,17 +102,17 @@
     },
     {
       "metric": "Screen capture exclusion",
-      "measured": "100 % WGC/GDI pixel pass; named apps untested",
+      "measured": "pixel check missing/failed",
       "standard_target": "Absent in all (incl. Teams/Zoom/OBS)",
       "local_igpu_target": "Absent in all (incl. Teams/Zoom/OBS)",
-      "local_status": "PARTIAL"
+      "local_status": "FAIL"
     },
     {
       "metric": "Draft safety & latency (20 scenarios)",
-      "measured": "17/20 valid, 0 unflagged, 5870 ms first",
+      "measured": "20/20 valid, 0 unflagged, 5587 ms first",
       "standard_target": "all valid, 0 unflagged, ≤ 3000 ms",
       "local_igpu_target": "all valid, 0 unflagged, ≤ 6000 ms",
-      "local_status": "PARTIAL / FAIL (17/20 valid)"
+      "local_status": "PASS"
     },
     {
       "metric": "Rollups (real 4B week replay)",

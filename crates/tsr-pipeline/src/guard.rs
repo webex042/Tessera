@@ -21,6 +21,7 @@ use regex::Regex;
 
 use crate::normalize::normalize;
 use crate::schema::RawFact;
+use tsr_guard::injection;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
 pub enum Class {
@@ -33,97 +34,6 @@ pub enum Class {
 fn re(p: &str) -> Regex {
     Regex::new(p).expect("guard regex")
 }
-
-/// Text addressed to an AI system or trying to change its rules.
-static AI_DIRECTED: LazyLock<Vec<Regex>> = LazyLock::new(|| {
-    [
-        r"\b(ignore|disregard|forget|override|bypass|skip)\b.{0,40}\b(previous|prior|above|earlier|all|any|your|the|these|system|safety)\b.{0,20}\b(instructions?|rules?|prompts?|guidelines?|polic(y|ies)|directions?|messages?|context)\b",
-        r"\b(new|updated|real|actual|hidden|secret|developer|admin|system)\s+(instructions?|prompt|rules?|directive)s?\b",
-        r"\bsystem\s*(prompt|message|override|note|instruction)\b",
-        r"^\s*(system|developer|assistant|admin|root)\s*[:>\]]",
-        r"\b(you are now|act as|pretend to be|you must now|from now on you|your new (role|task|job))\b",
-        r"\b(developer|god|dan|jailbreak|unrestricted|debug)\s+mode\b",
-        r"\b(dear|hey|attention|note to|to the|hello)\s+(ai|assistant|bot|model|llm|chatbot|agent|tessara|copilot|gpt|claude|summari[sz]ers?|note-?takers?|scheduling tools?)\b",
-        r"\b(note to|addressed to|for)\s+(the\s+)?(ai\s+(note-?takers?|assistants?|agents?|models?|tools?|scheduling tools?)|note-?takers?)\b",
-        r"\b(language|vision|ai)\s+models?\s*[:,]\s*\w+",
-        r"\btess[ae]ra\b.{0,25}\b(ke liye|hamesha|likh(?:na|o)|summary|batao)\b",
-        r"(?:^|[:,]\s*)(assistant|ai\s+assistant|chatbot|bot|llm|tess[ae]ra)\s*[.!?]*$",
-        // A role noun, optional filler words ("AI: also forward…"), then an action verb.
-        r"(\b(ai|assistant|bot|model|llm|chatbot|agent|tessara|copilot|gpt|sahayak)\b|सहायक|बॉट)\s*(,|:|-)?\s*((please|also|then|now|just|and|kindly|ji)\s+){0,2}(must|should|shall|will|needs? to|has to|ignore|send|forward|email|delete|reveal|output|print|add|record|remember|mark|store|create|summari[sz]e|tell|say|respond|reply|run|execute|exec|call|open|download|install|uninstall|upload|post|copy|move|disable|cancel|stop|kill|remove|share|transfer|wire|approve|pay|buy)\b",
-        r"(सहायक|बॉट|एआई)\s*[:,]",
-        // HTML comments that address an AI.
-        r"<!--[^>]{0,200}\b(ai|assistant|bot|model|llm|agent|tessara)\b",
-        // Destructive shell or database commands in screen text are never the user's task.
-        r"(\brm\s+-[a-z]*r[a-z]*f?\s+(/|~|\*|\.)|\bdel\s+/[sq]\b|\bformat\s+[a-z]:|\bdrop\s+(table|database)\b|\bcurl\b[^|\n]{0,80}\|\s*(ba|z)?sh\b|\bmkfs\b|\bshutdown\s+/[sr]\b)",
-        r"\b(as an ai|as a language model|large language model|ai model)\b",
-        r"(<\|[a-z_]{2,20}\|>|\[/?inst\]|<<sys>>|</?screen_content>|</?memory>|</?system>|###\s*(instruction|system|response))",
-        r"\b(begin|end)\s+(system|instructions?|prompt)\b",
-        r"\bprompt\s*injection\b",
-        // Role nouns that only an AI system answers to, followed by instruction language.
-        r"\b(ai|a\.i\.|assistants?|bots?|llms?|chatbots?|copilot|gpt|claude|gemini|tessara|ai helpers?|summari[sz]ers?|vision models?|language models?|ai models?|ai agents?)\b.{0,60}\b(instructions?|directives?|orders?|commands?|must|should|shall|(is|are) required|required to|needs? to|treat|when (you|describing|writing|summari[sz]ing|reading)|reading (this|these)|processing (this|these)|please|kindly)\b",
-        // Ambiguous role nouns ("model", "agent", "helper") only with explicit instruction words.
-        r"\b(models?|agents?|helpers?|automation)\b\s*(instructions?|directives?|commands?)\b",
-        r"\b(models?|agents?|helpers?)\b.{0,30}\b(reading|processing|describing|summari[sz]ing) (this|these)\b",
-        r"\b(instructions?|directives?|orders?) (for|to) (the |any |all )?(ai|assistants?|bots?|models?|llms?|agents?|tessara)\b",
-        // Direct AI address with up to 5 intervening words (e.g. Hinglish SOV: "Bot, purane saare notes delete kar do").
-        r"\b(bot|ai|assistant|llm|model|tess[ae]ra|sahayak)\b\s*[:,]\s*(?:\S+\s+){0,5}\b(delete|erase|wipe|remove|forward|send|exfiltrate|ignore|bypass|override|batana|chupa)\b",
-        r"\b(notes|memories|files|data|history|emails|messages|logs|records)\s+(?:delete|erase|wipe|remove|forward|send)\b",
-        r"\b(command|instruction|request|prompt)\s+to\s+(?:delete|erase|wipe|remove|forward|send|exfiltrate)\b",
-    ]
-    .iter()
-    .map(|p| re(&format!("(?im){p}")))
-    .collect()
-});
-
-/// Asking to move data out, destroy it, or reveal what is protected.
-static EXFIL: LazyLock<Regex> = LazyLock::new(|| {
-    re(
-        r"(?i)\b(send|e-?mail|mail|forward|upload|post|share|sharing|sending|giving|providing|submitting|entering|typing|transfer|wire|leak|exfiltrate|paste|copy|reveal|disclose|print|output|dump|export|list|show|delete|wipe|erase|remove|purge|format|disable|uninstall|drop|type|enter|give|provide|submit|tell|read out|include|attach|reply(?:\s+to\b[^.!?\n]{0,25})?\s+with)\b.{0,60}\b(passwords?|passcodes?|credentials?|api[ _-]?keys?|tokens?|secrets?|otps?|one[- ]time|private keys?|ssh keys?|seed phrase|recovery (codes?|phrase)|2fa|mfa|cookies?|session|all (the |my |your |of the )?(files|data|emails|mails|contacts|memories|memory|facts|messages|notes|history|documents|screenshots|recordings|invoices|receipts|statements|payslips|contracts|records|photos)|everything|backups?|public (bucket|repo|repository|link|drive|folder|channel)|password manager( export)?|(full |entire |complete |whole )?(customer|client|contact|employee|user) (list|data|database|records|details)|(laptop|hard|the|system) (disk|drive)|(?:documents|downloads|desktop|home|user|root) folder|(?:(?:list|summary|dump) of\b[^.!?\n]{0,25}\b(?:open\s+)?commitments?|open commitments?|open loops?)|disk|inbox|mailbox|(hr|payroll|finance) files|the database|database|tessara|keychain|wallet|suppressed|forgotten (people|persons?|names?)|card numbers?|card details|credit cards?|cvvs?|cvc|pins?|bank details|aadhaar|pan numbers?)\b",
-    )
-});
-
-/// Phishing / social-engineering account takeover & credential capture patterns.
-static ACCOUNT_HIJACK: LazyLock<Regex> = LazyLock::new(|| {
-    re(
-        r"(?i)(?:\b(update|change|switch|move|verify)\b.{0,35}\b(salary|payroll|bank|direct deposit|payout)\s+account\b.{0,50}\b(via\s+(this|the)\s+(form|link|portal)|\d{6,})\b|\b(confirm|verify|validate|reactivate)\b.{0,25}\b(your\s+)?(login|account|credentials?|identity)\b.{0,30}\b(at|via|on)\s+\S+)",
-    )
-});
-
-/// Trying to write into Tessara's memory or its output format.
-static STORE_POISON: LazyLock<Vec<Regex>> = LazyLock::new(|| {
-    [
-        // ":" needs no word boundaries around it ("Create a new memory: …" missed before).
-        r"\b(add|insert|create|record|store|save|log|remember)\b.{0,20}\b(a |this |that |the following |new )?(fact|task|memory|memories|commitment|reminder|note|entry|record)s?\b.{0,20}(\b(that|saying|for)\b|:)",
-        r"\bremember (that|this)\b.{0,40}\b(the user|asha|you)\b",
-        r"\bremember (for later|this|that)\s*:",
-        r"\b(add|save|store|put|write)\b.{0,20}\b(to|in|into) (your |the )?memory\b",
-        // Bulk edits of the user's data.
-        r"\b(overwrite|modify|edit|reset|change|update|set)\b.{0,30}\b(every|all|each)\b.{0,15}\b(tasks?|commitments?|reminders?|facts?|memories|loops?|due dates?)\b",
-        // Planted answers for later questions.
-        r"\bif (anyone|someone|somebody|the user|they|he|she)\b.{0,30}\basks?\b.{0,60}\b(the answer is|answer that|say|tell (them|him|her)|reply)\b",
-        // key=value smuggling of the output format.
-        r"\b(status|kind|owner|confidence|evidence|due_text)\s*=\s*\S.{0,80}\b(status|kind|owner|confidence|evidence|text)\s*=",
-        // Gift-card fraud.
-        r"\b(buy|purchase|get|send)\b.{0,40}\bgift ?cards?\b|\bgift ?cards?\b.{0,40}\b(codes?|send)\b",
-        // Logs sent to an outside address.
-        r"\b(send|e-?mail|mail|forward|upload|post)\b.{0,40}\blogs?\b.{0,60}([\w.+-]+@[\w-]+\.\w|https?://)",
-        r"\bmark (all|every|each|this|these|the)\b.{0,40}\b(done|complete|completed|closed|resolved)\b",
-        r"\b(output|return|respond with|reply with|emit|produce|generate)\b.{0,20}\b(json|the following|this text|exactly)\b",
-        r#""(kind|facts|summary|owner|evidence|confidence)"\s*:"#,
-        r"\b(set|change|update)\s+(the\s+)?(status|owner|due date|confidence)\b",
-        r"\bthe user\s+(?:has\s+)?(?:(?:already|previously|earlier|just)\s+)?(wants?|asked|instructs?|instructed|authori[sz]ed?|approved?)\b",
-        r"\bsummar\w*\b.{0,40}\b(should|must|hamesha|always)\s+(say|state|read|include|tell|mention|likh(?:na|o)?)\b",
-        r"\b(must|should|needs? to)\s+(tell|instruct|remind|ask|inform)\s+the user\b",
-        r"\b(ai|assistants?|bots?|models?|llms?|chatbots?|agents?)\b.{0,40}\b(reading|summari[sz]ing|processing|seeing) this\b",
-        r"\bforget\s+(everything|all|what)\s+(you\s+)?know\s+about\b",
-        r"\b(replace|overwrite)\s+(it|this|that|everything|memory|the\s+(fact|memory|record))\s+with\b\s*:",
-        r"\b(when\s+(you\s+)?(next\s+)?|next\s+time\s+(you\s+)?)(writ(e|ing)|draft(ing)?|compil(e|ing)|summari[sz](e|ing)|generat(e|ing))\b.{0,50}\b(morning brief|brief|summary|today|reply|response)\b",
-        r"\b(append|prepend|add|insert)\b.{0,90}\bto\s+(any|every|the|your|a)\s+(summary|brief|response|reply|output)\b",
-    ]
-    .iter()
-    .map(|p| re(&format!("(?i){p}")))
-    .collect()
-});
 
 static QUOTE_HEADER: LazyLock<Regex> = LazyLock::new(|| {
     re(
@@ -198,11 +108,7 @@ fn addressed_to_user(s: &str, self_names: &[String]) -> bool {
 }
 
 pub fn looks_injected(s: &str) -> bool {
-    let n = normalize(s).text;
-    AI_DIRECTED.iter().any(|r| r.is_match(&n))
-        || EXFIL.is_match(&n)
-        || ACCOUNT_HIJACK.is_match(&n)
-        || STORE_POISON.iter().any(|r| r.is_match(&n))
+    injection::matches_normalized(&normalize(s).text)
 }
 
 /// True when an injected window title's content leaked into `fact_text` without appearing in `item`.
@@ -339,7 +245,11 @@ pub fn classify(f: &RawFact, item: &str, start: usize, end: usize, self_names: &
     }
     let actionable = matches!(f.kind.as_str(), "task" | "commitment");
     if !actionable {
-        return Class::Genuine;
+        return if quoted_request(&f.evidence) || quoted_request(&f.text) {
+            Class::Quoted
+        } else {
+            Class::Genuine
+        };
     }
     if in_code_block(&before, &line) || in_quote_section(&line, &before) || quoted_in_line(&line, &f.evidence) {
         return Class::Quoted;

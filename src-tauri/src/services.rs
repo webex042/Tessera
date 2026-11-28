@@ -264,10 +264,13 @@ fn candidates(models: &Path, third_party: &Path) -> Option<(Vec<tsr_infer::sidec
         &Default::default(),
     )
     .ok()?;
+    let threads = std::thread::available_parallelism()
+        .map(|n| (n.get() / 2).clamp(2, 8) as u32)
+        .ok();
     let specs = plan
         .candidates
         .iter()
-        .map(|c| tsr_infer::sidecar::SidecarSpec::from_candidate(c, model.clone(), mmproj.clone(), 8192, None))
+        .map(|c| tsr_infer::sidecar::SidecarSpec::from_candidate(c, model.clone(), mmproj.clone(), 8192, threads))
         .collect();
     Some((specs, plan.candidates.iter().map(|c| c.label()).collect()))
 }

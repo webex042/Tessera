@@ -61,7 +61,13 @@ fn real_model_safety_violations_now_fail_closed() {
         .map(|c| (c.id.clone(), c))
         .collect();
 
-    let report_json = std::fs::read_to_string(root.join("evals/results/injection_real.json")).unwrap();
+    let baseline = root.join("evals/results/baselines-2026-10-28/injection_real.json");
+    let report_path = if baseline.exists() {
+        baseline
+    } else {
+        root.join("evals/results/injection_real.json")
+    };
+    let report_json = std::fs::read_to_string(&report_path).unwrap();
     let report: EvalReport = serde_json::from_str(&report_json).unwrap();
 
     let safety_and_mixed_ids = [

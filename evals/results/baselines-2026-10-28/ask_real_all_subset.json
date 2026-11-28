@@ -1,0 +1,169 @@
+{
+  "label": "qwen3-vl-4b-instruct-q4_k_m on vulkan on Vulkan0 (AMD Radeon (TM) Graphics)",
+  "split": "all",
+  "simulated": false,
+  "questions": 5,
+  "invalid": 0,
+  "correct": 1,
+  "accuracy": 0.2,
+  "shown_sentences": 3,
+  "verified_sentences": 2,
+  "verified_share": 0.6666666666666666,
+  "fabricated_citations": 0,
+  "first_sentence_ms_p50": 26658,
+  "total_ms_p50": 24952,
+  "pass": false,
+  "rows": [
+    {
+      "id": "ask-001",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": "commitment"
+      },
+      "sentences": [
+        {
+          "text": "I promised Ravi I'd send the revised sheet by Friday.",
+          "cites": [
+            2
+          ],
+          "item_ids": [
+            21
+          ],
+          "verified": false,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 20933,
+      "total_ms": 22567,
+      "calls": [
+        {
+          "finish": "stop",
+          "completion_tokens": null,
+          "ms": 22566,
+          "first_delta_ms": 14481,
+          "output": "{ \"sentences\": [ { \"text\": \"I promised Ravi I'd send the revised sheet by Friday.\", \"cites\": [ 2 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-002",
+      "correct": false,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "Yes, you sent Ravi the revised budget sheet on Fri 23 Oct, as per snippet [2].",
+          "cites": [
+            2
+          ],
+          "item_ids": [
+            29
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 26658,
+      "total_ms": 28166,
+      "calls": [
+        {
+          "finish": "stop",
+          "completion_tokens": null,
+          "ms": 28164,
+          "first_delta_ms": 18934,
+          "output": "{\"sentences\": [{\"text\": \"Yes, you sent Ravi the revised budget sheet on Fri 23 Oct, as per snippet [2].\", \"cites\": [2]}], \"insufficient\": false}"
+        }
+      ]
+    },
+    {
+      "id": "ask-003",
+      "correct": true,
+      "insufficient": false,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [
+        {
+          "text": "The onboarding design review is now scheduled for Thursday 3pm IST, as moved from Tuesday due to Daniel's travel.",
+          "cites": [
+            1
+          ],
+          "item_ids": [
+            22
+          ],
+          "verified": true,
+          "fabricated": 0
+        }
+      ],
+      "first_sentence_ms": 29229,
+      "total_ms": 30967,
+      "calls": [
+        {
+          "finish": "stop",
+          "completion_tokens": null,
+          "ms": 30965,
+          "first_delta_ms": 20309,
+          "output": "{ \"sentences\": [ { \"text\": \"The onboarding design review is now scheduled for Thursday 3pm IST, as moved from Tuesday due to Daniel's travel.\", \"cites\": [ 1 ] } ], \"insufficient\": false }"
+        }
+      ]
+    },
+    {
+      "id": "ask-004",
+      "correct": false,
+      "insufficient": true,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 24952,
+      "calls": [
+        {
+          "finish": "stop",
+          "completion_tokens": null,
+          "ms": 24952,
+          "first_delta_ms": 21510,
+          "output": "{ \"sentences\": [ ], \"insufficient\": true }"
+        }
+      ]
+    },
+    {
+      "id": "ask-005",
+      "correct": false,
+      "insufficient": true,
+      "gold_retrieved": true,
+      "filters": {
+        "range": false,
+        "app": null,
+        "kind": null
+      },
+      "sentences": [],
+      "first_sentence_ms": null,
+      "total_ms": 24347,
+      "calls": [
+        {
+          "finish": "stop",
+          "completion_tokens": null,
+          "ms": 24347,
+          "first_delta_ms": 20878,
+          "output": "{ \"sentences\": [  ], \"insufficient\": true }"
+        }
+      ]
+    }
+  ]
+}

@@ -281,13 +281,69 @@ const STOPWORDS: &[&str] = &[
     "aur",
 ];
 
+/// Additional conversational filler words dropped only from natural-language OR queries.
+const ANY_FILLER: &[&str] = &[
+    "anything",
+    "something",
+    "everything",
+    "nothing",
+    "someone",
+    "anyone",
+    "everyone",
+    "recently",
+    "currently",
+    "actually",
+    "really",
+    "say",
+    "said",
+    "tell",
+    "told",
+    "asking",
+    "asked",
+    "supposed",
+    "ready",
+    "know",
+    "think",
+];
+
+fn fts_stem_or_exact(t: &str) -> String {
+    let low = t.to_lowercase();
+    let stem = if let Some(s) = low.strip_suffix("ing") {
+        s
+    } else if let Some(s) = low.strip_suffix("ied") {
+        s
+    } else if let Some(s) = low.strip_suffix("ies") {
+        s
+    } else if let Some(s) = low.strip_suffix("ed") {
+        s
+    } else if let Some(s) = low.strip_suffix("es") {
+        s
+    } else if let Some(s) = low.strip_suffix('e') {
+        s
+    } else if let Some(s) = low.strip_suffix('s') {
+        s
+    } else {
+        low.as_str()
+    };
+    if stem.chars().count() >= 4 && !t.chars().all(|c| c.is_ascii_digit()) && stem != low {
+        format!("\"{t}\" OR \"{stem}\"*")
+    } else if t.chars().count() >= 5 && !t.chars().all(|c| c.is_ascii_digit()) {
+        format!("\"{t}\"*")
+    } else {
+        format!("\"{t}\"")
+    }
+}
+
 /// Natural-language query → any-term FTS5 query (stop words dropped, terms ORed, quoted).
 pub fn fts_query_any(user: &str) -> Option<String> {
     let terms: Vec<String> = user
         .split(|c: char| !(c.is_alphanumeric() || c == '_'))
-        .filter(|t| !t.is_empty() && !STOPWORDS.contains(&t.to_lowercase().as_str()))
+        .filter(|t| {
+            let low = t.to_lowercase();
+            !t.is_empty() && !STOPWORDS.contains(&low.as_str()) && !ANY_FILLER.contains(&low.as_str())
+        })
         .take(32)
-        .map(|t| format!("\"{t}\""))
+        .map(fts_stem_or_exact)
         .collect();
     (!terms.is_empty()).then(|| terms.join(" OR "))
 }

@@ -62,31 +62,68 @@ fn main() {
     let model_arg = arg(&args, "--model");
     // `--ids a,b,c`: run only these cases/items (diagnosis); reports are named `*_subset`.
     let ids: Option<Vec<String>> = arg(&args, "--ids").map(|s| s.split(',').map(str::to_owned).collect());
-    let real = match model_arg.as_deref() {
-        None | Some("oracle") | Some("simulated") => None,
-        Some(dir) => match common::real_model(&PathBuf::from(dir)) {
-            Ok(m) => Some(m),
-            Err(e) => {
-                eprintln!("tsr-eval: cannot start a real model: {e}");
-                std::process::exit(2);
-            }
-        },
+    let needs_llm = matches!(cmd.as_str(), "injection" | "extraction" | "draft" | "ask" | "rollup");
+    let real = if needs_llm {
+        match model_arg.as_deref() {
+            None | Some("oracle") | Some("simulated") => None,
+            Some(dir) => match common::real_model(&PathBuf::from(dir)) {
+                Ok(m) => Some(m),
+                Err(e) => {
+                    eprintln!("tsr-eval: cannot start a real model: {e}");
+                    std::process::exit(2);
+                }
+            },
+        }
+    } else {
+        None
     };
+    let embedder = if matches!(cmd.as_str(), "search" | "ask") {
+        match model_arg.as_deref() {
+            None | Some("oracle") | Some("simulated") => None,
+            Some(dir) => match common::real_embedder(&PathBuf::from(dir)) {
+                Ok(e) => e,
+                Err(e) => {
+                    eprintln!("tsr-eval: cannot load embedder: {e}");
+                    std::process::exit(2);
+                }
+            },
+        }
+    } else {
+        None
+    };
+    let emb_dyn = embedder.as_ref().map(|e| e as &dyn tsr_retrieval::embed::Embedder);
     let label = real
         .as_ref()
         .map(|m| m.label.clone())
         .unwrap_or_else(|| "simulated".into());
     let real_dyn = real.as_ref().map(|m| m as &dyn tsr_infer::client::ChatModel);
     let ok = match cmd.as_str() {
-        "injection" => finish(
-            match (real.is_some(), ids.is_some()) {
+        "injection" => {
+            let corpus_arg = arg(&args, "--corpus");
+            let corpus_path = corpus_arg
+                .as_ref()
+                .map(|c| {
+                    let p = std::path::PathBuf::from(c);
+                    if p.is_absolute() { p } else { common::root().join(p) }
+                })
+                .unwrap_or_else(|| common::root().join("tests/fixtures/injection/cases.json"));
+            let suffix = corpus_arg
+                .as_ref()
+                .and_then(|c| std::path::Path::new(c).file_stem().and_then(|s| s.to_str()))
+                .filter(|s| *s != "cases")
+                .map(|s| format!("_{s}"))
+                .unwrap_or_default();
+            let base = match (real.is_some(), ids.is_some()) {
                 (true, false) => "injection_real",
                 (true, true) => "injection_real_subset",
                 (false, false) => "injection_simulated",
                 (false, true) => "injection_simulated_subset",
-            },
-            injection::run_corpus(real_dyn, &label, ids.as_deref()),
-        ),
+            };
+            finish(
+                &format!("{base}{suffix}"),
+                injection::run_corpus_path(real_dyn, &label, ids.as_deref(), &corpus_path),
+            )
+        }
         "extraction" => {
             let split = arg(&args, "--split").unwrap_or_else(|| "heldout".into());
             match (real_dyn, model_arg.as_deref()) {
@@ -104,7 +141,10 @@ fn main() {
                 }
             }
         }
-        "search" => finish("search", search::run()),
+        "search" => finish(
+            if emb_dyn.is_some() { "search_e5" } else { "search" },
+            search::run(emb_dyn),
+        ),
         "draft" => {
             let split = arg(&args, "--split").unwrap_or_else(|| "all".into());
             finish(
@@ -120,7 +160,7 @@ fn main() {
                     if real.is_some() { "real" } else { "simulated" },
                     if ids.is_some() { "_subset" } else { "" }
                 ),
-                ask::run(real_dyn, &label, &split, ids.as_deref(), profile),
+                ask::run(real_dyn, emb_dyn, &label, &split, ids.as_deref(), profile),
             )
         }
         "rollup" => finish(
@@ -164,7 +204,7 @@ fn main() {
                 "extraction_oracle_heldout",
                 extraction::run(None, "oracle", "heldout", None, profile),
             );
-            let c = finish("search", search::run());
+            let c = finish("search", search::run(None));
             let d = finish("backlog_simulated", backlog::run(profile));
             let (_, sc_json, sc_md) = profile::scorecard(&common::root());
             let _ = common::write_report("scorecard", &sc_json, &sc_md);

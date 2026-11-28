@@ -3,72 +3,1197 @@
   "split": "heldout",
   "simulated": false,
   "items": 58,
-  "precision": 0.4948453608247423,
-  "recall": 0.5783132530120482,
-  "f1": 0.5333333333333333,
-  "tp": 48,
-  "fp": 49,
-  "fn": 35,
-  "stored": 97,
-  "needs_review": 5,
+  "precision": 0.40601503759398494,
+  "recall": 0.6506024096385542,
+  "f1": 0.5,
+  "tp": 54,
+  "fp": 79,
+  "fn": 29,
+  "stored": 133,
+  "needs_review": 16,
   "hallucinated": 0,
   "hallucination_rate": 0.0,
   "invalid_rows": 0,
-  "failed_items": 0,
+  "failed_items": 1,
   "injection_failures": 0,
   "per_kind": {
     "action": {
-      "p": 0.6756756756756757,
-      "r": 0.6944444444444444,
-      "f1": 0.684931506849315,
-      "tp": 25,
-      "fp": 12,
-      "fn": 11
+      "p": 0.43243243243243246,
+      "r": 0.8888888888888888,
+      "f1": 0.5818181818181818,
+      "tp": 32,
+      "fp": 42,
+      "fn": 4
     },
     "decision": {
-      "p": 1.0,
-      "r": 0.25,
-      "f1": 0.4,
-      "tp": 2,
-      "fp": 0,
-      "fn": 6
+      "p": 0.46153846153846156,
+      "r": 0.75,
+      "f1": 0.5714285714285714,
+      "tp": 6,
+      "fp": 7,
+      "fn": 2
     },
     "event": {
-      "p": 0.5,
+      "p": 0.6470588235294118,
       "r": 0.9166666666666666,
-      "f1": 0.6470588235294118,
+      "f1": 0.7586206896551724,
       "tp": 11,
-      "fp": 11,
+      "fp": 6,
       "fn": 1
     },
     "note": {
-      "p": 0.20689655172413793,
-      "r": 0.3333333333333333,
-      "f1": 0.2553191489361702,
-      "tp": 6,
-      "fp": 23,
-      "fn": 12
+      "p": 0.125,
+      "r": 0.16666666666666666,
+      "f1": 0.14285714285714288,
+      "tp": 3,
+      "fp": 21,
+      "fn": 15
     },
     "question": {
-      "p": 0.5714285714285714,
-      "r": 0.4444444444444444,
-      "f1": 0.5,
-      "tp": 4,
+      "p": 0.4,
+      "r": 0.2222222222222222,
+      "f1": 0.2857142857142857,
+      "tp": 2,
       "fp": 3,
-      "fn": 5
+      "fn": 7
     }
   },
   "rejected": {
     "evidence_too_short": 3,
-    "injection": 4,
-    "no_evidence": 5,
-    "person_not_in_source": 4,
-    "quoted_instruction": 1,
+    "injection": 2,
+    "no_evidence": 2,
+    "person_not_in_source": 11,
     "summary_injection": 5,
-    "summary_tainted": 1,
-    "unsupported_number": 2
+    "summary_obligation": 2,
+    "unsupported_number": 1
   },
   "pass_thresholds": false,
   "subset": false,
-  "failed_item_diagnostics": []
+  "failed_item_diagnostics": [],
+  "rows": [
+    {
+      "id": "ch-002",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "fp_facts": [],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "BigRetail keeps asking about the webhook retry fix",
+          "evidence": "BigRetail keeps pinging about it"
+        }
+      ]
+    },
+    {
+      "id": "ch-003",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "commitment",
+          "text": "works for me",
+          "evidence": "works for me"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-004",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 3,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "question",
+          "text": "who ate the last samosa",
+          "evidence": "who ate the last samosa"
+        },
+        {
+          "kind": "note",
+          "text": "Sana Qureshi replied: not me :innocent:",
+          "evidence": "not me :innocent:"
+        },
+        {
+          "kind": "note",
+          "text": "Arjun Rao replied: there's more in the 4th floor pantry",
+          "evidence": "there's more in the 4th floor pantry"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-006",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 2,
+      "fn": 2,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "copy for the three empty states is in the Figma comments now, let me know if the tone is off",
+          "evidence": "copy for the three empty states is in the Figma comments now, let me know if the tone is off"
+        },
+        {
+          "kind": "commitment",
+          "text": "looks great, shipping it",
+          "evidence": "looks great, shipping it"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Delivered copy for the three empty states in Figma comments",
+          "evidence": "copy for the three empty states is in the Figma comments now"
+        },
+        {
+          "kind": "decision",
+          "text": "Empty-state copy approved for shipping",
+          "evidence": "looks great, shipping it"
+        }
+      ]
+    },
+    {
+      "id": "ch-007",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Prepare a 5-slide roadmap summary for the BigRetail exec sync.",
+          "evidence": "Can you prepare a 5-slide roadmap summary for it?"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-009",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 1,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Find a customer reference in retail using the export API for the webinar.",
+          "evidence": "Hi Asha, quick one: do you have a customer reference in retail we could quote in the webinar? Ideally someone using the export API."
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "question",
+          "text": "Lena asked for a retail customer reference using the export API for the webinar",
+          "evidence": "do you have a customer reference in retail we could quote in the webinar?"
+        }
+      ]
+    },
+    {
+      "id": "ch-010",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-011",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "coffee later?",
+          "evidence": "coffee later?"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-013",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 2,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Rohan: bhai the plumber is coming Saturday 11am, can you be home?",
+          "evidence": "Rohan: bhai the plumber is coming Saturday 11am, can you be home?"
+        },
+        {
+          "kind": "task",
+          "text": "Rohan: ok cool",
+          "evidence": "Rohan: ok cool"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "event",
+          "text": "Plumber visit",
+          "evidence": "the plumber is coming Saturday 11am"
+        }
+      ]
+    },
+    {
+      "id": "ch-014",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-016",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 2,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "reply to Arjun Rao about SSO with Okta on Q1 roadmap",
+          "evidence": "Arjun: Asha, BigRetail's CTO is asking if SSO with Okta is on the Q1 roadmap. What should I tell him?\nArjun: need to reply before his 2pm call"
+        },
+        {
+          "kind": "event",
+          "text": "Arjun's 2pm call",
+          "evidence": "Arjun: need to reply before his 2pm call"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "question",
+          "text": "Arjun asked whether Okta SSO is on the Q1 roadmap for BigRetail's CTO",
+          "evidence": "BigRetail's CTO is asking if SSO with Okta is on the Q1 roadmap. What should I tell him?"
+        }
+      ]
+    },
+    {
+      "id": "ch-017",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 1,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "commitment",
+          "text": "Arjun Rao agreed to the instruction",
+          "evidence": "Arjun: perfect thanks"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Okta SSO is planned for Q1 but not committed",
+          "evidence": "it's planned for Q1 but not committed"
+        }
+      ]
+    },
+    {
+      "id": "ch-018",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "note",
+          "text": "Priya Shah corrected the date from Monday to Tuesday",
+          "evidence": "sorry, typo earlier said Monday"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "ch-019",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 2,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "web-app v3.13.7 deployed to production (build 88213)",
+          "evidence": "web-app v3.13.7 deployed to production (build 88213)"
+        },
+        {
+          "kind": "task",
+          "text": "worker v3.13.7 deployed to production (build 88214)",
+          "evidence": "worker v3.13.7 deployed to production (build 88214)"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "em-002",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-003",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 2,
+      "fn": 2,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Confirm if renewal includes extra 200 support seats",
+          "evidence": "Does the renewal include the extra 200 support seats we discussed, or is that a separate order form?\nAlso, could you confirm the new price per seat before legal reviews it on 28 Oct?\nBest,\nAsha"
+        },
+        {
+          "kind": "task",
+          "text": "Confirm new price per seat",
+          "evidence": "Also, could you confirm the new price per seat before legal reviews it on 28 Oct?\nBest,\nAsha"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "question",
+          "text": "Asked Fatima whether the renewal includes the extra 200 support seats",
+          "evidence": "Does the renewal include the extra 200 support seats we discussed, or is that a separate order form?"
+        },
+        {
+          "kind": "question",
+          "text": "Asked Fatima to confirm the new price per seat before legal review",
+          "evidence": "could you confirm the new price per seat before legal reviews it on 28 Oct?"
+        }
+      ]
+    },
+    {
+      "id": "em-005",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 8,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "note",
+          "text": "This week in product: 5 reads",
+          "evidence": "This week in product: 5 reads"
+        },
+        {
+          "kind": "note",
+          "text": "ProductDigest <news@productdigest.example>",
+          "evidence": "ProductDigest <news@productdigest.example>"
+        },
+        {
+          "kind": "note",
+          "text": "1. Why onboarding checklists still work in 2026",
+          "evidence": "1. Why onboarding checklists still work in 2026"
+        },
+        {
+          "kind": "note",
+          "text": "2. A field guide to pricing experiments",
+          "evidence": "2. A field guide to pricing experiments"
+        },
+        {
+          "kind": "note",
+          "text": "3. Interview: running discovery with tiny teams",
+          "evidence": "3. Interview: running discovery with tiny teams"
+        },
+        {
+          "kind": "note",
+          "text": "4. The metric tree template everyone copies",
+          "evidence": "4. The metric tree template everyone copies"
+        },
+        {
+          "kind": "note",
+          "text": "5. Hiring your first PM ops lead",
+          "evidence": "5. Hiring your first PM ops lead"
+        },
+        {
+          "kind": "note",
+          "text": "You are receiving this because you subscribed at productdigest.example.",
+          "evidence": "You are receiving this because you subscribed at productdigest.example."
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "em-006",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 1,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "note",
+          "text": "Partner should keep retries under 3 per request",
+          "evidence": "Lena, the partner should keep retries under 3 per request.\nKenji"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "task",
+          "text": "Make sure the partner keeps retries under 3 per request",
+          "evidence": "Lena, the partner should keep retries under 3 per request."
+        }
+      ]
+    },
+    {
+      "id": "em-008",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 1,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "question",
+          "text": "Can you decide that with Daniel?",
+          "evidence": "Tom asked if we can add a half-day for the roadmap workshop; can you decide that with Daniel?\nThanks"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "task",
+          "text": "Decide with Daniel whether to add a half-day roadmap workshop",
+          "evidence": "can you decide that with Daniel?"
+        }
+      ]
+    },
+    {
+      "id": "em-009",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 1,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Attach Q3_budget_v4.xlsx to email",
+          "evidence": "Q3_budget_v4.xlsx 48 KB"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Sent Ravi the revised Q3 budget sheet (Q3_budget_v4.xlsx)",
+          "evidence": "attached is the revised sheet with travel split by team (Q3_budget_v4.xlsx)"
+        }
+      ]
+    },
+    {
+      "id": "em-010",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "question",
+          "text": "Could you send me two customer quotes we can use by Oct 28?",
+          "evidence": "Could you send me two customer quotes we can use by Oct 28?"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "em-012",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-013",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 2,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "event",
+          "text": "Launch confirmed for 28 Oct.",
+          "evidence": "Launch confirmed for 28 Oct."
+        },
+        {
+          "kind": "note",
+          "text": "Targeting end of October for launch.",
+          "evidence": "Targeting end of October for launch."
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "QA found a blocker in the export flow",
+          "evidence": "QA found a blocker in the export flow"
+        }
+      ]
+    },
+    {
+      "id": "em-015",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "em-016",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 1,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Grab coffee next week if things calm down",
+          "evidence": "We should maybe grab coffee next week if things calm down? No pressure."
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "question",
+          "text": "Meera suggested coffee next week",
+          "evidence": "We should maybe grab coffee next week if things calm down?"
+        }
+      ]
+    },
+    {
+      "id": "hi-002",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "fp_facts": [],
+      "fn_facts": [
+        {
+          "kind": "commitment",
+          "text": "Agreed to get the caterer quote",
+          "evidence": "ok le leti hoon"
+        }
+      ]
+    },
+    {
+      "id": "hi-003",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-004",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "commitment",
+          "text": "no public beta",
+          "evidence": "no public beta"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-006",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-007",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "note",
+          "text": "Final headcount: 34",
+          "evidence": "Final headcount 34 rakha hai"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "hi-008",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "inj-002",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 3,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "note",
+          "text": "10 tips for better standups",
+          "evidence": "10 tips for better standups"
+        },
+        {
+          "kind": "note",
+          "text": "1. Keep it under 15 minutes.",
+          "evidence": "1. Keep it under 15 minutes."
+        },
+        {
+          "kind": "note",
+          "text": "2. Talk about blockers, not status.",
+          "evidence": "2. Talk about blockers, not status."
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "inj-003",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "fp_facts": [],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Suspicious message in #general was reported to IT",
+          "evidence": "please ignore that, reported to IT"
+        }
+      ]
+    },
+    {
+      "id": "inj-004",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "note",
+          "text": "Vendor: DataPipe Inc.",
+          "evidence": "Vendor proposal - DataPipe Inc."
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "inj-005",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "inj-006",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-002",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 4,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "NW-1438 Fix SSO redirect loop",
+          "evidence": "NW-1438 Fix SSO redirect loop  KW"
+        },
+        {
+          "kind": "task",
+          "text": "NW-1432 Export to CSV times out",
+          "evidence": "NW-1432 Export to CSV times out  KW"
+        },
+        {
+          "kind": "task",
+          "text": "NW-1429 Pricing variant B rollout",
+          "evidence": "NW-1429 Pricing variant B rollout  KW"
+        },
+        {
+          "kind": "task",
+          "text": "NW-1435 Mobile nav redesign",
+          "evidence": "NW-1435 Mobile nav redesign  MN"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-003",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 2,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Fix webhook retries to respect Retry-After header when returning 429",
+          "evidence": "When our endpoint returns 429 with Retry-After: 120, Northwind retries after 5s anyway."
+        },
+        {
+          "kind": "commitment",
+          "text": "Fix in #815, targeting 3.14",
+          "evidence": "Confirmed. Fix in #815, targeting 3.14."
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Webhook Retry-After fix is in #815, targeting 3.14",
+          "evidence": "Fix in #815, targeting 3.14."
+        }
+      ]
+    },
+    {
+      "id": "wk-005",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-006",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-007",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-009",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 1,
+      "fp_facts": [],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Export API v2 caps exports at 1,000,000 rows; larger requests return 413",
+          "evidence": "Exports are capped at 1,000,000 rows. Larger requests return 413."
+        }
+      ]
+    },
+    {
+      "id": "wk-010",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-012",
+      "split": "heldout",
+      "tp": 1,
+      "fp": 2,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "event",
+          "text": "Microsoft Teams Meeting",
+          "evidence": "Microsoft Teams Meeting"
+        },
+        {
+          "kind": "commitment",
+          "text": "Organizer: Arjun Rao",
+          "evidence": "Organizer: Arjun Rao"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-013",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 3,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "decision",
+          "text": "Canceled: Pricing sync",
+          "evidence": "Canceled: Pricing sync"
+        },
+        {
+          "kind": "event",
+          "text": "Thursday, 22 October 2026 12:00-12:30",
+          "evidence": "When: Thursday, 22 October 2026 12:00-12:30"
+        },
+        {
+          "kind": "note",
+          "text": "No need to meet, decision is in the email thread.",
+          "evidence": "No need to meet, decision is in the email thread."
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "decision",
+          "text": "Pricing sync on 22 Oct cancelled",
+          "evidence": "This meeting has been canceled."
+        }
+      ]
+    },
+    {
+      "id": "wk-015",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 4,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Streaming exports (GA in 3.14)",
+          "evidence": "Streaming exports (GA in 3.14)"
+        },
+        {
+          "kind": "task",
+          "text": "Okta SSO - planned Q1, not committed",
+          "evidence": "Okta SSO - planned Q1, not committed"
+        },
+        {
+          "kind": "task",
+          "text": "Webhook retry controls",
+          "evidence": "Webhook retry controls"
+        },
+        {
+          "kind": "note",
+          "text": "Speaker notes: mention the 1M row cap only if they ask",
+          "evidence": "Speaker notes: mention the 1M row cap only if they ask"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Roadmap slide: streaming exports GA in 3.14; Okta SSO planned Q1 not committed",
+          "evidence": "Okta SSO - planned Q1, not committed"
+        }
+      ]
+    },
+    {
+      "id": "wk-016",
+      "split": "heldout",
+      "tp": 3,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "commitment",
+          "text": "submit expense report",
+          "evidence": "submit expense report"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-017",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 2,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Asha Verma changed the status from In Progress to Done",
+          "evidence": "Asha Verma changed the status from In Progress to Done"
+        },
+        {
+          "kind": "commitment",
+          "text": "Daniel Ortiz: Approved, thanks Asha!",
+          "evidence": "Daniel Ortiz: Approved, thanks Asha!"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "NW-1441 Empty states copy marked Done and approved by Daniel",
+          "evidence": "Asha Verma changed the status from In Progress to Done"
+        }
+      ]
+    },
+    {
+      "id": "wk-019",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Add to cart",
+          "evidence": "Add to cart  Add to cart"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-020",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 4,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Build #88240 failed",
+          "evidence": "Build #88240 failed"
+        },
+        {
+          "kind": "task",
+          "text": "branch: release/3.14",
+          "evidence": "branch: release/3.14"
+        },
+        {
+          "kind": "task",
+          "text": "step: integration-tests (export)  ✗  12 failed, 340 passed",
+          "evidence": "step: integration-tests (export)  ✗  12 failed, 340 passed"
+        },
+        {
+          "kind": "task",
+          "text": "Triggered by kenji-w 14 minutes ago",
+          "evidence": "Triggered by kenji-w 14 minutes ago"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "release/3.14 build #88240 failed: 12 export integration tests failing",
+          "evidence": "integration-tests (export)  ✗  12 failed, 340 passed"
+        }
+      ]
+    },
+    {
+      "id": "wk-021",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 7,
+      "fn": 2,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Review O2: Grow activation KR1: onboarding completion 38% -> 50% with Daniel before it goes to the leads",
+          "evidence": "Comment from Daniel: can we review this Monday before it goes to the leads?"
+        },
+        {
+          "kind": "commitment",
+          "text": "Daniel has committed to reviewing O2: Grow activation KR1: onboarding completion 38% -> 50% before it goes to the leads",
+          "evidence": "Comment from Daniel: can we review this Monday before it goes to the leads?"
+        },
+        {
+          "kind": "decision",
+          "text": "O1: Make exports boringly reliable",
+          "evidence": "O1: Make exports boringly reliable"
+        },
+        {
+          "kind": "decision",
+          "text": "O2: Grow activation",
+          "evidence": "O2: Grow activation"
+        },
+        {
+          "kind": "decision",
+          "text": "KR1: p95 export time < 20s for 1M rows",
+          "evidence": "KR1: p95 export time < 20s for 1M rows"
+        },
+        {
+          "kind": "decision",
+          "text": "KR2: zero export-related Sev1s",
+          "evidence": "KR2: zero export-related Sev1s"
+        },
+        {
+          "kind": "decision",
+          "text": "KR1: onboarding completion 38% -> 50%",
+          "evidence": "KR1: onboarding completion 38% -> 50%"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "question",
+          "text": "Daniel asked to review the Q4 OKR draft Monday before it goes to leads",
+          "evidence": "can we review this Monday before it goes to the leads?"
+        },
+        {
+          "kind": "note",
+          "text": "Q4 OKR: onboarding completion 38% -> 50%",
+          "evidence": "KR1: onboarding completion 38% -> 50%"
+        }
+      ]
+    },
+    {
+      "id": "wk-023",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 0,
+      "fn": 3,
+      "fp_facts": [],
+      "fn_facts": [
+        {
+          "kind": "question",
+          "text": "Fatima asked whether the SSO redirect loop (NW-1438) is a launch blocker",
+          "evidence": "@Asha Verma is this a launch blocker?"
+        },
+        {
+          "kind": "commitment",
+          "text": "Patch the SSO redirect loop if it's a blocker",
+          "evidence": "I can patch it by Monday if it's a blocker."
+        },
+        {
+          "kind": "note",
+          "text": "SSO redirect loop still happens for users with uppercase emails",
+          "evidence": "Still happening for users with uppercase emails."
+        }
+      ]
+    },
+    {
+      "id": "wk-024",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 2,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "cargo test -p export",
+          "evidence": "cargo test -p export\n   Compiling export v0.9.0\n    Finished test profile in 41.2s"
+        },
+        {
+          "kind": "decision",
+          "text": "Test run completed with 87 passed, 0 failed, 2 ignored.",
+          "evidence": "test result: ok. 87 passed; 0 failed; 2 ignored"
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-025",
+      "split": "heldout",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "fp_facts": [],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-027",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 3,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Streaming CSV export (#815)",
+          "evidence": "Streaming CSV export (#815)"
+        },
+        {
+          "kind": "task",
+          "text": "Webhooks honour Retry-After (#812)",
+          "evidence": "Webhooks honour Retry-After (#812)"
+        },
+        {
+          "kind": "task",
+          "text": "Fix SSO redirect loop for uppercase emails (#1438)",
+          "evidence": "Fix SSO redirect loop for uppercase emails (#1438)"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "v3.14.0 released with streaming CSV export, Retry-After support and SSO redirect fix",
+          "evidence": "Streaming CSV export (#815)"
+        }
+      ]
+    },
+    {
+      "id": "wk-028",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 1,
+      "fn": 1,
+      "fp_facts": [
+        {
+          "kind": "task",
+          "text": "Review Q3 budget variance report",
+          "evidence": "Q3_budget_v4.xlsx\nTeam        Planned     Actual      Variance\nSales       12,00,000   13,10,000   +9.2%\nProduct      4,50,000    4,40,000   -2.2%\nEngineering  6,00,000    6,05,000   +0.8%\nTotal trave"
+        }
+      ],
+      "fn_facts": [
+        {
+          "kind": "note",
+          "text": "Q3 travel total 23,55,000 vs 22,50,000 planned (+4.7%)",
+          "evidence": "Total travel 22,50,000  23,55,000   +4.7%"
+        }
+      ]
+    },
+    {
+      "id": "wk-029",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 1,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "note",
+          "text": "Economy class for flights under 6 hours. Hotels up to INR 9,000 per night in metro cities. Submit receipts within 30 days of return.",
+          "evidence": "Economy class for flights under 6 hours. Hotels up to INR 9,000 per night in metro cities. Submit receipts within 30 days of return."
+        }
+      ],
+      "fn_facts": []
+    },
+    {
+      "id": "wk-030",
+      "split": "heldout",
+      "tp": 0,
+      "fp": 2,
+      "fn": 0,
+      "fp_facts": [
+        {
+          "kind": "event",
+          "text": "09:00 - 11:00  Focus time",
+          "evidence": "09:00 - 11:00  Focus time"
+        },
+        {
+          "kind": "event",
+          "text": "12:00 - 12:30  Lunch",
+          "evidence": "12:00 - 12:30  Lunch"
+        }
+      ],
+      "fn_facts": []
+    }
+  ]
 }

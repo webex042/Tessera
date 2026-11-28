@@ -173,7 +173,7 @@ impl Recorder<'_> {
     fn note(&self, r: &Result<ChatResponse, ClientError>, first_ms: Option<u64>) {
         let entry = match r {
             Ok(x) => serde_json::json!({
-                "finish": x.finish_reason, "completion_tokens": x.completion_tokens,
+                "finish": x.finish_reason, "prompt_tokens": x.prompt_tokens, "completion_tokens": x.completion_tokens,
                 "ms": x.elapsed_ms, "first_delta_ms": first_ms,
                 "output": x.content.expose().chars().take(3000).collect::<String>(),
             }),
@@ -262,8 +262,11 @@ pub fn real_model(models_dir: &Path) -> Result<RealModel, String> {
     )
     .map_err(|e| e.to_string())?;
     let mut last = String::from("no candidates");
+    let threads = std::thread::available_parallelism()
+        .map(|n| (n.get() / 2).clamp(2, 8) as u32)
+        .ok();
     for c in &plan.candidates {
-        let spec = tsr_infer::sidecar::SidecarSpec::from_candidate(c, model.clone(), mmproj.clone(), 8192, None);
+        let spec = tsr_infer::sidecar::SidecarSpec::from_candidate(c, model.clone(), mmproj.clone(), 8192, threads);
         match tsr_infer::sidecar::start(&spec, &CancelToken::new()) {
             Ok(p) => {
                 return Ok(RealModel {
@@ -275,6 +278,27 @@ pub fn real_model(models_dir: &Path) -> Result<RealModel, String> {
         }
     }
     Err(last)
+}
+
+/// Load the pinned ONNX multilingual-e5-small embedder from `models_dir` if present and verified.
+pub fn real_embedder(models_dir: &Path) -> Result<Option<tsr_retrieval::embed::OnnxEmbedder>, String> {
+    use tsr_infer::models::{FileStatus, MANIFEST, inspect_dir};
+    let r = inspect_dir(models_dir, &MANIFEST, true, &CancelToken::new(), &mut |_, _| {});
+    let usable = r.entries.iter().any(|e| {
+        e.id == "multilingual-e5-small-onnx"
+            && e.usable
+            && e.files.iter().all(|f| matches!(f.status, FileStatus::Ok { .. }))
+    });
+    if !usable {
+        return Ok(None);
+    }
+    let dll = root().join("third_party/onnxruntime/1.31.0/win-x64/onnxruntime-win-x64-1.31.0/lib/onnxruntime.dll");
+    let pinned =
+        tsr_retrieval::runtime::load_pinned(&dll, "0c42dc4e278f0968fdf9ebf1b1e54a74c657a9942e70803e453c91993451cf4c")
+            .map_err(|e| format!("onnxruntime: {e}"))?;
+    let emb = tsr_retrieval::embed::OnnxEmbedder::from_dir(models_dir, "multilingual-e5-small-onnx", 384, &pinned)
+        .map_err(|e| format!("embedder: {e}"))?;
+    Ok(Some(emb))
 }
 
 /// Write `<name>.json` and `<name>.md` under `evals/results/`.

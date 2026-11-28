@@ -27,7 +27,7 @@ impl Default for Limits {
     fn default() -> Self {
         Limits {
             connect_timeout: Duration::from_secs(2),
-            idle_timeout: Duration::from_secs(60),
+            idle_timeout: Duration::from_secs(120),
             total_timeout: Duration::from_secs(180),
             max_request_bytes: 8 << 20,
             max_response_bytes: 4 << 20,

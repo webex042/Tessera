@@ -19,10 +19,10 @@ use tsr_infer::cancel::CancelToken;
 use tsr_infer::client::{ChatModel, ChatRequest, ClientError};
 use tsr_infer::prompts::{ASK_V2, escape_content, render};
 
-pub const MAX_SNIPPETS: usize = 8;
-/// ≈ 1 500 tokens of snippets in total (plan §10.3 step 5).
-pub const SNIPPET_BUDGET_CHARS: usize = 6_000;
-pub const SNIPPET_CHARS: usize = 700;
+pub const MAX_SNIPPETS: usize = 3;
+/// ≈ 250–310 tokens of snippets in total so 4B iGPU first-sentence latency stays <= 15 s.
+pub const SNIPPET_BUDGET_CHARS: usize = 1_050;
+pub const SNIPPET_CHARS: usize = 350;
 pub const MIN_OVERLAP: f64 = 0.35;
 pub const MAX_QUESTION_CHARS: usize = 300;
 
@@ -94,7 +94,8 @@ pub fn snippets(
         }
         let src = tsr_store::items::get_source(conn, it.source_id)?;
         let raw_w = window(it.text.expose(), &terms, SNIPPET_CHARS);
-        let w = tsr_guard::redact::mask_pii(&raw_w).text;
+        let scrubbed = tsr_guard::injection::scrub_untrusted_lines(&raw_w);
+        let w = tsr_guard::redact::mask_pii(&scrubbed).text;
         if used + w.len() > SNIPPET_BUDGET_CHARS && !out.is_empty() {
             break;
         }
@@ -123,6 +124,17 @@ pub fn request(
     weekday: &str,
     label: &dyn Fn(i64) -> String,
 ) -> ChatRequest {
+    request_with_user(question, snippets, local_date, weekday, None, label)
+}
+
+pub fn request_with_user(
+    question: &str,
+    snippets: &[Snippet],
+    local_date: &str,
+    weekday: &str,
+    user_name: Option<&str>,
+    label: &dyn Fn(i64) -> String,
+) -> ChatRequest {
     let p = &*ASK_V2;
     let lines = snippets
         .iter()
@@ -141,7 +153,7 @@ pub fn request(
         })
         .collect::<Vec<_>>()
         .join("\n");
-    let user = render(
+    let mut user = render(
         p.user,
         &[
             ("local_date", local_date),
@@ -151,12 +163,27 @@ pub fn request(
         ],
     )
     .expect("template");
+    if let Some(name) = user_name.map(str::trim).filter(|s| !s.is_empty()) {
+        let initials: String = name
+            .split_whitespace()
+            .filter_map(|w| w.chars().next())
+            .flat_map(|c| c.to_uppercase())
+            .collect();
+        let identity = if initials.len() >= 2 {
+            format!(" User: {} (initials {}).", escape_content(name), initials)
+        } else {
+            format!(" User: {}.", escape_content(name))
+        };
+        if let Some(idx) = user.find('\n') {
+            user.insert_str(idx, &identity);
+        }
+    }
     ChatRequest {
         system: Sensitive::new(p.system.to_string()),
         user: Sensitive::new(user),
         image_png: None,
-        temperature: 0.1,
-        max_tokens: 700,
+        temperature: 0.0,
+        max_tokens: 350,
         json_schema: p.schema.clone(),
         stream: true,
         seed: Some(5),
@@ -186,8 +213,38 @@ pub struct Answer {
     pub total_ms: u64,
 }
 
+/// Extract rendered `[n] <header> — ...` prefixes from the `<memory>` block in `req.user`.
+fn snippet_headers(user: &str, max_n: usize) -> Vec<String> {
+    let mut out = vec![String::new(); max_n];
+    let Some(start) = user.find("<memory>") else {
+        return out;
+    };
+    let rest = &user[start + "<memory>".len()..];
+    let body = rest.split("</memory>").next().unwrap_or(rest);
+    for line in body.lines() {
+        let Some(after_br) = line.strip_prefix('[') else {
+            continue;
+        };
+        let Some((num_s, tail)) = after_br.split_once(']') else {
+            continue;
+        };
+        let Ok(n) = num_s.parse::<usize>() else {
+            continue;
+        };
+        if n >= 1 && n <= max_n {
+            let hdr = tail.split(" — ").next().unwrap_or("").trim();
+            out[n - 1] = hdr.to_owned();
+        }
+    }
+    out
+}
+
 /// Verify one sentence against the snippets it cites.
 pub fn verify(text: &str, cites: &[usize], snippets: &[Snippet]) -> AnswerSentence {
+    verify_with_headers(text, cites, snippets, &[])
+}
+
+fn verify_with_headers(text: &str, cites: &[usize], snippets: &[Snippet], headers: &[String]) -> AnswerSentence {
     let mut valid = Vec::new();
     let mut fabricated = 0;
     for c in cites {
@@ -199,13 +256,30 @@ pub fn verify(text: &str, cites: &[usize], snippets: &[Snippet]) -> AnswerSenten
             fabricated += 1;
         }
     }
-    let cited: Vec<&str> = valid.iter().map(|c| snippets[c - 1].text.expose().as_str()).collect();
-    let ctx = cited.join("\n");
-    let mut verified = !cited.is_empty() && fabricated == 0 && claims::unsupported(text, &ctx).is_empty();
+    let cited: Vec<String> = valid
+        .iter()
+        .map(|c| {
+            let s = &snippets[c - 1];
+            let hdr = headers.get(c - 1).map(String::as_str).unwrap_or("");
+            let title = s.title.as_deref().unwrap_or("");
+            format!("{hdr} {} {title}\n{}", s.app, s.text.expose())
+        })
+        .collect();
+    let ctx_claims = cited.join("\n");
+    let ctx_overlap = valid
+        .iter()
+        .map(|c| {
+            let s = &snippets[c - 1];
+            let title = s.title.as_deref().unwrap_or("");
+            format!("{} {title}\n{}", s.app, s.text.expose())
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let mut verified = !cited.is_empty() && fabricated == 0 && claims::unsupported(text, &ctx_claims).is_empty();
     if verified {
         let w = words(text);
         if !w.is_empty() {
-            let cw = words(&ctx);
+            let cw = words(&ctx_overlap);
             let hits = w.iter().filter(|x| cw.contains(*x)).count();
             verified = hits as f64 / w.len() as f64 >= MIN_OVERLAP;
         }
@@ -310,6 +384,7 @@ pub fn answer(
     cancel: &CancelToken,
     on_sentence: &mut dyn FnMut(&AnswerSentence),
 ) -> Result<Answer, AskError> {
+    let headers = snippet_headers(req.user.expose(), snippets.len());
     let t0 = Instant::now();
     let mut first = None;
     let mut stream = SentenceStream::default();
@@ -319,7 +394,7 @@ pub fn answer(
                 first = Some(t0.elapsed().as_millis() as u64);
             }
             let cites: Vec<usize> = cites.into_iter().map(|c| c.max(0) as usize).collect();
-            on_sentence(&verify(&text, &cites, snippets));
+            on_sentence(&verify_with_headers(&text, &cites, snippets, &headers));
         }
     })?;
     let raw: RawAnswer = serde_json::from_str(r.content.expose().trim()).map_err(|_| AskError::Invalid)?;
@@ -329,7 +404,7 @@ pub fn answer(
         .take(8)
         .map(|s| {
             let cites: Vec<usize> = s.cites.iter().map(|c| (*c).max(0) as usize).collect();
-            verify(&s.text, &cites, snippets)
+            verify_with_headers(&s.text, &cites, snippets, &headers)
         })
         .collect();
     let not_found = !sentences.iter().any(|s| s.verified);

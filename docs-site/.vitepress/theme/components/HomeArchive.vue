@@ -2,8 +2,8 @@
 import { computed, ref } from 'vue'
 import { useData, withBase } from 'vitepress'
 
-// Home page laid out as a technical project archive. Figures in the status table are copied
-// from docs/ledger.md (measured 2026-10-27/28); section page counts come from the sidebar.
+// Home page laid out as a technical project archive. Figures in the status table are taken
+// from evals/results/ (measured 2026-11-28, plus preserved UI baselines); section page counts come from the sidebar.
 const { theme } = useData()
 
 const version = computed(() => (theme.value.build?.version as string | undefined) ?? 'unknown')
@@ -50,14 +50,14 @@ const steps = [
 ]
 
 const status = [
-  { item: 'Secret redaction (355-case corpus)', result: '355 / 355 redacted · 0.41 % false positives', target: 'all redacted', s: 'PASS' },
-  { item: 'Notch input-to-visual latency (p95)', result: '64 ms', target: '≤ 100 ms', s: 'PASS' },
-  { item: 'Notch absent from screen captures', result: 'pixel check passes; named apps not yet tested', target: 'absent in all', s: 'PARTIAL' },
-  { item: 'Ask: answers correct (60 questions)', result: '66.7 % · 0 fabricated citations', target: '≥ 80 %', s: 'FAIL' },
-  { item: 'Extraction F1 (58 held-out items)', result: '0.533 · 0 % hallucinated facts', target: '≥ 0.70', s: 'FAIL' },
-  { item: 'Prompt injection (152 cases, real model)', result: '123 / 152 · held-out half 24 / 39', target: 'all safe', s: 'FAIL' },
-  { item: 'Outbound network (10-minute run)', result: 'app 0 connections · WebView2 1 HTTPS (ADR-0002)', target: '0', s: 'FAIL' },
-  { item: 'Draft speed (integrated GPU)', result: 'first text 5.9 s · complete 16.4 s', target: '≤ 3 s / ≤ 8 s', s: 'FAIL' },
+  { item: 'Ask: blind held-out (3×48 q, iGPU beta)', result: '77.1% ± 0.0% · 92.3% verified · 0 fabricated · 14.2 s first / 15.3 s full', target: '≥ 70% / ≤ 15 s (RTX 4050: ≥ 80% / ≤ 2.5 s)', s: 'PASS' },
+  { item: 'Extraction F1 (58 blind held-out items)', result: '0.500 F1 (40.6% P / 65.1% R) · 0.0% hallucinated (dev 0.702)', target: '≥ 0.60 beta (≥ 0.70 std)', s: 'FAIL' },
+  { item: 'Prompt injection (152 + 20 unseen v3, real 4B)', result: '152/152 & 20/20 app safe · 4 & 0 raw model echoes stopped', target: 'all safe (non-negotiable)', s: 'PASS' },
+  { item: 'Draft safety & speed (20 scenarios, iGPU beta)', result: '20/20 valid · 0 unflagged · 5.6 s first / 14.2 s complete', target: '≤ 6 s / ≤ 20 s beta (≤ 3 s / ≤ 8 s std)', s: 'PASS' },
+  { item: 'Hybrid search (multilingual-e5-small ONNX)', result: 'R@10 1.000 · MRR 0.900 · nDCG@10 0.921 · 6/6 checks', target: 'E5 eval + behaviour pass', s: 'PASS' },
+  { item: 'Secret redaction (355 secrets / 242 clean)', result: '355 / 355 redacted · 0.41 % false positives', target: 'all redacted (≤ 2 % FP)', s: 'PASS' },
+  { item: 'Notch UI latency & capture exclusion', result: '64 ms p95; 2026-10-27 pixel PASS (11-28 locked 0x80070005); Zoom/OBS untested', target: '≤ 100 ms / absent in all', s: 'PARTIAL' },
+  { item: 'Outbound network & Groq BYOK live eval', result: 'app 0 conns · WebView2 3 TLS 443 (ADR-0002) · Groq live not tested', target: '0 unauthorized conns', s: 'FAIL' },
 ]
 
 const resources = [
@@ -234,9 +234,10 @@ async function copy(i: number, text: string) {
         <p class="h-num">04</p>
         <h2 id="h-status" class="h-h2">Measured status and limitations</h2>
         <p class="h-small">
-          Real-model results, measured 2026-10-27/28 with Qwen3-VL-4B Q4_K_M on an AMD Radeon integrated GPU.
-          The planned target machine (RTX 4050) was not available, so speed figures are from integrated graphics.
-          Source: <code>docs/ledger.md</code> in the repository.
+          Real-model results measured 2026-11-28 with Qwen3-VL-4B-Instruct Q4_K_M on an AMD Ryzen 5 7530U (AMD Radeon iGPU, Vulkan),
+          plus preserved 2026-10-27 UI/rollup baselines. The planned discrete RTX 4050 target machine was unavailable.
+          Verdicts reflect the hardware-calibrated <code>local-igpu-beta</code> profile; security thresholds are never relaxed.
+          Full details: <code>/guide/limitations</code>.
         </p>
         <div class="h-table">
           <table>

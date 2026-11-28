@@ -62,8 +62,8 @@ Once model files are verified, Tessera executes a lightweight smoke-test prompt 
 
 ## 4. Unpausing Capture
 
-The notch interface remains in a **Paused** state until you click **Start** or press `Alt + Shift + P`. Once unpaused:
+The notch interface remains in a **Paused** state until you click **Start** or press `Ctrl + Alt + P`. Once unpaused:
 - The Gatekeeper monitors foreground window changes.
 - Sessions aggregate active typing and document reading.
 - Passwords, PII, and secrets are masked (`tsr-guard`) before persistence in SQLCipher and AES-256-GCM `VectorDb` (`tessera_vectors.enc`).
-- Open **Privacy Controls** at any time to adjust retention pruning (`7`–`365` days), edit app blocklists, delete individual captured items, or run a token-confirmed wipe.
+- Open **Privacy Controls** at any time to adjust retention pruning (`0` Forever or presets `7 / 30 / 90 / 365` days; backend max `3650`), edit app blocklists, delete individual captured items, or run a token-confirmed wipe.

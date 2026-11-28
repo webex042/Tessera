@@ -6,7 +6,7 @@ The `tsr-draft` crate implements context-aware ghost reply drafting directly int
 
 ## 1. Context Capture & Focused Target Verification
 
-When the user presses the draft hotkey (`Alt + Shift + D`):
+When the user presses the draft hotkey (`Ctrl + Alt + D`):
 1. **Target Identification:** UI Automation queries the currently focused HWND and control element.
 2. **Password Guard:** If the focused control is an `Edit` element with `IsPassword = true`, drafting is **refused immediately**.
 3. **Thread Context:** The active conversation thread is extracted from the focused application's accessibility tree.

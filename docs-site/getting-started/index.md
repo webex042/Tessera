@@ -106,7 +106,7 @@ Once Tessera is running:
 2. **The Top Notch:** Tessera appears as a subtle, unobtrusive pill at the top of your primary display.
 3. **Capture Ladder in Action:** As you switch between windows (e.g., your browser or text editor), Tessera periodically samples the active window title and text content.
 4. **Testing Redaction:** Open Notepad, type `My secret key is sk-1234567890abcdef`, and save it. When Tessera reads the window, `tsr-guard` immediately replaces `sk-1234567890abcdef` with `[REDACTED_API_KEY]` before saving to SQLite.
-5. **Asking a Question:** Click the notch or press `Alt + Space` to expand the query bar. Type a question about something you recently viewed, such as:
+5. **Asking a Question:** Click the notch or press `Ctrl + Alt + Space` (or fallback `Ctrl + Alt + N` / `Ctrl + Alt + K`) to expand the query bar. Type a question about something you recently viewed, such as:
    > *"What did I write in Notepad just now?"*
 6. **Reviewing Grounded Answers:** Tessera retrieves the redacted note and answers with exact substring citations.
 

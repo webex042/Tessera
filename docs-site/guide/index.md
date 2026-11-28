@@ -15,10 +15,10 @@ Imagine an assistant that sits quietly on your PC, remembers what you read or wo
 Most current AI tools achieve this by continuously taking screenshots of your monitor and streaming your screen, passwords, personal emails, and private code to remote corporate cloud servers.
 
 **Tessera takes the opposite approach:**
-1. **100% Local Inference:** It runs compact, powerful language models (such as 4-billion parameter neural networks) directly on your own computer's graphics card (GPU) or processor (CPU).
-2. **Zero Cloud Dependency:** Not a single token of text or pixel of screen data ever leaves your computer.
-3. **Deterministic Safety:** Before anything is written to memory, sensitive data (credit cards, passwords, access keys) is redacted by a strict security guardrail.
-4. **Hardware Independence:** Unlike traditional tools that crash if you do not have a specific graphics card, Tessera works across NVIDIA, AMD, Intel, and CPU-only systems without proprietary lock-in.
+1. **Local-First Inference (`TSR_LLM_PROVIDER=local`):** Runs `Qwen3-VL-4B-Instruct` via a local `llama.cpp` sidecar on your GPU (Vulkan) or CPU by default, with optional consented Groq BYOK (`openai/gpt-oss-20b`) when `--features groq` is enabled.
+2. **Scoped Network Boundary:** Core crates cannot make network calls. Outbound traffic only occurs for consented model downloads (`tools/models.lock`), optional PII-masked Groq BYOK requests, or an upstream Microsoft WebView2 socket currently under audit ([ADR-0002](/guide/limitations)).
+3. **Deterministic Safety:** Before anything is written to storage or prompts, sensitive data (names, emails, Aadhaar, PAN, credit cards, passwords, access keys) is masked by `tsr-guard`.
+4. **Hardware Independence:** Separates compute into hash-verified sidecars (`vulkan-x64` / `cpu-x64`) so it runs across NVIDIA, AMD, Intel, and AVX2 CPUs without CUDA SDK lock-in.
 
 ---
 
@@ -103,7 +103,7 @@ Tessera is built as a workspace of modular Rust crates orchestrated under a Taur
 Here is a realistic scenario demonstrating how a user interacts with Tessera:
 
 1. **The Scenario:** While testing a software script in PowerShell at 10:15 AM, you encounter a cryptic compiler error code (`0xC0000005: STATUS_ACCESS_VIOLATION`). You close the terminal and continue working on other tasks.
-2. **The Question:** At 11:00 AM, you press `Alt + Space` to summon the Tessera query bar and type:
+2. **The Question:** At 11:00 AM, you press `Ctrl + Alt + Space` (or `Ctrl + Alt + K`) to summon the Tessera Ask bar and type:
    > *"What was the exact hexadecimal memory access violation code from my terminal earlier?"*
 3. **Under the Hood:**
    * Tessera queries `tsr-store` for windows with title `PowerShell` or `Terminal`.

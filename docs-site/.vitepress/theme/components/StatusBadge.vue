@@ -2,12 +2,26 @@
 import { computed } from 'vue'
 
 // Implementation status label. The word is always shown, so status never depends on colour.
+export type BadgeStatus =
+  | 'implemented'
+  | 'partial'
+  | 'planned'
+  | 'unverified'
+  | 'pass'
+  | 'fail'
+  | 'blocked'
+  | 'not-tested'
+  | 'in-progress'
+  | 'deferred'
+
 const props = defineProps<{
-  status: 'implemented' | 'partial' | 'planned' | 'unverified' | 'pass' | 'fail' | 'blocked'
+  status: BadgeStatus
+  text?: string
 }>()
 
 const label = computed(
   () =>
+    props.text ??
     ({
       implemented: 'implemented',
       partial: 'partial',
@@ -16,6 +30,9 @@ const label = computed(
       pass: 'pass',
       fail: 'fail',
       blocked: 'blocked',
+      'not-tested': 'not tested',
+      'in-progress': 'in progress',
+      deferred: 'deferred',
     })[props.status],
 )
 </script>
@@ -25,10 +42,10 @@ const label = computed(
 </template>
 
 <style scoped>
-/* Solid border = done, dashed = partial / planned / unverified, inverted = fail / blocked. */
+/* Solid border = pass/implemented, dashed = partial/untested/in-progress/deferred, inverted = fail/blocked. */
 .t-badge {
   display: inline-block;
-  padding: 0 0.4rem;
+  padding: 0 0.45rem;
   border: 1px solid var(--p-ink);
   border-radius: 0;
   background: var(--p-white);
@@ -44,7 +61,10 @@ const label = computed(
 
 .t-badge.is-partial,
 .t-badge.is-planned,
-.t-badge.is-unverified {
+.t-badge.is-unverified,
+.t-badge.is-not-tested,
+.t-badge.is-in-progress,
+.t-badge.is-deferred {
   border-style: dashed;
   background: var(--p-paper);
 }

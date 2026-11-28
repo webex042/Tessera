@@ -51,7 +51,15 @@ cargo run -p tsr-evals --bin tsr-eval -- all
 
 # Run prompt injection defense against a simulated compromised model
 cargo run -p tsr-evals --bin tsr-eval -- injection
+cargo run -p tsr-evals --bin tsr-eval -- injection --corpus tests/fixtures/injection/unseen_v3.json
 
-# Run search benchmark (recall@5, precision@5, MRR, nDCG@10)
+# Run search benchmark with real E5 ONNX embedder or fast hash baseline
+cargo run -p tsr-evals --bin tsr-eval -- search --model D:\models
 cargo run -p tsr-evals --bin tsr-eval -- search
+
+# Run real-model evaluations under hardware-calibrated iGPU beta profile
+cargo run -p tsr-evals --bin tsr-eval -- ask --model D:\models --split heldout --profile local-igpu-beta
+cargo run -p tsr-evals --bin tsr-eval -- extraction --model D:\models --split heldout --profile local-igpu-beta
+cargo run -p tsr-evals --bin tsr-eval -- draft --model D:\models --split all --profile local-igpu-beta
+cargo run -p tsr-evals --bin tsr-eval -- scorecard
 ```

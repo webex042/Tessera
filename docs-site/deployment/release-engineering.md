@@ -67,12 +67,12 @@ Defines the official download URLs, versions, and expected cryptographic hashes 
 ```json
 {
   "llama_cpp": {
-    "version": "b4404",
+    "tag": "b11900",
     "assets": [
       {
         "variant": "cpu-x64",
-        "sha256": "4b684c3ea8c772e70e302506dd5e28a47caec908bf5b0c95a208221b369f7d43",
-        "url": "https://github.com/ggerganov/llama.cpp/releases/download/b4404/llama-b4404-bin-win-avx2-x64.zip"
+        "sha256": "d3bbbbb7d1b4979b72052fd73cdeeb5a4d5a4e6a3f52aeb40abd6f116558e323",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11900/llama-b11900-bin-win-cpu-x64.zip"
       }
     ]
   }

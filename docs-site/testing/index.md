@@ -28,13 +28,13 @@ flowchart TD
 
     subgraph TIER3 ["Tier 3: Empirical Security Corpora"]
         S1["355-Case Secret Redaction Suite\n(Pass: 355/355, 0.41% FP)"]
-        S2["152-Case Adversarial Injection Suite\n(Stage 7 Prompt Defense)"]
+        S2["152-Case + 20 Unseen v3 Injection\n(App Pass: 0 Guard Failures)"]
     end
 
     subgraph TIER4 ["Tier 4: Real-Hardware & Model Evals"]
-        E1["Hardware Sidecar Discovery\n(Vulkan vs. AVX2 CPU)"]
-        E2["Ask Accuracy Benchmark (60 q)\n(66.7% Correct, 0 Hallucinations)"]
-        E3["Extraction F1 Benchmark\n(0.533 F1 Score)"]
+        E1["Hardware Sidecar Discovery\n(AMD Vulkan vs. AVX2 CPU)"]
+        E2["Blind Ask Benchmark (3x48 q)\n(77.1% Acc, 92.3% Ver, 0 Fab)"]
+        E3["Blind Extraction F1 (58 items)\n(0.500 F1 FAIL, 0% Hallucinated)"]
     end
 
     TIER1 --> TIER2 --> TIER3 --> TIER4

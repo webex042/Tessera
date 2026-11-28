@@ -14,7 +14,7 @@ flowchart TD
     end
 
     subgraph Sidecars["Sidecar Binaries"]
-        ORT["ONNX Runtime 1.20.1"] & LLAMA["llama.cpp (b4404)"] -->|fetch_sidecar.py| BINS["src-tauri/binaries/"]
+        ORT["ONNX Runtime 1.31.0"] & LLAMA["llama.cpp (b11900)"] -->|fetch_sidecar.py / .ps1| BINS["third_party/ (bundled resource)"]
     end
 
     subgraph Backend["Rust Core"]
@@ -22,7 +22,7 @@ flowchart TD
     end
 
     DIST & BINS & EXE --> BUNDLE["Tauri Bundler (NSIS)"]
-    BUNDLE -->|LZMA Compression| INSTALLER["Tessera-Setup.exe (CurrentUser)"]
+    BUNDLE -->|LZMA Compression| INSTALLER["Tessara_0.0.1_x64-setup.exe (CurrentUser)"]
 ```
 
 ---
@@ -34,7 +34,7 @@ The packaging pipeline is defined in [`src-tauri/tauri.conf.json`](https://githu
 ```json
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Tessera",
+  "productName": "Tessara",
   "version": "0.0.1",
   "identifier": "app.tessara.desktop",
   "build": {
@@ -44,12 +44,17 @@ The packaging pipeline is defined in [`src-tauri/tauri.conf.json`](https://githu
     "beforeBuildCommand": { "script": "npm run build", "cwd": "../ui" }
   },
   "bundle": {
-    "active": false,
+    "active": true,
     "targets": ["nsis"],
     "icon": ["icons/icon.ico", "icons/icon.png"],
     "shortDescription": "Local-first memory of your screen",
-    "copyright": "Tessera contributors",
+    "copyright": "Tessara contributors",
     "licenseFile": "../THIRD_PARTY_NOTICES.md",
+    "resources": {
+      "../third_party/llama_cpp/b11900/cpu-x64": "third_party/llama_cpp/b11900/cpu-x64",
+      "../third_party/llama_cpp/b11900/vulkan-x64": "third_party/llama_cpp/b11900/vulkan-x64",
+      "../third_party/onnxruntime/1.31.0/win-x64/onnxruntime-win-x64-1.31.0/lib/onnxruntime.dll": "third_party/onnxruntime/1.31.0/win-x64/onnxruntime-win-x64-1.31.0/lib/onnxruntime.dll"
+    },
     "windows": {
       "webviewInstallMode": { "type": "embedBootstrapper" },
       "nsis": {
@@ -86,12 +91,12 @@ The packaging pipeline is defined in [`src-tauri/tauri.conf.json`](https://githu
 
 Tessera isolates high-risk C/C++ runtimes into child processes rather than linking them statically into the main process.
 
-| Sidecar Component | Pinned Version | Windows Target Binary | Checksum Source |
+| Sidecar Component | Pinned Version | Bundled Resource Path | Checksum Source |
 | :--- | :--- | :--- | :--- |
-| **llama-server** | `b4404` | `src-tauri/binaries/llama-server-x86_64-pc-windows-msvc.exe` | [`tools/sidecar.lock`](https://github.com/webex042/Tessera/blob/main/tools/sidecar.lock) |
-| **ONNX Runtime** | `1.20.1` | `src-tauri/binaries/onnxruntime.dll` | [`tools/sidecar.lock`](https://github.com/webex042/Tessera/blob/main/tools/sidecar.lock) |
+| **llama-server (`cpu-x64`, `vulkan-x64`)** | `b11900` | `third_party/llama_cpp/b11900/{cpu-x64,vulkan-x64}` | [`tools/sidecar.lock`](https://github.com/webex042/Tessera/blob/main/tools/sidecar.lock) |
+| **ONNX Runtime** | `1.31.0` | `third_party/onnxruntime/1.31.0/win-x64/onnxruntime-win-x64-1.31.0/lib/onnxruntime.dll` | [`tools/sidecar.lock`](https://github.com/webex042/Tessera/blob/main/tools/sidecar.lock) |
 
-During packaging, sidecar binaries must be pre-fetched into `src-tauri/binaries/` using the verified fetch tool:
+During packaging, sidecar binaries must be pre-fetched into `third_party/` using the verified fetch tools:
 
 ```powershell
 python tools/fetch_sidecar.py onnxruntime win-x64

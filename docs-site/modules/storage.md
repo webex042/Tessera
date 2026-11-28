@@ -26,14 +26,14 @@ The embedded vector database is intended to support local, in-process semantic r
 - **Similarity Metric:** Cosine similarity (computed via L2-normalized `f32` dot products and scaled quantized `int8` dot products).
 - **Metadata Pre-Filtering:** Filters records before vector scoring by application name, time range (`timestamp_ms`), item ID, source ID, and memory type (`passage`, `fact`, `summary`).
 - **Storage Location:** `%LOCALAPPDATA%\Tessara\tessera_vectors.enc`.
-- **Encryption at Rest:** 256-bit symmetric key unwrapped from the Windows Data Protection API (`CryptUnprotectData`). Uses an authenticated SHA-256 CTR stream keystream with a random 16-byte nonce and HMAC integrity tag (`TSRV` magic header).
+- **Encryption at Rest:** 256-bit symmetric master key unwrapped from the Windows Data Protection API (`CryptUnprotectData`). Format `v2` uses **`ring::aead::AES_256_GCM`** with a random 12-byte CSPRNG nonce, 16-byte GCM authentication tag, and authenticated header/nonce AAD (`TSRV` magic header). Legacy `v1` files (SHA-256 CTR + HMAC) are backed up to `.v1.bak` and migrated automatically.
 
-### Cryptographic File Layout (`tessera_vectors.enc`)
+### Cryptographic File Layout (`tessera_vectors.enc`, v2)
 ```
-+----------------+---------------+----------------+----------------+--------------------------+
-| Magic (4 bytes)| Version (1 B) | Nonce (16 B)   | Tag (32 B)     | Ciphertext (N bytes)     |
-| "TSRV"         | 0x02          | 12B Nonce      | AES-256-GCM Ciphertext | GCM 16B Tag (AAD)        |
-+----------------+---------------+----------------+----------------+--------------------------+
++----------------+---------------+---------------+-------------------------+------------------+
+| Magic (4 B)    | Version (1 B) | Nonce (12 B)  | AES-256-GCM Ciphertext  | GCM Tag (16 B)   |
+| "TSRV"         | 0x02          | CSPRNG Nonce  | Zstd/JSON/Bincode Data  | AAD-Bound Tag    |
++----------------+---------------+---------------+-------------------------+------------------+
 ```
 
 ---

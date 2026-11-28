@@ -1,9 +1,10 @@
 # Download & Release Notes
 
-Tessera distributes native **Windows 11 (x64)** desktop builds packaged with Tauri 2, bundled hash-verified `llama.cpp` inference sidecars (`cpu-x64` and `vulkan-x64`), and pinned ONNX Runtime `1.31.0`.
+Tessera distributes signed-manifest, unsigned **Windows 11 (x64)** desktop builds (`v0.0.1-beta`) packaged with Tauri 2, bundled hash-verified `llama.cpp` `b11900` inference sidecars (`cpu-x64` and `vulkan-x64`), and pinned ONNX Runtime `1.31.0`. The Windows bundle identifier in `tauri.conf.json` uses the internal executable/package name `Tessara` (`tessara.exe` and `%LOCALAPPDATA%\Tessara`), while the project and website use **Tessera**.
 
-> [!WARNING] Unsigned Beta Notice (Windows SmartScreen)
-> Locally prepared beta installers (`v0.0.1`) are **unsigned**. Running an unsigned `.exe` installer on Windows 11 triggers Microsoft Defender SmartScreen ("Windows protected your PC"). To verify file integrity before running, compare the installer's SHA-256 hash against the `SHA256SUMS.txt` manifest published with the release, then select **More info → Run anyway** only if the checksum matches and you trust the source repository (`https://github.com/webex042/Tessera`).
+> [!WARNING] Unsigned Beta Notice & Current Release Scope
+> - **SmartScreen Warning:** The published `v0.0.1-beta` Windows binaries are **unsigned**. Running an unsigned `.exe` installer on Windows 11 triggers Microsoft Defender SmartScreen ("Windows protected your PC"). Verify the SHA-256 checksum against `SHA256SUMS.txt` below before selecting **More info → Run anyway**.
+> - **Known Prototype Limitations:** Local AMD iGPU testing still fails blind **Extraction F1 (`0.500 < 0.60`)**, leaves **WebView2 Microsoft TLS sockets open (`ADR-0002`)**, and has **no RTX 4050 or live Groq evaluation yet**. Review [Measured Status and Limitations](/guide/limitations) before installing.
 
 ---
 
@@ -61,7 +62,7 @@ Tessera starts with **screen capture paused by default**. When you open the notc
 
 - **AES-256-GCM VectorDb v2 (`tsr-store`):** Replaced custom SHA-256 CTR + timestamp nonces with `ring::aead::AES_256_GCM` and CSPRNG 96-bit nonces (`SystemRandom`), plus explicit authenticated migration from legacy `v1` files with automatic `.v1.bak` backup creation.
 - **Outbound Full PII Masking (`tsr-net`):** Applied `tsr_guard::redact::mask_pii` across all outbound Groq prompt paths (Ask, Draft, Extraction, Rollups).
-- **DPAPI Key Lifecycle & Privacy Controls (`tsr-store`, `src-tauri`, `ui`):** Added single-item deletion across SQLCipher + `VectorDb`, token-confirmed memory wipe, configurable retention pruning (`0–3650` days), and an interactive capture blocklist editor.
+- **Privacy & Deletion:** Single-item deletion across SQLCipher + `VectorDb`, token-confirmed (`CLEAR`) wipes, configurable retention pruning (`0` Forever, UI presets `7 / 30 / 90 / 365` days, backend cap `3650` days), and live blocklist editing in **Privacy Controls**.
 - **In-App AI Onboarding & Runtime Switching:** Added first-run setup UI for local GGUF verification/downloads and Groq BYOK configuration (stored via Windows DPAPI) with live runtime hot-swapping.
 - **Embedded Vector Retrieval Integration (`tsr-retrieval`, `tsr-pipeline`):** Connected pinned ONNX Runtime `1.31.0` + `multilingual-e5-small-onnx` vector indexing into `tessera_vectors.enc` and Ask/Search hybrid RRF retrieval with automatic FTS5 fallback.
 - **Windows Desktop Packaging:** Enabled Tauri 2 `currentUser` NSIS installer and portable ZIP targets bundling verified CPU/Vulkan `llama-server` and pinned `onnxruntime.dll` sidecars.

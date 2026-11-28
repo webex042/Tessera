@@ -38,9 +38,9 @@ This document provides a structured threat analysis for Tessera, defining trust 
 
 ## Known Residual Risks & Open Findings
 
-### 1. Upstream WebView2 Telemetry ([ADR-0002](https://github.com/webex042/Tessera/blob/main/docs/adr/0002-webview2-outbound-connection.md))
-- **Finding:** In network monitoring tests, the Microsoft WebView2 runtime initiates one outbound HTTPS connection to Microsoft IP space upon startup despite all telemetry flags (`--disable-background-networking`, `--disable-features=msSmartScreenPua`) being passed.
-- **Status:** Open upstream deficiency in Microsoft Edge WebView2. Tessera's own Rust code makes zero network requests, but true air-gapping currently requires an external firewall or hosts-file blocking.
+### 1. Upstream WebView2 Platform Sockets ([ADR-0002](https://github.com/webex042/Tessera/blob/main/docs/adr/0002-webview2-outbound-connection.md))
+- **Finding:** Although Chromium NetLog (`TSR_STAGE0_NETLOG`) records **0** external URLs (`localhost` only), `msedgewebview2.exe` still opens TLS port-443 sockets to Microsoft IP space (`52.110.14.167`, `40.104.66.66`, and `2603:1046:c04::/48` in prior runs) even when SmartScreen and background-networking flags are disabled.
+- **Status:** Open upstream finding in Microsoft Edge WebView2; elevated `pktmon` TLS SNI capture and 24-hour Sysmon/WFP audits are pending. Tessera's own host processes make zero non-loopback requests in default local mode.
 
 ### 2. OS Paging & Hibernation
 - **Finding:** When system memory is heavily utilized, the Windows memory manager may swap volatile memory pages containing decrypted text or model weights into `pagefile.sys` or `hiberfil.sys`.

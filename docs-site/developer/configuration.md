@@ -15,5 +15,5 @@ This page provides an exhaustive reference for all settings available in `%LOCAL
 | `inference.idle_unload_min`| `integer` | `10` | `0` (never), `1` to `120` | `tsr-infer` | Minutes of inactivity before evicting the model from VRAM on battery power. Reduces idle battery drain. |
 | `capture.cadence_active_s`| `integer` | `5` | `1` to `60` | `tsr-capture` | Polling interval during active user typing. Multiplied by $3\times$ when operating on battery. |
 | `capture.quality_threshold`| `float` | `0.55` | `0.0` to `1.0` | `tsr-capture` | OCR quality score below which Rung 3 VLM screen cropping triggers. Higher values trigger VLM more often. |
-| `storage.retention_days` | `integer` | `90` | `1` to `365` | `tsr-store` | Retention limit for captured items. Older items are pruned automatically, triggering evidence cascades. |
+| `storage.retention_days` | `integer` | `0` (Forever) | `0` to `3650` (UI presets: `0`, `7`, `30`, `90`, `365`) | `tsr-store` | Retention limit in days for captured items (`0` disables pruning). Expired items trigger evidence & `VectorDb` cascades. |
 | `storage.vacuum_interval_d`| `integer` | `7` | `1` to `30` | `tsr-store` | Frequency in days for running database defragmentation and WAL checkpoints. |

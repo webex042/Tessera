@@ -85,6 +85,6 @@ Tessera makes no claim that all possible PII can be detected under every circums
 - Physical address detection uses bounded structural patterns; non-standard or partial street descriptions may bypass heuristics.
 
 ### Verification Scorecard
-Evaluated against the versioned secret corpus (`tests/fixtures/redaction/`):
-- **Detection Rate:** $355 / 355$ ($100.0\%$) of seeded secrets redacted.
-- **False Positive Rate:** $1 / 235$ ($0.43\%$) on the clean English Wikipedia test corpus (target: $\le 2.0\%$).
+Evaluated against `tests/fixtures/redaction/` plus clean extraction fixtures (`crates/tsr-guard/tests/redaction_corpus.rs`):
+- **Detection Rate:** $355 / 355$ ($100.0\%$) of seeded secrets redacted across 13 categories (`aadhaar`, `account`, `api_key`, `card`, `jwt`, `otp`, `pan`, `passport`, `password`, `private_key`, `secret`, `upi`, `voter_id`).
+- **False Positive Rate:** $1 / 242$ ($0.41\%$) across clean English prose and synthetic screen sessions (target: $\le 2.0\%$).

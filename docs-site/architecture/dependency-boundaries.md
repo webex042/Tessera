@@ -26,14 +26,14 @@ flowchart TD
         TSR_DRAFT["crates/tsr-draft"]
     end
 
-    APPROVAL_TOKEN --> TSR_NET --> OS_SCHANNEL --> HF["Hugging Face (Models Only)"]
+    APPROVAL_TOKEN --> TSR_NET --> OS_SCHANNEL --> HF["Hugging Face (Models Only)\n+ Opt-In Groq BYOK"]
     TSR_INFER -.-> |"Custom std::net HTTP/1.1 (127.0.0.1 Only)"| LOCAL_SOCKET["Loopback Socket"]
 ```
 
 ### Compile-Time Verification
 Tessera enforces the network ban via `tools/check_network_deps.py`:
 - Walks the complete resolved dependency graph from `cargo metadata`.
-- Verifies that banned network crates (`reqwest`, `hyper`, `curl`, `ureq`, `native-tls`, `tungstenite`) are unreachable from any crate other than `tsr-net`.
+- Verifies that banned network crates (`reqwest`, `hyper`, `curl`, `ureq`, `native-tls`, `tungstenite`) are unreachable from any crate other than `tsr-net` (and optional feature-gated `tauri-plugin-updater`, kept off in default builds).
 - Flags transitive dependencies in build scripts (e.g. `ort-sys` binary downloaders).
 
 ---

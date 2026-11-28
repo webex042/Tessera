@@ -209,7 +209,7 @@ export default defineConfigWithTheme<ThemeConfig>({
             { text: 'Design Principles', link: '/guide/design-principles' },
             { text: 'Implementation Status', link: '/guide/status' },
             { text: 'System Requirements', link: '/guide/requirements' },
-            { text: 'Known Limitations', link: '/guide/limitations' },
+            { text: 'Measured Status & Limitations', link: '/guide/limitations' },
             { text: 'Roadmap', link: '/guide/roadmap' },
           ]
         }

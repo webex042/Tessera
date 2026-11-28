@@ -27,14 +27,14 @@ At the application layer, Tessera applies this inference layer to personal deskt
 
 | Architectural Dimension | Conventional Cloud AI (e.g. Copilot, ChatGPT) | Standard Local Wrappers (e.g. Electron + Ollama) | Tessera Architecture |
 |---|---|---|---|
-| **Data Locality** | Screen content and prompts transmitted to cloud data centers. | Local, but often lacks strict outbound network sandboxing. | **Strictly Air-Gapped:** Zero network calls in core crates; verified compile-time boundary (`tsr-net`). |
+| **Data Locality** | Screen content and prompts transmitted to cloud data centers. | Local, but often lacks strict outbound network sandboxing. | **Local-First Boundary:** Core inference runs on `127.0.0.1` (`TSR_LLM_PROVIDER=local`); `tsr-net` isolates optional PII-masked Groq BYOK & consented HF downloads (`ADR-0002` WebView2 open). |
 | **Process Containment** | N/A (Server-side execution). | In-process or uncontained background daemons that persist on crash. | **Job Object Encapsulation:** Guaranteed kill-on-close; port-owner authenticated loopback. |
 | **Hardware Portability** | N/A (Hardware handled by cloud provider). | Bundles one massive binary or relies on manual user terminal setup. | **Dynamic Runtime Probing:** Manifest-checked builds arbitrated automatically at runtime. |
-| **Safety & Redaction** | Cloud filters apply after data has already left the machine. | Often passes raw screen buffers directly to the model. | **Deterministic Pre-Storage Redaction:** Regex + Luhn/Verhoeff checksums scrub secrets before disk. |
-| **Model Grounding** | Unverifiable citations; susceptible to hallucination. | Basic RAG; answers can freely invent unsupported statements. | **Strict Substring Evidence:** Output rejected unless quote exists in source; 0% hallucination rate. |
+| **Safety & Redaction** | Cloud filters apply after data has already left the machine. | Often passes raw screen buffers directly to the model. | **Deterministic Pre-Storage Redaction:** Regex + Luhn/Verhoeff checksums scrub secrets before disk (`355/355` corpus). |
+| **Model Grounding** | Unverifiable citations; susceptible to hallucination. | Basic RAG; answers can freely invent unsupported statements. | **Strict Substring Evidence:** Extraction enforces `0.0%` hallucination & `0` fabricated Ask citations. |
 
 ---
 
 ## Current Development Phase
 
-Tessera is currently midway through its primary development plan (Stages 0–7). Core infrastructure—capture hooks, encrypted storage, redaction, sidecar supervision, and scheduler preemption—is fully functional and verified by automated test suites. Ongoing work focuses on improving the accuracy of small 4B vision-language models and resolving an open telemetry connection originating inside the upstream Microsoft WebView2 runtime.
+Tessera is a **Windows 11 (x64) desktop beta (`v0.0.1-beta`)** spanning Stages 0–10. Core infrastructure—capture hooks, SQLCipher + AES-256-GCM `VectorDb`, redaction (`355/355`), `multilingual-e5-small` hybrid search, blind held-out Ask (`77.1%`), and Draft (`20/20`)—passes `local-igpu-beta` gates on AMD Radeon integrated graphics, while **blind held-out Extraction F1 (`0.500 < 0.60`)**, **RTX 4050 / live Groq validation**, and **upstream Microsoft WebView2 sockets (`ADR-0002`)** remain open. See [Measured Status and Limitations](/guide/limitations).

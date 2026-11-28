@@ -37,9 +37,9 @@ Tessera distributes its logic across ten specialized Rust crates and two applica
 - Executes pre-storage secret scrubbing using algorithmic checks (Luhn for cards, Verhoeff for Aadhaar).
 
 ### Storage & Retrieval (`tsr-store` & `tsr-retrieval`)
-- Persists captured items, facts, and rollups into an encrypted SQLite database using SQLCipher (AES-256-CBC).
+- Persists captured items, facts, and rollups into an encrypted SQLite database using SQLCipher (AES-256-CBC) and stores 384-d embeddings plus redacted chunks inside `tessera_vectors.enc` (`VectorDb`, AES-256-GCM v2).
 - Maintains synchronized full-text search indexes using SQLite FTS5 with BM25 scoring.
-- Computes in-memory cosine similarities against 384-dimensional int8 vector embeddings produced by local ONNX Runtime 1.31.
+- Computes in-memory cosine similarities against 384-dimensional int8/f32 vector embeddings produced by local ONNX Runtime 1.31.
 
 ### Inference & Scheduling (`tsr-infer` & `tsr-pipeline`)
 - Detects GPU hardware via DXGI, checks binary integrity, and probes candidate backends.

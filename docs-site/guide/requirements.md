@@ -19,7 +19,7 @@ Tessera compiles and executes on commodity integrated graphics without a discret
 - **Processor:** AMD Ryzen 5 7530U (6 cores / 12 threads with AVX2, FMA, F16C).
 - **Graphics:** AMD Radeon Graphics (Integrated iGPU, Vulkan 1.3).
 - **System Memory:** 16 GB shared LPDDR4x RAM (dynamically allocated VRAM).
-- **Status:** Functional. Runs all capture, store, and inference pipelines, but generation latency exceeds interactive targets ($14.5\text{s}$ first token).
+- **Status:** Functional. Runs capture, store, search, Ask (`14.2 s` p50 first sentence across 3 blind runs; passes `local-igpu-beta <= 15 s`), and Draft (`5.6 s` p50 first text; passes `local-igpu-beta <= 6 s`), while exceeding discrete-GPU `standard` interactive targets (`<= 2.5–3.0 s`).
 - **Operational Mode:** Extraction runs only when connected to AC power and the system is idle.
 
 ### CPU-Only Fallback

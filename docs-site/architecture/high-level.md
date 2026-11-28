@@ -115,7 +115,7 @@ To understand how Tessera functions as an integrated system, let us examine the 
 
 ### C. Which Component Initiates Each Operation
 * **Capture Operations:** Initiated by the **Gatekeeper** and **WinEvent Hooks** in response to user desktop activity (window focus changes, scrolling).
-* **Search & Ask Operations:** Initiated by the **User** through keyboard input in the floating notch UI (`Alt + Space`).
+* **Search & Ask Operations:** Initiated by the **User** through keyboard input in the floating notch UI (`Ctrl + Alt + Space` / `Ctrl + Alt + K`).
 * **Maintenance & Pruning:** Initiated by internal **Background Timers** in the host orchestration tier (cleaning up old history, compressing embeddings).
 
 ### D. Where Data is Processed, Stored, and Transmitted

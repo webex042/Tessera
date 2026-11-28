@@ -32,40 +32,41 @@ gantt
     Release Engineering & Signing (St. 10):2026-12-25, 20d
 ```
 
-### Stage 0: Feasibility & Model Benchmark <StatusBadge status="partial" text="In Progress" />
+### Stage 0: Feasibility & Model Benchmark <StatusBadge status="partial" />
 - **Goal:** Validate model execution, desktop capture APIs, and GPU memory budgets on consumer hardware.
 - **Completed:** Hardware detection and backend arbitration tooling (`crates/tsr-infer`); GGUF metadata parsing; UIA/WGC capture spikes; SQLCipher compilation.
-- **Open Finding:** [ADR-0002](https://github.com/webex042/Tessera/blob/main/docs/adr/0002-webview2-outbound-connection.md) identifies one outbound HTTPS connection per run initiated by the WebView2 runtime to Microsoft IP space.
+- **Open Finding:** [ADR-0002](https://github.com/webex042/Tessera/blob/main/docs/adr/0002-webview2-outbound-connection.md) documents WebView2 (`msedgewebview2.exe`) opening Microsoft TLS port-443 sockets outside Chromium NetLog.
 
-### Stage 1: Foundation, Encrypted Store & Capture <StatusBadge status="implemented" text="Complete" />
-- **Goal:** Build the encrypted database, DPAPI key unwrapping, desktop capture ladder, and secret redaction engine.
-- **Completed:** SQLCipher 4 storage (`tsr-store`); 285ms UIA deadline worker; WGC frame grabbing; 355-case secret redaction corpus (100% detection, 0.43% false positives).
+### Stage 1: Foundation, Encrypted Store & Capture <StatusBadge status="pass" />
+- **Goal:** Build the encrypted database, `VectorDb`, DPAPI key unwrapping, desktop capture ladder, and secret redaction engine.
+- **Completed:** SQLCipher 4 + AES-256-GCM `VectorDb` v2 (`tsr-store`); 285ms UIA deadline worker; WGC frame grabbing; `355/355` secret redaction (`0.41%` FP across `242` clean docs).
 
-### Stage 2: Understanding Pipeline & Injection Guard <StatusBadge status="partial" text="In Progress" />
+### Stage 2: Understanding Pipeline & Injection Guard <StatusBadge status="partial" />
 - **Goal:** Implement structured fact extraction, prompt injection defense, and sidecar supervision.
-- **Completed:** Sidecar Job Object containment; loopback HTTP/1.1 client; 0% hallucination rate; 0 schema violations; 70/74 prompt injection defense cases passing.
-- **Open Finding:** Real model extraction F1 = 0.533 (target 0.70). Invalid-JSON failures were fixed by keeping schema key order (ADR-0010); the remaining gap is precision (too many low-value `note` facts).
+- **Completed:** Sidecar Job Object containment; loopback HTTP/1.1 client; `0.0%` hallucination rate; `0` schema violations; `152/152` + `20/20` (`unseen_v3`) guarded prompt-injection **PASS**.
+- **Open Finding:** Blind held-out extraction F1 is **0.500** (`FAIL` vs. `>= 0.60` `local-igpu-beta` and `>= 0.70` `standard`; `dev` split = `0.702`). Precision (`40.6%`) is limited by false-positive `action` and `note` rows on the 4B model.
 
-### Stage 3: Floating Notch UI & Desktop Placement <StatusBadge status="implemented" text="Complete" />
+### Stage 3: Floating Notch UI & Desktop Placement <StatusBadge status="partial" />
 - **Goal:** Implement the desktop user interface shell with hardware capture exclusion.
-- **Completed:** 60 fps rendering (p95 frame time 16.8ms); input-to-visual latency p95 64ms; multi-monitor DPI scaling; 100% capture exclusion affinity (`WDA_EXCLUDEFROMCAPTURE`).
+- **Completed:** 60 fps rendering (`16.8 ms` p95 frame time); input-to-visual latency p95 `64 ms`; `20/20` focus return; `2026-10-27` pixel exclusion (`0x11`).
+- **Open Finding:** Unlocked desktop re-verification (blocked by `BitBlt 0x80070005` while locked on `2026-11-28`) and live Teams/Zoom/OBS capture tests remain incomplete (`Zoom`/`OBS` `NOT TESTED`).
 
-### Stage 4: Rollups, Morning Brief & Open Loops <StatusBadge status="implemented" text="Complete" />
+### Stage 4: Rollups, Morning Brief & Open Loops <StatusBadge status="partial" />
 - **Goal:** Multi-tier map-reduce summarization and task tracking.
-- **Completed:** Hour/day/month rollups; code-assembled morning brief; open-loop status engine; zero auto-closing of facts without user confirmation.
+- **Completed:** Hour/day/month rollups (`11/11` exact active hours, `0` invalid IDs); code-assembled morning brief; open-loop status engine; zero auto-closing without user confirmation. OS lock/unlock trigger not live-tested.
 
-### Stage 5: Contextual Draft Assistant <StatusBadge status="implemented" text="Complete" />
+### Stage 5: Contextual Draft Assistant <StatusBadge status="partial" />
 - **Goal:** In-place ghost drafting grounded in active window context.
-- **Completed:** UIA target focus re-verification; password-field refusal; private clipboard save/restore; zero unflagged unsupported claims.
+- **Completed:** UIA target focus re-verification; password-field refusal; private clipboard save/restore; `20/20` valid drafts with `0` unflagged unsupported claims (`5,587 ms` first / `14,175 ms` complete on AMD iGPU = `PASS` `local-igpu-beta`, `FAIL` `standard`). Live Gmail/Outlook/Slack/Teams insertion and Win+V checks remain incomplete.
 
-### Stage 6: Grounded Ask with Source Verification <StatusBadge status="partial" text="In Progress" />
-- **Goal:** Question answering with sentence-level citation verification.
-- **Completed:** Pipeline verified in simulation (88% correct, 100% verified); 0 fabricated citations.
-- **Open Finding:** Real 4B model answers 66.7 % of questions correctly (target 80 %) with 0 fabricated citations. The earlier 15 % came from empty answers caused by sorted schema keys (ADR-0010).
+### Stage 6: Grounded Ask with Source Verification <StatusBadge status="pass" text="pass (beta)" />
+- **Goal:** Question answering with sentence-level citation verification and hybrid E5+FTS5 search.
+- **Completed:** Real `multilingual-e5-small` ONNX search (`R@10 1.000`, `MRR 0.900`, `nDCG@10 0.921`); 3 blind held-out Ask runs (`48` q): **77.1%** accuracy, **92.3%** verified, **0** fabricated citations, **14,240 ms** p50 first sentence (`PASS` `local-igpu-beta`; `FAIL` vs. `standard` RTX 4050 latency/80% floor).
 
-### Stage 7: Security Hardening & Guardrail Audit <StatusBadge status="partial" text="In Progress" />
+### Stage 7: Security Hardening & Guardrail Audit <StatusBadge status="partial" />
 - **Goal:** Comprehensive threat model, canary disk scans, and network isolation audit.
-- **Completed:** Canary disk scan clean (0 plaintext hits); `check_network_deps.py` passing; dependency license audit.
+- **Completed:** Short-window `0` app outbound connections; NetLog `0` external URLs; `cargo deny` clean (default & `groq`); `355/355` redaction; `152/152` + `20/20` guarded injection safety.
+- **Open Finding:** `msedgewebview2.exe` opened `3` TLS `443` sockets (`ADR-0002`); 24h elevated Sysmon/WFP + `pktmon` capture and 24h pagefile canary scan remain incomplete.
 
 ---
 

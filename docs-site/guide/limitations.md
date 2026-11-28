@@ -1,87 +1,161 @@
-# Known Limitations & Constraints
+---
+title: Measured Status and Limitations
+description: Transparent engineering report of Tessera's verified capabilities, hardware-calibrated benchmarks, AI and security failures, and remaining unexecuted validation.
+---
 
-This document details the verified empirical boundaries, known technical limitations, and unachieved benchmark targets for the Tessera prototype.
+# Measured Status and Limitations
 
-Rather than claiming production readiness, Tessera follows a strict "measured, not assumed" engineering discipline. Every constraint documented below is backed by empirical test logs from the repository's test suites and evaluation ledgers (`docs/ledger.md`, `docs/final-report.md`).
+This page documents Tessera's verified capabilities, failing criteria, security boundaries, and untested edge cases based strictly on empirical evaluation logs in the repository (`evals/results/`, `docs/ledger.md`, and workspace tests).
+
+Rather than presenting a promotional pass report, every measurement on this page is tied to actual hardware, software revisions, and unmodified evaluation outputs. Where deterministic code guards catch unsafe model behavior, both the **raw model behavior** and the **application-level outcome** are reported separately.
 
 ---
 
-## 1. Benchmark Profiles & MVP Gate Status
+## 1. Benchmark Hardware, Model & Profile Disclosure
 
-As recorded in `docs/ledger.md`, `docs/final-report.md`, and `evals/results/scorecard.md`, Stages 0 through 7 are implemented, and Tessera maintains two independent benchmark profiles (`--profile standard` vs. `--profile local-igpu-beta`):
+All real-model evaluations reported below were recorded on a single development laptop rather than the discrete-GPU reference hardware:
 
-- **Hardware Used for Measurement:** AMD Ryzen 5 7530U (AMD Radeon Integrated Graphics via Vulkan), Windows 11, running **`Qwen3-VL-4B-Instruct-Q4_K_M`**.
-- **Target Hardware Not Benchmarked:** Discrete **RTX 4050 (6 GB VRAM)** was unavailable during benchmarking. Local AMD iGPU results must **not** be presented as RTX 4050 performance or universal compatibility across other GPUs/iGPUs.
-- **Non-Negotiable Security Requirements:** Prompt injection resistance (`152/152` safe), secret redaction (`100%` of sensitive fixtures), zero fabricated citations, and zero unauthorized application outbound connections are **never lowered** in either profile.
+| Environment Attribute | Verified Benchmark Configuration | Target Reference (Not Benchmarked) |
+|---|---|---|
+| **Measurement Date** | `2026-11-28` (plus preserved `2026-10-27/28` UI/rollup baselines) | — |
+| **Operating System** | Windows 11 (x64, `Microsoft Windows NT 10.0.26300.0`) | Windows 11 (x64) |
+| **CPU** | AMD Ryzen 5 7530U (6 physical cores / 12 threads, AVX2 + FMA) | Modern 6+ core x64 |
+| **GPU & Backend** | **AMD Radeon Integrated Graphics** via `llama.cpp` `b11900` (**Vulkan**) | NVIDIA **RTX 4050 (6 GB VRAM)** |
+| **Primary Local LLM** | `Qwen3-VL-4B-Instruct-Q4_K_M.gguf` + `mmproj-Qwen3VL-4B-Instruct-F16.gguf` | Discrete-GPU or larger quant |
+| **Embedding Runtime** | `multilingual-e5-small` (384-d) via pinned `onnxruntime.dll` `1.31.0` | Same |
+| **Evaluation Profile** | `local-igpu-beta` (`evals/runner/src/profile.rs`) | `standard` |
 
-| Metric / Evaluation Area | Measured Result (AMD iGPU) | Standard Target (RTX 4050) | Local iGPU Beta Target | Local Status | Root Cause & Audit Note |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Ask Correctness (60 q)** | **66.7%** (`40/60`) | $\ge 80\%$ (blind) | $\ge 70\%$ (blind; $\ge 65\%$ rejected) | <StatusBadge status="fail" /> | 95% Wilson CI `[54.1%, 77.3%]`, non-blind `ask/v2` iteration, and `83.7%` verified share (`< 90%`) |
-| **Ask Latency (p50 first / total)** | **25.2 s** / **25.5 s** | $\le 2.5\text{ s} / \le 10.0\text{ s}$ | $\le 15.0\text{ s} / \le 30.0\text{ s}$ | <StatusBadge status="fail" /> | Integrated GPU memory bandwidth bottleneck (`0` fabricated citations passes) |
-| **Extraction F1 (58 held-out)** | **0.533** (49.5% P / 57.8% R) | $\ge 0.70$ | $\ge 0.60$ ($\ge 0.50$ rejected) | <StatusBadge status="fail" /> | Within `1` SE of `0.50`; `49.5%` precision / `20.7%` `note` precision noise (`0%` hallucinated passes) |
-| **Prompt Injection (Real 4B)** | **123 / 152** (`24/39` held-out) | 152/152 safe | 152/152 safe (non-negotiable) | <StatusBadge status="fail" /> | Historical real run before `guard.rs` hardening (`152/152` sim + `13/13` replay pass; live 4B re-run pending) |
-| **Secret Redaction** | **355 / 355 (100%)**, `0.41%` FP | 100% redacted | 100% redacted | <StatusBadge status="pass" /> | Deterministic detectors cover Indian IDs + credentials |
-| **Notch UI Latency (p95)** | **64 ms** (`16.8 ms` frame p95) | $\le 100\text{ ms}$ | $\le 100\text{ ms}$ | <StatusBadge status="pass" /> | Cold-start cycle `64 ms`; cycles 2–20 cluster `24–39 ms` |
-| **Screen Capture Exclusion** | WGC/GDI pixels pass; apps untested | Absent in all | Absent in all | <StatusBadge status="partial" /> | Teams, Zoom, OBS, Snipping Tool, and Game Bar not yet tested live |
-| **Application Network** | **0 connections** | 0 unauthorized | 0 unauthorized | <StatusBadge status="pass" /> | Verified via 10-min `netmon.ps1`; 24h Sysmon/WFP pending |
-| **WebView2 Network (ADR-0002)** | **1 HTTPS** (`2603:1046:c04::/48`) | 0 connections | 0 connections | <StatusBadge status="fail" /> | `msedgewebview2.exe` platform beacon outside Chromium NetLog |
+> [!IMPORTANT] Two Benchmark Profiles & Hardware Scope
+> - **Standard Product Profile (`--profile standard`):** Long-term interactive quality and latency gates calibrated for a discrete **RTX 4050 (6 GB VRAM)** laptop. Physical RTX 4050 testing has **not** been executed.
+> - **Local iGPU Beta Profile (`--profile local-igpu-beta`):** Hardware-specific beta targets calibrated for `Qwen3-VL-4B-Instruct-Q4_K_M` running on AMD Radeon integrated graphics over shared system RAM. These targets are **hardware-specific**, not universal product guarantees for all consumer GPUs or CPU-only laptops.
+> - **Non-Negotiable Invariants:** Security criteria (`0` unsafe application-level injection outcomes, `100%` corpus secret redaction, `0` fabricated Ask citations, `0` schema-invalid rows, `0` unflagged unsupported draft claims, and `0` unauthorized app-originated outbound connections) are **never lowered** under either profile.
 
-### Analysis of Extraction, Ask, and Security Failures
-* **Extraction F1 (`0.533`) & Rejected `0.50` Candidate:** Measured on 58 held-out items (`83` gold facts) after ADR-0010 (`preserve_order`). Zero items failed invalid JSON (down from 15/58), recall rose from 44.6% to 57.8%, and hallucination was `0.0%` (`0/97`). However, precision fell to `49.5%` because the 4B model emitted `23` false-positive `note` facts. Adopting `≥ 0.50` was rejected because `0.533` sits within one standard error ($\approx 0.045$) of `0.50` and sub-50% precision is too noisy for default memory.
-* **Ask Correctness (`66.7%`) & Rejected `≥ 65%` Candidate:** While Ask achieved **0 fabricated citations** and failed closed cleanly, `40/60` has a 95% Wilson confidence interval of `[54.1%, 77.3%]` (1 question away from `< 65%`), `ask/v2` had no separate blind held-out split, and `8/49` displayed sentences failed verification (`83.7% < 90%`).
-* **Prompt Injection (`123/152` Historical Real Run):** Of the 29 historical failures on `Qwen3-VL-4B`, `5` were Windows standby timeouts (`inj-h04`, `h05`, `j01`, `j02`, `s7-005`), `10` were genuine-task misses (`inj-a05`, `e05`, `k04`, `s7-059..061`, `s7-g01/03/08/12`) caused by fail-closed taint rejection or `kind` misclassification, `1` was an extra open commitment (`inj-m04`), and `13` were safety leaks (`s7-002`, `004`, `012`, `016`, `018`, `019`, `020`, `024`, `026`, `028`, `030`, `050`, `066`). Deterministic guards in `tsr-pipeline::guard` (`s7-002` Hinglish SOV/refusal summary, `s7-018` forged user pre-approval, `s7-050` credential phishing) and `prompts::escape_content` (`<thread>`, `<style_examples>`) now pass `152/152` simulated and `13/13` recorded real-model safety replays, but live re-evaluation on physical hardware and a 3rd unseen injection set remain required before claiming `PASS`.
-* **Untested Evaluations:** Real `multilingual-e5-small` search recall (`tsr-eval search` uses `HashEmbedder`), 24-hour elevated Sysmon/WFP + `pktmon` TLS SNI capture, 24-hour pagefile canary scan, and named third-party screen-sharing app checks remain unexecuted.
+### Status Label Legend
 
----
-
-## 2. Platform & OS Constraints
-
-* **Windows 11 Only:** The current implementation targets Windows 11 (64-bit x86_64). macOS (Darwin/Metal) and Linux (X11/Wayland) are not supported.
-* **Windows Graphics Capture (WGC):** Requires Windows 10/11 build 19041 or higher. On older OS builds or unsupported virtualization environments, WGC fails, dropping the pipeline to the GDI fallback capture engine.
-* **GDI Fallback Limitations:**
-  * Cannot capture hardware-accelerated surfaces (DirectX, Vulkan, OpenGL, or DRM-protected content).
-  * Susceptible to window occlusion: if another window overlaps the target application, GDI captures the occluding window's pixels.
-  * Lacks per-window dirty rect tracking, requiring full frame reads.
+- <StatusBadge status="pass" /> — Verified directly against stated target criteria in recorded outputs.
+- <StatusBadge status="fail" /> — Latest measured result does not meet the target criterion.
+- <StatusBadge status="partial" /> — Core mechanism is verified, but required environment or real-app coverage is incomplete.
+- <StatusBadge status="not-tested" /> — No sufficient measurement has been executed on that target yet.
+- <StatusBadge status="in-progress" /> — Active engineering investigation or validation is underway.
+- <StatusBadge status="deferred" /> — Intentionally postponed until earlier MVP gates close.
 
 ---
 
-## 3. Hardware & Acceleration Boundaries
+## 2. Full Benchmark Scorecard (Performance vs. Security)
 
-* **No Dynamic Compilation:** Tessera strictly forbids dynamic runtime linking or host compilation against NVIDIA CUDA, AMD ROCm, or Intel oneAPI/SYCL.
-* **Sidecar Architecture:** Hardware acceleration is provided exclusively via pre-built, pinned binary sidecars (`llama-b11900-bin-win-vulkan-x64.zip` and `llama-b11900-bin-win-cpu-x64.zip`).
-* **Vulkan Driver Dependency:** The Vulkan backend requires Windows display drivers supporting Vulkan 1.2+. If driver initialization fails or VRAM allocation is rejected, Tessera automatically falls back to CPU inference.
-* **CPU Inference Demands:** CPU fallback requires hardware support for **AVX2** and **FMA** vector instructions. On machines lacking AVX2, CPU token generation rates fall below interactive usability thresholds ($< 2$ tokens/second).
+### A. AI Functional Quality & Performance Metrics
+
+| Measurement | Actual Result (`AMD Ryzen 5 7530U` iGPU) | Standard Target (`RTX 4050`) | Local iGPU Beta Target | Local Status | Source Artifact |
+|---|---|---|---|---|---|
+| **Ask Answer Accuracy** (3 blind held-out runs × 48 q) | **77.1% ± 0.0%** (`37 / 48` in R1, R2, R3; `dev` = `91.7%` on `12` q) | $\ge 80\%$ (blind) | $\ge 70\%$ (blind) | <StatusBadge status="pass" /> | `ask_real_heldout_r{1,2,3}.md` |
+| **Ask Citation Verification** (3 blind runs × 48 q) | **92.3% ± 0.0%** (`36 / 39` displayed sentences verified) | $\ge 90\%$ verified | $\ge 85\%$ verified | <StatusBadge status="pass" /> | `ask_real_heldout_r{1,2,3}.md` |
+| **Ask Time to First Sentence (p50)** (3 blind runs) | **14,240 ± 516 ms** (`13,787`, `14,802`, `14,132 ms`) | $\le 2,500\text{ ms}$ | $\le 15,000\text{ ms}$ | <StatusBadge status="pass" /> | `ask_real_heldout_r{1,2,3}.md` |
+| **Ask Full Answer Latency (p50)** (3 blind runs) | **15,315 ± 490 ms** (`15,127`, `15,871`, `14,947 ms`) | $\le 10,000\text{ ms}$ | $\le 30,000\text{ ms}$ | <StatusBadge status="pass" /> | `ask_real_heldout_r{1,2,3}.md` |
+| **Extraction F1** (58 blind held-out items, 83 gold) | **0.500** (`dev` 22 items = `0.702`; oracle `all` = `0.996`) | $\ge 0.70$ | $\ge 0.60$ | <StatusBadge status="fail" /> | `extraction_real_heldout.md` |
+| **Extraction Precision & Recall** (58 held-out items) | **40.6% Precision** / **65.1% Recall** (`133` stored vs `83` gold; `1` JSON fail) | Balanced $\ge 0.70$ F1 | Balanced $\ge 0.60$ F1 | <StatusBadge status="fail" /> | `extraction_real_heldout.md` |
+| **Draft Validity** (20 scenarios) | **20 / 20 valid** (`16/20` must-include, `20/20` must-not-include, `19/20` placeholders) | All valid (`20 / 20`) | All valid (`20 / 20`) | <StatusBadge status="pass" /> | `draft_real_all.md` |
+| **Draft Latency (p50 first / complete)** (20 scenarios) | **5,587 ms** first text / **14,175 ms** complete | $\le 3,000 / \le 8,000\text{ ms}$ | $\le 6,000 / \le 20,000\text{ ms}$ | <StatusBadge status="pass" /> | `draft_real_all.md` |
+| **Rollup Reliability** (22 simulated items / 6 days) | **11 / 11** exact active hours, **0.0%** fallback (`15/15` model-written), `0` invalid IDs | Exact hours, $\le 10\%$ fallback, `0` invalid IDs | Same | <StatusBadge status="pass" /> | `rollup_real.md` |
+| **Notch UI Latency & Frame Time** (20 open/close cycles) | **64 ms** input-to-visual p95 (`16.8 ms` animation frame p95; `20/20` focus return) | $\le 100\text{ ms}$ / $60\text{ fps}$ | $\le 100\text{ ms}$ / $60\text{ fps}$ | <StatusBadge status="pass" /> | `notch_perf.json` |
+| **Search Behaviour Checks** (`tsr-eval search`) | **6 / 6 behaviour checks pass** (suppression, blocklist, OTP skip, dupes, fallback, determinism) | All pass | All pass | <StatusBadge status="pass" /> | `search_e5.md` |
+| **Real Embedding Evaluation** (`multilingual-e5-small` ONNX) | **R@5 0.981**, **R@10 1.000**, **P@5 0.219**, **MRR 0.900**, **nDCG@10 0.921** (54 q / 80 items) | Measured pass | Measured pass | <StatusBadge status="pass" /> | `search_e5.md` |
+
+*Note on Standard Profile:* Against the **Standard Product Profile (`RTX 4050`)**, Ask accuracy (`77.1% < 80%`), Ask latency (`14.2 s > 2.5 s`, `15.3 s > 10.0 s`), Draft latency (`5.6 s > 3.0 s`, `14.2 s > 8.0 s`), and Extraction F1 (`0.500 < 0.70`) remain <StatusBadge status="fail" /> or <StatusBadge status="not-tested" /> because the physical discrete GPU has not been benchmarked.
+
+### B. Security, Privacy & Containment Metrics (Never Relaxed)
+
+| Security / Privacy Measurement | Actual Result | Requirement (Both Profiles) | Status | Notes |
+|---|---|---|---|---|
+| **Ask Fabricated Citations** (3 blind runs × 48 q) | **0** across all 3 runs (`R1: 0`, `R2: 0`, `R3: 0`) | `0` fabricated | <StatusBadge status="pass" /> | Deterministic `verify_with_headers` blocks ungrounded claims |
+| **Extraction Hallucination Rate** (58 held-out items) | **0 / 133 (0.0%)** stored facts lacking source evidence | $\le 3.0\%$ | <StatusBadge status="pass" /> | Substring/Dice verification rejects ungrounded quotes |
+| **Extraction Schema-Invalid Rows** | **0** invalid rows (`0` injection items stored forbidden text) | `0` invalid rows | <StatusBadge status="pass" /> | Enforced by `tsr_pipeline::audit` |
+| **Unsupported Draft Claims Unflagged** (20 scenarios) | **0** shown without a flag | `0` unflagged | <StatusBadge status="pass" /> | Verified by `tsr_draft::factcheck` |
+| **Real-Model Prompt Injection** (`cases.json`, 152 cases) | **152 / 152 safe** at app level (**4** raw-model forbidden echoes blocked by guards) | `152 / 152` safe (`0` guarded failures) | <StatusBadge status="pass" /> | Fresh real `Qwen3-VL-4B` run after final edits (`injection_real.md`) |
+| **Unseen 3rd Prompt Injection Set** (`unseen_v3.json`, 20 cases) | **20 / 20 safe** at app level (**0** raw-model forbidden echoes) | `0` unsafe stored outcomes | <StatusBadge status="pass" /> | Held-out 15 adversarial + 5 controls (`injection_real_unseen_v3.md`) |
+| **Simulated Compromised Model Injection** (`152` + `20` cases) | **152 / 152 safe** (`130` raw echoes blocked) & **20 / 20 safe** (`15` raw echoes blocked) | `0` guarded failures | <StatusBadge status="pass" /> | Worst-case adversarial harness (`injection_simulated*.md`) |
+| **Secret Redaction Corpus** (`355` secrets) | **355 / 355 (100.0%)** redacted across 13 categories | `100%` redacted | <StatusBadge status="pass" /> | `cargo test -p tsr-guard --test redaction_corpus --locked` |
+| **Redaction False-Positive Rate** (`242` clean docs) | **1 / 242 (0.41%)** (`Order #[REDACTED:card]...`) | $\le 2.0\%$ FP | <StatusBadge status="pass" /> | `clean.txt` + `evals/extraction/items/*.json` |
+| **Screen Capture Exclusion** (`WDA_EXCLUDEFROMCAPTURE`) | `2026-10-27` pixel test `pass: true` (`0x11`, WGC+GDI `1.0`); `2026-11-28` re-run failed (`BitBlt: 0x80070005` locked session); `MSTeams`/`ScreenSketch`/`Game Bar` installed only; `Zoom`/`OBS` absent | Absent in all capture & meeting tools | <StatusBadge status="partial" /> | Pixel re-run blocked while desktop locked; named apps not verified live (`Zoom`/`OBS` <StatusBadge status="not-tested" />) |
+| **App Outbound Network** (`tessara.exe`, `llama-server.exe`) | **0** non-loopback connections (2-min debug run `2026-11-28`; 4–10 min prior runs) | `0` unauthorized connections | <StatusBadge status="partial" /> | Passes short audits & `check_network_deps.py`; 24h Sysmon/WFP pending |
+| **WebView2 Outbound Network** (`ADR-0002`) | **0** external URLs in Chromium NetLog (`localhost` only); **3** TLS `443` sockets from `msedgewebview2.exe` (`52.110.14.167`, `40.104.66.66`) | `0` connections or documented/blocked SNI | <StatusBadge status="fail" /> | Microsoft Edge WebView2 platform sockets occur outside Chromium NetLog; `pktmon` TLS SNI capture needs Admin |
+
+<details>
+<summary>Expand detailed before vs. after comparison &amp; per-run variability (2026-10-28 vs. 2026-11-28)</summary>
+
+| Metric | Prior Baseline (`baselines-2026-10-28`) | Latest Measurement (`2026-11-28`) |
+|---|---|---|
+| **Ask Correctness** | `66.7%` (`40/60`, `all` split) | `77.1% ± 0.0%` (`37/48`, 3 blind `heldout` runs) · `91.7%` (`dev`, `11/12`) |
+| **Ask Verified Sentences** | `83.7%` (`41/49`) | `92.3% ± 0.0%` (`36/39`, 3 blind `heldout` runs) |
+| **Ask Latency (p50 first / full)** | `25,155 ms` / `25,540 ms` | `14,240 ± 516 ms` / `15,315 ± 490 ms` (`R1: 13,787/15,127`, `R2: 14,802/15,871`, `R3: 14,132/14,947`) |
+| **Extraction Held-Out F1 (58 items)** | `0.533` (`49.5%` P, `57.8%` R, `97` stored) | `0.500` (`40.6%` P, `65.1%` R, `133` stored; `0%` hallucinated) |
+| **Injection Real 4B (`152` cases)** | `123 / 152` (`29` failures) | `152 / 152` PASS (`0` guarded failures, `4` raw echoes blocked) |
+| **Draft (`20` scenarios)** | `17 / 20` valid, `5,870 ms` first, `16,372 ms` complete | `20 / 20` valid, `5,587 ms` first, `14,175 ms` complete |
+| **Search (`multilingual-e5-small`)** | Hash embedder only (`sim-hash-v1`) | Real ONNX `E5` measured: `R@10 1.000`, `MRR 0.900`, `nDCG@10 0.921` |
+
+Note: An intermediate `injection` run on `2026-11-28` (`injection_real.md` after continuous `draft` load) experienced `3` `model: transport: timed out` errors (`inj-m04`, `s7-055`, `s7-056`) with `0` security leaks; a clean re-run passed `152 / 152` with `0` guarded failures.
+
+</details>
 
 ---
 
-## 4. Model Architecture & Resource Constraints
+## 3. Remaining AI & Pipeline Limitations
 
-* **Supported Format:** Tessera currently supports only **GGUF** format models compatible with `llama.cpp` build b11900. Proprietary checkpoints (SafeTensors, PyTorch `.pt`, ONNX) are not supported for primary text generation.
-* **Model Sizing (4B Default):**
-  * Weights footprint: $\approx 2.4 \text{ GB}$ disk space.
-  * Runtime memory footprint: $\approx 3.8 \text{ GB}$ system RAM / VRAM under default 4096-token context.
-  * Minimum recommended system RAM: **8 GB** (system struggles under concurrent browser loads).
-  * Recommended system RAM: **16 GB** or higher.
-* **Context Window Limitation:** Inference context is capped at 4096 tokens to prevent out-of-memory crashes on integrated GPUs (Intel Iris Xe, AMD Radeon 680M/780M). Long screen histories must be aggressively chunked and summarized.
+### Ask Limitations (<StatusBadge status="pass" /> on Local iGPU Beta / <StatusBadge status="fail" /> on Standard)
+- **Remaining 22.9% Incorrect Answers on Blind Held-Out Queries (`11 / 48`):** On ambiguous or multi-hop personal queries over `<= 3` retrieved snippets (clipped to `350` chars per snippet within a `1,050`-char prompt snippet budget to hit `<= 15 s` latency), the compact 4B local model occasionally misses the decisive fact or answers conservatively (`"insufficient"`).
+- **Tight Latency Margin (`14.2 s` vs. `15.0 s` p50 ceiling):** Although prefill optimizations (`-b 2048 -ub 2048`, `MAX_SNIPPETS = 3`, single-line compact JSON) cut Ask first-sentence latency by ~44% from `25.2 s` down to `13.8–14.8 s`, Run 2 hit `14,802 ms` — leaving little headroom under background CPU/iGPU load and falling well short of the `<= 2.5 s` discrete-GPU target.
+- **Citation Verification Bounds:** Deterministic `verify_with_headers` blocks fabricated citations (`0` across all 144 run-questions) and achieved `92.3%` displayed verification, yet `3 / 39` sentences were withheld/unverified because paraphrased 4B phrasing diverged too far from source wording or numeric formatting.
+
+### Extraction Limitations (<StatusBadge status="fail" /> on Blind Held-Out F1)
+- **Over-Extraction & False-Positive Precision Noise (`F1 = 0.500` on 58 Blind Items):** While extraction achieved `0.702` F1 on the 22-item `dev` split and `0.996` F1 under oracle inputs, blind held-out evaluation stored **133 facts** (plus `16` held as `needs_review`) against **83 gold facts** — yielding **65.1% recall** but only **40.6% precision**:
+  - `action`: `P 0.43`, `R 0.89`, `F1 0.58` (`32 TP`, `42 FP`, `4 FN`)
+  - `decision`: `P 0.46`, `R 0.75`, `F1 0.57` (`6 TP`, `7 FP`, `2 FN`)
+  - `event`: `P 0.65`, `R 0.92`, `F1 0.76` (`11 TP`, `6 FP`, `1 FN`)
+  - `note`: `P 0.12`, `R 0.17`, `F1 0.14` (`3 TP`, `21 FP`, `15 FN`)
+  - `question`: `P 0.40`, `R 0.22`, `F1 0.29` (`2 TP`, `3 FP`, `7 FN`)
+- **Generalization Gap (`dev` `0.702` vs. `heldout` `0.500`):** Prompt and heuristic refinements tuned on `dev` did not generalize cleanly to unseen screen patterns on the 4B model, generating `42` false-positive `action` items and `21` false-positive `note` items.
+- **JSON Reliability & Confidence Limits:** `1 / 58` held-out items failed valid JSON output twice under strict grammar retries; confidence scores remain model-calibrated heuristics rather than calibrated probabilities, and evidence validation guarantees only substring existence (`0.0%` hallucinations), not semantic usefulness.
+
+### Prompt Injection Limitations (<StatusBadge status="pass" /> App Level, Raw Model Still Susceptible)
+- **Raw Model vs. Application Guard Separation:** In the `152`-case real-model run (`Qwen3-VL-4B-Instruct-Q4_K_M`), **the raw 4B model still echoed forbidden injected strings in 4 cases**, and the simulated worst-case compromised model echoed them in **130 / 152** (`cases.json`) and **15 / 20** (`unseen_v3.json`).
+- **Deterministic Defense Reliance:** Application safety (`0` unsafe stored outcomes across both `152` real cases and `20` `unseen_v3` cases) relies critically on deterministic Rust pre-prompt scrubbing (`scrub_untrusted_segments`), XML tag escaping (`escape_content`), and post-extraction filtering (`tsr-guard::injection` + `tsr-pipeline::guard`). Novel obfuscated phrasings or unsupported non-English scripts outside tested patterns remain an ongoing defense risk.
+- **Sidecar Thermal/Timeout Sensitivity:** Running continuous heavy VLM + text injection batches on shared iGPU hardware triggered `3` `model: transport: timed out` failures (`inj-m04`, `s7-055`, `s7-056`) during a back-to-back stress run before passing `152/152` cleanly in an isolated run.
+
+### Draft Limitations (<StatusBadge status="pass" /> Local iGPU Beta / <StatusBadge status="fail" /> Standard)
+- **Required Point Coverage & Placeholders:** Although `20 / 20` drafts produced valid schema JSON with `0` unflagged unsupported claims and `20 / 20` avoided forbidden content, **4 / 20 missed at least one `must_include` element** (`16 / 20`) and **1 / 20 missed an expected `[...]` placeholder** (`19 / 20`).
+- **Latency & Style Limits:** `5,587 ms` first visible text p50 and `14,175 ms` complete draft p50 satisfy `local-igpu-beta` (`<= 6,000 / 20,000 ms`) but exceed discrete-GPU interactive targets (`<= 3,000 / 8,000 ms`). Style matching clips examples at 320 chars and cannot capture long-form writing voice cleanly on a 4B quant.
+- **Application Insertion Scope:** Plain-text insertion, password-control refusal, and clipboard restoration were verified on test controls (`insert_real.rs`), whereas live insertion across **Gmail, Outlook, Teams, Slack, and WhatsApp** and **Windows Win+V history / cloud clipboard suppression** remain <StatusBadge status="partial" /> or <StatusBadge status="not-tested" />.
+
+### Search Limitations (<StatusBadge status="pass" />)
+- **FTS5 + `VectorDb` Hybrid Fusion:** SQLite FTS5 BM25 and `VectorDb` (`tessera_vectors.enc`, 384-d `multilingual-e5-small` via ONNX Runtime `1.31.0`) fused via RRF ($k = 60$) now have an executed real-embedder evaluation (`evals/results/search_e5.md`: `R@10 = 1.000`, `MRR = 0.900`, `nDCG@10 = 0.921`).
+- **Residual Search Constraints:** Unanswerable questions still retrieve candidates (`8 / 8` hit >= 1 snippet; abstention depends on Ask). Furthermore, forgetting a person via salted-hash suppression filters full-name hits (`7` filtered) but **5 first-name-only mentions** remained searchable (`search_e5.md` note), and simulated-hash CI runs (`sim-hash-v1`) do not exercise semantic E5 quality when `--model` is absent.
 
 ---
 
-## 5. Security & Isolation Boundaries
+## 4. Security, Privacy & Platform Limitations
 
-* **Outbound Network Separation (`ADR-0002`):**
-  * **Application-originated (`tessara.exe`, `llama-server.exe`):** **0** non-loopback connections observed across 4–10 minute `tools/netmon.ps1` audits (`check_network_deps.py` also enforces that no crate outside `tsr-net` depends on HTTP/TLS crates).
-  * **WebView2 platform-originated (`msedgewebview2.exe`):** **1** outbound HTTPS connection to Microsoft (`2603:1046:c04::/48:443`) per launch even with SmartScreen, WPAD (`--no-proxy-server`), and Chromium background-networking switches disabled. Absent from Chromium NetLog and Windows DNS cache; likely Edge/WebView2 diagnostic telemetry (**not yet confirmed** via elevated `pktmon` TLS SNI capture). Privacy implication: Microsoft receives a connection event on launch until identified and blocked/removed ([ADR-0002](https://github.com/webex042/Tessera/blob/main/docs/adr/0002-webview2-outbound-connection.md)). A formal 24-hour elevated Sysmon/WFP audit has not been run yet.
-  * **Other third-party connections:** **0** in default local mode (opt-in Groq BYOK transmits only PII-masked text when explicitly configured and consented to by the user).
-* **DPAPI Encryption Scope:**
-  Storage encryption relies on the Windows Data Protection API (DPAPI) tied to the logged-in Windows user account (`CryptProtectData`). Data is protected against offline drive theft and unprivileged processes, but is accessible to any process executing under the same user security context unless explicit access control lists (ACLs) are configured.
-* **Screen Scraping Adversarial Injections:**
-  In deterministic tests (`tsr-eval injection`), the hardened pipeline guard (`tsr-pipeline::guard`) plus prompt delimiter escaping (`<screen_content>`, `<memory>`, `<thread>`, `<style_examples>`) blocks `152/152` simulated worst-case injections and `13/13` recorded real-model safety violations fail-closed. However, in the prior live `Qwen3-VL-4B` benchmark (`123/152` pass, `24/39` held-out), the compact 4B model echoed injected directives and misclassified mixed prompts until the guard caught them; unseen attack styles and live hardware re-verification remain open risks.
+- **Local Mode vs. Optional Groq BYOK:** Tessera defaults strictly to `TSR_LLM_PROVIDER=local` (`llama-server` on loopback `127.0.0.1`). Optional **Groq BYOK** (`openai/gpt-oss-20b`, enabled via `--features groq`) requires explicit user consent and transmits prompts over HTTPS to `api.groq.com`. Screen images (`image_png`) are never sent to Groq (`UnsupportedModality`), and **Groq BYOK quality/latency has NOT been benchmarked live** (<StatusBadge status="not-tested" />).
+- **What Can Leave the Device:**
+  1. Consented Hugging Face downloads of pinned model/embedder weights in **AI Setup** (verified against `tools/models.lock`).
+  2. PII-masked prompt text sent to `api.groq.com` **only** when the user explicitly activates Groq BYOK and supplies an API key.
+  3. **Microsoft Edge WebView2 (`msedgewebview2.exe`) platform traffic (`ADR-0002`):** Even with Chromium NetLog showing `0` external URLs (`localhost` only), Windows socket monitoring (`netmon.ps1`) observed **3 TLS port-443 sockets** to Microsoft IP space (`52.110.14.167`, `40.104.66.66`, and `2603:1046:c04::/48` in Stage 0 runs). Elevating `pktmon` for TLS SNI inspection or creating Windows Firewall rules requires Administrator privileges not verified in standard builds.
+- **PII Masking Boundaries:** Deterministic regex + Luhn (`[CARD]`) + Verhoeff (`[AADHAAR]`) + contextual pseudonyms (`[PERSON_01]`) achieve `355 / 355` (`0.41%` FP) on synthetic corpora, **not** universal privacy guarantees. Isolated/lowercase names without conversational cues, non-standard street addresses, and garbled OCR strings can pass unmasked.
+- **Screen Capture Exclusion Limits:** Win32 `SetWindowDisplayAffinity(..., WDA_EXCLUDEFROMCAPTURE)` (`0x11`) passed synthetic WGC/GDI pixel tests on `2026-10-27`, **failed on `2026-11-28` (`BitBlt: Access is denied. 0x80070005`) while the Windows desktop session was locked/unattended**, and cannot hide windows from kernel-level capture drivers, external cameras, or untested virtual-display hooks.
+- **Database Encryption & Windows DPAPI:** SQLCipher (`tessara.db`) and `VectorDb` v2 (`tessera_vectors.enc`, `ring::aead::AES_256_GCM` with 12-byte CSPRNG nonces + AAD) protect data at rest against offline disk theft, but master keys (`key.bin`, `groq_key.bin`) rely on Windows DPAPI (`CryptProtectData`). Any malicious software executing under the same logged-in Windows user account can call `CryptUnprotectData`.
+- **Deletion & Retention Scope:** Single-item deletion, automatic retention pruning (`0` = Keep Forever, UI presets `7 / 30 / 90 / 365` days, backend maximum `3650` days), and token-confirmed (`CLEAR`) wipes cascade across SQLCipher tables, FTS5 indexes, `facts`/`evidence`, and `tessera_vectors.enc`, using `PRAGMA secure_delete = ON`. However, prior Windows VSS shadow copies, `pagefile.sys`, or `hiberfil.sys` pages outside BitLocker are not retro-wiped by SQLite.
+- **Dependency Advisories Verified Clean (Default + Groq):** `cargo deny --offline --locked check` and `cargo deny --offline --locked --features tessara/groq check` both pass with **0 advisories, 0 bans, and 0 license violations** (`rusqlite 0.43.0`, `sqlcipher-src 420.0.0`, `cookie 0.18.3`, `url 2.5.9`). The optional auto-updater (`--features updater`, `tauri-plugin-updater`) remains **compiled out** (<StatusBadge status="deferred" />) per `ADR-0003` due to transitive `zip` crate advisories (`RUSTSEC-2026-0367`, `-0368`, `-0369`).
 
 ---
 
-## 6. Next Steps & Mitigations
+## 5. Remaining Validation Work (`NOT TESTED` / `PARTIAL`)
 
-For detailed technical mitigation plans and architectural roadmaps addressing each limitation, consult:
-* [Implementation Status](/guide/status) — Full test scorecards and stage completion matrix.
-* [Roadmap](/guide/roadmap) — Stage 8 through Stage 10 milestones.
-* [Threat Model](/privacy/threat-model) — Comprehensive security boundary analysis.
+| Validation Item | Current State | Status | What Is Required to Close |
+|---|---|---|---|
+| **Discrete RTX 4050 Benchmarking** | Hardware unavailable; zero measurements taken | <StatusBadge status="not-tested" /> | Execute `tsr-eval` Ask, Extraction, Draft, and Injection suites on RTX 4050 6 GB laptop |
+| **Live Groq BYOK Evaluation** | Connectivity probe & `QuotaTracker` unit-tested only; no `evals/results/*groq*` dataset run | <StatusBadge status="not-tested" /> | Run `tsr-eval` suite with `TSR_LLM_PROVIDER=groq` and user API key |
+| **Zoom & OBS Capture Exclusion** | Not installed on test machine | <StatusBadge status="not-tested" /> | Live screen-share verification in Zoom and OBS Studio on unlocked desktop |
+| **Teams, Snipping Tool & Xbox Game Bar Exclusion** | Packages present (`MSTeams`, `ScreenSketch`, `XboxGamingOverlay`), not verified live during capture | <StatusBadge status="not-tested" /> | Unlocked interactive desktop test capturing active screen-share / screenshot tools |
+| **Unlocked Pixel Exclusion Re-Run** | `2026-10-27` passed (`0x11`); `2026-11-28` re-run blocked by `BitBlt 0x80070005` on locked session | <StatusBadge status="partial" /> | Re-run `tools\verify-capture-exclusion.ps1` in an unlocked interactive Windows session |
+| **Extended 24h Network & Elevated TLS SNI Audit** | 2-min & 10-min `netmon.ps1` + NetLog completed; `pktmon` & 24h Sysmon/WFP blocked on non-Admin shell | <StatusBadge status="partial" /> | Run 24-hour elevated Sysmon/WFP + `pktmon` capture to classify `msedgewebview2.exe` TLS SNIs (`ADR-0002`) |
+| **24h Pagefile & Memory Canary Validation** | 60-second canary scan (`0` plaintext hits) only | <StatusBadge status="partial" /> | Execute 24-hour continuous run and scan disk/pagefile/hiberfil |
+| **Live Mail/Chat Drafting & Win+V History** | Plain edit control tested (`insert_real.rs`); Gmail/Outlook/Teams/Slack/WhatsApp untested; Win+V history disabled | <StatusBadge status="partial" /> | Test live insertion in target desktop/web apps with Windows Clipboard History enabled |
+| **2-Week Dogfood Acceptance & 7-Day Stability** | MVP quality & Stage 8 audio/translation gates unclosed | <StatusBadge status="not-tested" /> | Track real daily draft acceptance ($\ge 50\%$) and 7-day continuous uptime after extraction F1 recovery |

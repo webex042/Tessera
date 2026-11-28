@@ -718,6 +718,30 @@ body {
   border: 1px solid var(--p-line);
 }
 
+/* Expandable diagnostic disclosures (e.g. Limitations before/after comparison) */
+.vp-doc details.custom-block,
+.vp-doc details {
+  border: 2px solid var(--p-ink);
+  background: var(--p-paper);
+  padding: 0.75rem 1rem;
+  margin: 1.25rem 0;
+}
+
+.vp-doc details > summary {
+  cursor: pointer;
+  font-family: var(--t-font-mono);
+  font-size: var(--t-size-meta);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--p-ink);
+}
+
+.vp-doc details[open] > summary {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--p-line);
+}
+
 /* ---------------------------------------------------------------- right-hand contents */
 
 .VPDocAsideOutline {
